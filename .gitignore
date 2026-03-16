@@ -1,0 +1,62 @@
+# ─── Dependencies ────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ─── Next.js ─────────────────────────────────────
+.next/
+out/
+build/
+dist/
+
+# ─── Environment variables ───────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ─── Supabase ────────────────────────────────────
+supabase/.branches
+supabase/.temp
+
+# ─── Testing ─────────────────────────────────────
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# ─── Logs ────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# ─── OS ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDE / Editor ────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── TypeScript ──────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── Turbopack / Turborepo ───────────────────────
+.turbo/
+
+# ─── Vercel ──────────────────────────────────────
+.vercel/
+
+# ─── Misc ────────────────────────────────────────
+*.pem

@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─────────────────────────────────────────────
+   NexusBridge Lending — Design Tokens
+   Font: Erbaum (commercial) — placeholder: DM Sans
+   Palette: deep navy / steel blue-gray / white
+───────────────────────────────────────────── */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+/* Dark-first: NexusBridge is a dark-theme brand */
+:root {
+  --background: #0D1117;
+  --foreground: #F0F4F8;
+
+  --card: #131C2B;
+  --card-foreground: #F0F4F8;
+
+  --popover: #131C2B;
+  --popover-foreground: #F0F4F8;
+
+  /* Primary = steel blue action color */
+  --primary: #4A90D9;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary = raised surface */
+  --secondary: #1A2739;
+  --secondary-foreground: #F0F4F8;
+
+  /* Muted = subdued backgrounds and text */
+  --muted: #1A2739;
+  --muted-foreground: #8BA3B5;
+
+  /* Accent = interactive highlight */
+  --accent: #4A90D9;
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #EF4444;
+
+  --border: #243347;
+  --input: #1A2739;
+  --ring: #4A90D9;
+
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}

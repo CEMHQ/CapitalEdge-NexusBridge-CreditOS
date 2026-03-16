@@ -97,6 +97,63 @@ export default function InvestorsPage() {
         </div>
       </section>
 
+      {/* Credit Fund Strategies */}
+      <section id="strategies" className="bg-[#F8FAFC] border-y border-slate-200">
+        <div className="mx-auto max-w-7xl px-6 py-24">
+          <div className="text-center mb-6">
+            <p className="text-xs tracking-widest uppercase text-[#4A90D9] mb-3">Deployment Strategies</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#0D1117]">
+              What Our Credit Fund Offers
+            </h2>
+          </div>
+          <p className="text-center text-sm text-[#4A6070] leading-relaxed max-w-2xl mx-auto mb-16">
+            NexusBridge Capital LP deploys investor capital across three complementary credit strategies — each targeting diversified, asset-backed yield within a balanced risk profile.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {[
+              {
+                title: "Asset-Backed Lending",
+                body: "Secured loans backed by tangible assets such as real estate, equipment, or receivables. Collateral reduces volatility and provides investors a steady, predictable income stream.",
+                highlight: "Lower volatility through hard-asset collateral",
+              },
+              {
+                title: "GAP Funding",
+                body: "Short-term capital that bridges financial gaps in real estate and other projects — secured by tangible assets. Ideal for investors seeking quicker return cycles with asset-backed security.",
+                highlight: "Faster capital recycling on bridge positions",
+              },
+              {
+                title: "Micro-Lending",
+                body: "Small loans to individuals and small businesses that foster economic growth and financial inclusion. Competitive returns aligned with socially responsible investing principles.",
+                highlight: "Diversified exposure across borrower segments",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-white rounded-xl border border-slate-200 p-8 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#4A90D9] flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-[#0D1117]">{item.title}</h3>
+                <p className="text-sm text-[#4A6070] leading-relaxed flex-1">{item.body}</p>
+                <p className="text-xs font-medium text-[#4A90D9] pt-2 border-t border-slate-100">
+                  {item.highlight}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-3xl mx-auto text-center shadow-sm">
+            <p className="text-sm font-semibold text-[#0D1117] mb-2">About The Fund</p>
+            <p className="text-sm text-[#4A6070] leading-relaxed">
+              NexusBridge Capital LP pools accredited investor capital to offer various forms of credit, targeting
+              higher-return opportunities within a disciplined risk framework. Whether you are an experienced
+              allocator or new to private credit, the fund provides a structured, well-managed path to
+              yield-generating exposure.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Fund structure */}
       <section id="structure" className="bg-card border-y border-border">
         <div className="mx-auto max-w-7xl px-6 py-24">

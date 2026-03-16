@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { Barlow } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
-// Placeholder for Erbaum (commercial license required).
-// Replace with Erbaum when font files are available.
-const dmSans = DM_Sans({
+// Barlow — closest Google Fonts match to Erbaum (geometric, rational, wide weight range).
+// Replace with licensed Erbaum when available.
+const barlow = Barlow({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={dmSans.variable}>
+    <html lang="en" className={barlow.variable}>
       <body className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1">{children}</main>

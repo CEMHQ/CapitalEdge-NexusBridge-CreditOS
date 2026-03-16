@@ -7,11 +7,33 @@ import { CheckCircle, Mail, Phone, MapPin } from "lucide-react";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // TODO: wire to notification service in Phase 2
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    const form = e.currentTarget;
+    const data = {
+      name: (form.elements.namedItem("name") as HTMLInputElement).value,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      subject: (form.elements.namedItem("subject") as HTMLSelectElement).value,
+      message: (form.elements.namedItem("message") as HTMLTextAreaElement).value,
+    };
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Submission failed");
+      setSubmitted(true);
+    } catch {
+      setError("Something went wrong. Please try again or email us directly.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -100,12 +122,16 @@ export default function ContactPage() {
                     placeholder="Tell us how we can help..."
                   />
                 </div>
+                {error && (
+                  <p className="text-sm text-destructive">{error}</p>
+                )}
                 <Button
                   type="submit"
                   size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground tracking-wide w-full md:w-auto"
+                  disabled={loading}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground tracking-wide w-full md:w-auto disabled:opacity-60"
                 >
-                  Send Message
+                  {loading ? "Sending..." : "Send Message"}
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   We typically respond within 1–2 business days.

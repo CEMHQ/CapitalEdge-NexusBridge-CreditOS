@@ -26,10 +26,39 @@ const loanPurposes = [
 export default function ApplyPage() {
   const [submitted, setSubmitted] = useState(false);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // TODO: wire to Supabase or form endpoint in Phase 2
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    const form = e.currentTarget;
+    const data = {
+      firstName: (form.elements.namedItem("firstName") as HTMLInputElement).value,
+      lastName: (form.elements.namedItem("lastName") as HTMLInputElement).value,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      phone: (form.elements.namedItem("phone") as HTMLInputElement).value,
+      loanAmount: (form.elements.namedItem("loanAmount") as HTMLInputElement).value,
+      propertyValue: (form.elements.namedItem("propertyValue") as HTMLInputElement).value,
+      loanPurpose: (form.elements.namedItem("loanPurpose") as HTMLSelectElement).value,
+      propertyType: (form.elements.namedItem("propertyType") as HTMLSelectElement).value,
+      propertyAddress: (form.elements.namedItem("propertyAddress") as HTMLInputElement).value,
+      exitStrategy: (form.elements.namedItem("exitStrategy") as HTMLTextAreaElement).value,
+    };
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Submission failed");
+      setSubmitted(true);
+    } catch {
+      setError("Something went wrong. Please try again or email us directly.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -221,12 +250,16 @@ export default function ApplyPage() {
                 </CardContent>
               </Card>
 
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
               <Button
                 type="submit"
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground tracking-wide w-full md:w-auto"
+                disabled={loading}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground tracking-wide w-full md:w-auto disabled:opacity-60"
               >
-                Submit Loan Inquiry
+                {loading ? "Submitting..." : "Submit Loan Inquiry"}
               </Button>
 
               <p className="text-xs text-muted-foreground">

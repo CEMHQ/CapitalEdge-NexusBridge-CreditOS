@@ -41,7 +41,14 @@ export function Footer() {
             </p>
             <p className="text-xs text-muted-foreground mt-4">
               Managed by{" "}
-              <span className="text-foreground/60">Capital Edge Management</span>
+              <a
+                href="https://www.capitaledgeinvest.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground/60 hover:text-foreground transition-colors"
+              >
+                Capital Edge Management
+              </a>
               {" "}through{" "}
               <span className="text-foreground/60">Obsidian & Co. Holdings, LLC</span>
             </p>

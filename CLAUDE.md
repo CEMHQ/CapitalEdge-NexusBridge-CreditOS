@@ -8,9 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NexusBridge CreditOS is a hybrid financial infrastructure platform connecting borrowers seeking short-term asset-backed financing (bridge loans, real estate) with investors seeking yield-generating private credit exposure. It handles Reg A/D offerings, investor management, fund accounting, and borrower workflows.
 
-**Business model**: Originate and manage short-duration loans (6–12 months), secured by real assets, with conservative LTV ratios. Investors participate through NexusBridge Capital. Long-term vision includes a hybrid "HyFi" layer — blockchain-based tokenized participation on top of the centralized lending platform.
+**Business model**: Originate and manage short-duration loans (6–12 months), secured by real assets, with conservative LTV ratios. Investors participate through NexusBridge Capital LP. Long-term vision includes a hybrid "HyFi" layer — blockchain-based tokenized participation on top of the centralized lending platform.
 
-The platform is **documentation-complete but not yet implemented** — all `apps/`, `services/`, `core/`, and `infrastructure/` directories are currently empty scaffolding.
+The marketing site (`apps/web-marketing`) is **live on Vercel**. All other `apps/`, `services/`, `core/`, and `infrastructure/` directories are scaffolding pending Phase 2.
 
 Design docs live in `/docs/`. Before implementing any feature, read the relevant doc:
 
@@ -31,8 +31,44 @@ Design docs live in `/docs/`. Before implementing any feature, read the relevant
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
 | Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
+| **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
 
 UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md` (application portals).
+
+---
+
+## Entity Separation — Critical Rule
+
+Two brands. Two licenses. Two regulatory lanes. **Never cross them.**
+
+| Entity | Lane | License | Website |
+|---|---|---|---|
+| Capital Edge Management, Inc. (CEM) | **Equity** | Real Estate License | capitaledgeinvest.com |
+| NexusBridge Lending LLC | **Debt** | Lending License | nexusbridgelending.com |
+
+### CEM owns (equity side):
+- Real Estate Fund (Reg A / Reg D) — income-producing, value-add, distressed properties
+- Crowdfund (Reg CF) — startups and growth-stage companies
+- Advisory / Education
+
+### NexusBridge owns (debt side):
+- Bridge Loans, Renovation Financing, Asset-Backed Lending, GAP Funding, Micro-Lending
+- NexusBridge Capital LP — private credit fund (Reg D / 506(c)), investor access to loan portfolio
+
+### Rules for all code and content decisions:
+- **No equity investment products on the NexusBridge site**
+- **No lending or debt products on the CEM site**
+- The CEM Credit Fund (Asset-Backed, GAP, Micro-Lending) belongs to NexusBridge — it must not appear on capitaledgeinvest.com
+- Each site cross-references the other: NexusBridge footer references CEM as manager; CEM references NexusBridge for lending services
+- See `docs/Entity_Separation_Strategy.md` for full detail
+
+### Corporate structure:
+```
+Capital Edge Management, Inc. (CEM)
+    └── Obsidian & Co. Holdings, LLC
+            ├── NexusBridge Capital LP   ← private credit fund (Reg D / 506(c))
+            └── NexusBridge Lending LLC  ← lending platform
+```
 
 ---
 
@@ -48,18 +84,29 @@ UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md
 
 ## Build & Dev Commands
 
-> No package.json exists yet. Commands below reflect the planned setup; update this section when scaffolding is added.
-
+### Marketing site (`apps/web-marketing`) — live
 ```bash
-# Expected monorepo commands (to be confirmed once package.json exists)
-npm run dev              # Start all apps in development
-npm run build            # Production build
-npm run lint             # ESLint across all packages
-npm run test             # Unit + integration tests
-npm run test -- --filter=<service>  # Run tests for a specific service
+cd apps/web-marketing
+npm run dev       # Start dev server (localhost:3000)
+npm run build     # Production build
+npm run lint      # ESLint
 ```
 
-Supabase local development:
+Requires `apps/web-marketing/.env.local` with:
+```
+RESEND_API_KEY=your_key_here
+```
+
+### Monorepo (Phase 2 — not yet scaffolded)
+```bash
+# Root-level commands once Turborepo/Nx is configured
+npm run dev              # Start all apps
+npm run build            # Build all packages
+npm run lint             # Lint all packages
+npm run test             # Run all tests
+```
+
+### Supabase local development (Phase 2)
 ```bash
 supabase start           # Start local Supabase stack
 supabase db reset        # Reset and re-apply migrations

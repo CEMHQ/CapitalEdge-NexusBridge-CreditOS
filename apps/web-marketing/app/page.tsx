@@ -118,7 +118,7 @@ export default function HomePage() {
       <section className="bg-[#F8FAFC] border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-6 py-24">
           <div className="text-center mb-16">
-            <p className="text-xs tracking-widest uppercase text-[#4A90D9] mb-3">Why Choose Us</p>
+            <p className="text-xs tracking-widest uppercase text-[#4A90D9] mb-3">Why NexusBridge</p>
             <h2 className="text-3xl md:text-4xl font-bold text-[#0D1117]">
               Built for Real Estate Investors
             </h2>

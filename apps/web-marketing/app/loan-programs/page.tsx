@@ -7,7 +7,7 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Loan Programs",
-  description: "Bridge loans and renovation financing for real estate investors. Fast closings, competitive terms, institutional underwriting.",
+  description: "Bridge loans, renovation financing, asset-backed lending, GAP funding, and micro-lending for real estate investors. Fast closings, competitive terms, institutional underwriting.",
 };
 
 const programs = [
@@ -82,7 +82,7 @@ export default function LoanProgramsPage() {
             Capital Structured for Your Deal
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl">
-            Two focused programs designed for real estate investors who need speed, certainty, and a lender that understands the asset.
+            Focused programs for real estate investors who need speed and certainty — plus Credit Fund strategies that deploy capital across asset-backed, GAP, and micro-lending.
           </p>
         </div>
       </section>
@@ -159,6 +159,66 @@ export default function LoanProgramsPage() {
             </div>
           </div>
         ))}
+      </section>
+
+      {/* ── Credit Fund Strategies (light section) ── */}
+      <section id="credit-fund" className="bg-[#F8FAFC] border-y border-slate-200">
+        <div className="mx-auto max-w-7xl px-6 py-24">
+          <div className="text-center mb-6">
+            <p className="text-xs tracking-widest uppercase text-[#4A90D9] mb-3">NexusBridge Capital LP</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#0D1117]">
+              What Our Credit Fund Offers
+            </h2>
+          </div>
+          <p className="text-center text-sm text-[#4A6070] leading-relaxed max-w-2xl mx-auto mb-16">
+            NexusBridge Capital LP pools accredited investor capital to deploy across three complementary credit strategies — targeting diversified, asset-backed yield within a balanced risk profile.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {[
+              {
+                title: "Asset-Backed Lending",
+                body: "Secured loans backed by tangible assets such as real estate, equipment, or receivables. Collateral reduces risk while providing investors a steady income stream with lower volatility.",
+                who: "Businesses and investors seeking secured short-term credit against hard assets.",
+              },
+              {
+                title: "GAP Funding",
+                body: "Short-term capital that bridges financial gaps in real estate and other projects — securing the investment with tangible assets. Ideal for investors and borrowers seeking quicker returns with asset-backed security.",
+                who: "Real estate developers and investors with equity gaps in their deal capital stack.",
+              },
+              {
+                title: "Micro-Lending",
+                body: "Small loans to individuals and small businesses fostering economic growth and financial inclusion. Competitive returns that align with socially responsible investing principles.",
+                who: "Small business owners and entrepreneurs who need accessible capital to grow.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-white rounded-xl border border-slate-200 p-8 flex flex-col gap-5 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#4A90D9] flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#0D1117] mb-3">{item.title}</h3>
+                  <p className="text-sm text-[#4A6070] leading-relaxed mb-4">{item.body}</p>
+                  <p className="text-xs text-[#4A90D9] font-medium tracking-wide uppercase">
+                    Best for: <span className="normal-case font-normal text-[#4A6070]">{item.who}</span>
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-[#4A6070] mb-6">
+              Interested in investing in the fund? NexusBridge Capital LP is available to accredited investors only.
+            </p>
+            <Button render={<Link href="/investors" />} className="bg-[#4A90D9] hover:bg-[#3A7BC8] text-white tracking-wide">
+              Explore Investor Access <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* Bottom CTA */}

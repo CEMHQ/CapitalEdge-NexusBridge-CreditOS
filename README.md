@@ -9,11 +9,33 @@
 ## Corporate Structure
 
 ```
-Capital Edge Management (CEM)
+Capital Edge Management, Inc. (CEM)
 └── Obsidian & Co. Holdings, LLC
-    ├── NexusBridge Capital LP      — Reg D investment fund (accredited investors)
-    └── NexusBridge Lending         — Origination & servicing platform
+    ├── NexusBridge Capital LP      — Reg D / 506(c) private credit fund
+    └── NexusBridge Lending LLC     — Lending origination & servicing platform
 ```
+
+---
+
+## Entity Separation — Debt vs. Equity
+
+Two brands. Two licenses. Two regulatory lanes.
+
+| Entity | Lane | License | Website |
+|---|---|---|---|
+| Capital Edge Management, Inc. | **Equity** | Real Estate License | capitaledgeinvest.com |
+| NexusBridge Lending LLC | **Debt** | Lending License | nexusbridgelending.com |
+
+**Capital Edge Management owns (equity):**
+- Real Estate Fund — income-producing, value-add, distressed properties (Reg A / Reg D)
+- Crowdfund — startups and growth-stage companies (Reg CF)
+- Advisory and financial education
+
+**NexusBridge Lending owns (debt):**
+- Bridge Loans, Renovation Financing, Asset-Backed Lending, GAP Funding, Micro-Lending
+- NexusBridge Capital LP — private credit fund giving accredited investors exposure to the loan portfolio (Reg D / 506(c))
+
+> See `docs/Entity_Separation_Strategy.md` for the full separation policy, migration rules, and cross-reference guidelines.
 
 ---
 
@@ -24,13 +46,14 @@ NexusBridge addresses a common inefficiency in private credit markets: the gap b
 **For Borrowers**
 - Short-term bridge loans (6–12 months) secured by real property
 - Renovation / fix-and-flip financing with draw schedules
+- Asset-backed lending, GAP funding, and micro-lending products
 - Fast underwriting and funding — 7 to 14 business days from approval
 
 **For Investors**
 - Structured exposure to short-duration, asset-backed credit via NexusBridge Capital LP
 - Reg D / Rule 506(c) offering — accredited investors only
-- Diversified loan portfolio with institutional underwriting standards
-- Investor portal with capital account tracking, distributions, and reporting
+- Capital deployed across Asset-Backed Lending, GAP Funding, and Micro-Lending strategies
+- Investor portal with capital account tracking, distributions, and reporting (Phase 2)
 
 **Long-Term Vision**
 A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized investor participation on top of the centralized lending platform — without compromising regulatory compliance.
@@ -41,12 +64,13 @@ A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized inve
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 14+ (App Router), TypeScript, Tailwind CSS, shadcn/ui |
-| Backend | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
+| Frontend | Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS v4, shadcn/ui v4 |
+| Backend | Supabase (PostgreSQL, Auth, Storage, Edge Functions) — Phase 2 |
+| Email | Resend SDK |
 | Monorepo | Turborepo (planned) |
 | Hosting | Vercel (frontend), Docker, Terraform |
 | Integrations | Plaid, PostHog, Sentry, n8n |
-| Compliance | Reg A/D, KYC/AML, SOC 2 alignment |
+| Compliance | Reg D / 506(c), Reg CF, KYC/AML, SOC 2 alignment |
 
 ---
 
@@ -86,10 +110,11 @@ images/                 ← Brand assets
 
 | Phase | Scope | Status |
 |---|---|---|
-| **Phase 1** | Marketing site + auth shell + borrower/investor dashboards | 🟡 In Progress |
-| **Phase 2** | Full loan lifecycle + underwriting + document management + fund ops | ⚪ Planned |
-| **Phase 3** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
-| **Phase 4** | Tokenization layer (Base/Ethereum L2) | ⚪ Optional |
+| **Phase 1** | Marketing site — all 8 pages live, lead capture forms, email routing | ✅ Complete |
+| **Phase 2** | Supabase auth + RBAC, borrower portal, investor portal, domain migration | 🔵 Next |
+| **Phase 3** | Full loan lifecycle + underwriting + document management + fund operations | ⚪ Planned |
+| **Phase 4** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
+| **Phase 5** | Tokenization layer (Base/Ethereum L2) — HyFi vision | ⚪ Optional |
 
 ---
 
@@ -139,6 +164,7 @@ supabase functions serve # Serve Edge Functions locally
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
 | Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
+| **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
 
 ---
 

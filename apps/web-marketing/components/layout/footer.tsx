@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
+import { NewsletterForm } from "@/components/home/newsletter-form";
 
 const footerLinks = {
   Borrowers: [
@@ -14,8 +15,8 @@ const footerLinks = {
   ],
   Company: [
     { href: "/about", label: "About Us" },
-    { href: "/about#compliance", label: "Compliance" },
     { href: "/contact", label: "Contact" },
+    { href: "/disclosures", label: "Disclosures" },
   ],
 };
 
@@ -52,6 +53,7 @@ export function Footer() {
               {" "}through{" "}
               <span className="text-foreground/60">Obsidian & Co. Holdings, LLC</span>
             </p>
+            <NewsletterForm />
           </div>
 
           {/* Link columns */}

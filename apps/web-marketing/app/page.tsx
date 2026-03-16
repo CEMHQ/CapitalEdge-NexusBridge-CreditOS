@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Shield, Clock, TrendingUp, CheckCircle, Building2, BarChart3 } from "lucide-react";
+import { FaqAccordion } from "@/components/home/faq-accordion";
 
 const stats = [
   { label: "Loan Terms", value: "6–12 Mo", sub: "Short-duration" },
@@ -107,6 +108,60 @@ export default function HomePage() {
                 <p className="text-2xl md:text-3xl font-bold text-foreground">{stat.value}</p>
                 <p className="text-xs tracking-widest uppercase text-primary mt-1">{stat.label}</p>
                 <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Why NexusBridge (light section) ────── */}
+      <section className="bg-[#F8FAFC] border-b border-slate-200">
+        <div className="mx-auto max-w-7xl px-6 py-24">
+          <div className="text-center mb-16">
+            <p className="text-xs tracking-widest uppercase text-[#4A90D9] mb-3">Why Choose Us</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#0D1117]">
+              Built for Real Estate Investors
+            </h2>
+            <p className="text-[#4A6070] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
+              We move at the speed of deals — with the discipline and structure of an institutional lender.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                title: "Fast Execution",
+                body: "Term sheets in 24–48 hours. Capital deployed in 7–14 days from approval to close.",
+              },
+              {
+                title: "Asset-Backed Security",
+                body: "Every loan is secured by a first-lien position on real property collateral — no unsecured exposure.",
+              },
+              {
+                title: "Flexible Structures",
+                body: "Bridge loans, renovation financing, and custom deal structures designed around your transaction.",
+              },
+              {
+                title: "Institutional Underwriting",
+                body: "Conservative LTV thresholds and rigorous due diligence on every deal — protecting borrowers and investors alike.",
+              },
+              {
+                title: "Transparent Pricing",
+                body: "Clear terms with no hidden fees. You know the full cost of capital before you sign.",
+              },
+              {
+                title: "Accredited Investor Access",
+                body: "Structured yield-generating credit exposure for qualified capital allocators under Reg D.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#4A90D9] flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-4 w-4 text-white" />
+                </div>
+                <h3 className="text-base font-bold text-[#0D1117]">{item.title}</h3>
+                <p className="text-sm text-[#4A6070] leading-relaxed">{item.body}</p>
               </div>
             ))}
           </div>
@@ -228,6 +283,32 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ────────────────────────────────── */}
+      <section className="bg-[#F8FAFC] border-y border-slate-200">
+        <div className="mx-auto max-w-7xl px-6 py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div>
+              <p className="text-xs tracking-widest uppercase text-[#4A90D9] mb-3">FAQ</p>
+              <h2 className="text-3xl font-bold text-[#0D1117] mb-4">
+                Commonly Asked Questions
+              </h2>
+              <p className="text-sm text-[#4A6070] leading-relaxed mb-6">
+                Have a question that isn&apos;t answered here? Reach out directly.
+              </p>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-1 text-sm text-[#4A90D9] hover:text-[#2563EB] transition-colors font-medium"
+              >
+                Contact Us <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="lg:col-span-2">
+              <FaqAccordion />
+            </div>
           </div>
         </div>
       </section>

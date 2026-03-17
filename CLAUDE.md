@@ -31,6 +31,7 @@ Design docs live in `/docs/`. Before implementing any feature, read the relevant
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
 | Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
+| **Database infrastructure & config** | **`docs/15_Database_Infrastructure.md`** |
 | **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
 
 UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md` (application portals).

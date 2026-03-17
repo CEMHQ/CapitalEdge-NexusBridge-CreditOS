@@ -65,12 +65,32 @@ A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized inve
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS v4, shadcn/ui v4 |
-| Backend | Supabase (PostgreSQL, Auth, Storage, Edge Functions) — Phase 2 |
+| Database | Supabase (PostgreSQL + TimescaleDB extension) |
+| ORM | Drizzle ORM — type-safe, FCFS locking, Supabase Transaction Pooler (port 6543) |
+| Auth & Storage | Supabase Auth, Supabase Storage |
+| Real-time | Supabase Realtime (WebSocket subscriptions) |
+| Background Jobs | Supabase Edge Functions |
 | Email | Resend SDK |
 | Monorepo | Turborepo (planned) |
-| Hosting | Vercel (frontend), Docker, Terraform |
-| Integrations | Plaid, PostHog, Sentry, n8n |
+| Hosting | Vercel (frontend) |
+| Integrations | Plaid, DocuSign/HelloSign, PostHog, Sentry, n8n |
 | Compliance | Reg D / 506(c), Reg CF, KYC/AML, SOC 2 alignment |
+
+### Database Architecture
+
+The platform uses a **hybrid relational + time-series architecture** within a single Supabase instance:
+
+| Layer | Purpose | Implementation |
+|---|---|---|
+| Relational (ACID) | Loans, investors, subscriptions, KYC/AML — source of truth | PostgreSQL with RLS |
+| Time-series | Payments, audit logs, fund ticks, onboarding events — high-frequency streams | TimescaleDB hypertables |
+| FCFS Locking | Capital contribution reservation — prevents fund oversubscription | `SELECT ... FOR UPDATE` via Drizzle transactions |
+| Real-time | Live onboarding dashboard, fund fill rate, investor alerts | Supabase Realtime (WebSockets) |
+
+**7 tables designated as TimescaleDB hypertables:**
+`payments` · `audit_events` · `activity_logs` · `loan_draws` · `distributions` · `fund_ticks` · `onboarding_events`
+
+> See `docs/15_Database_Infrastructure.md` for full configuration, hypertable SQL, FCFS locking patterns, and the QuestDB upgrade path.
 
 ---
 

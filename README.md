@@ -65,7 +65,7 @@ A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized inve
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS v4, shadcn/ui v4 |
-| Database | Supabase (PostgreSQL + TimescaleDB extension) |
+| Database | Supabase (PostgreSQL 17 + pg_partman extension) |
 | ORM | Drizzle ORM — type-safe, FCFS locking, Supabase Transaction Pooler (port 6543) |
 | Auth & Storage | Supabase Auth, Supabase Storage |
 | Real-time | Supabase Realtime (WebSocket subscriptions) |
@@ -83,14 +83,14 @@ The platform uses a **hybrid relational + time-series architecture** within a si
 | Layer | Purpose | Implementation |
 |---|---|---|
 | Relational (ACID) | Loans, investors, subscriptions, KYC/AML — source of truth | PostgreSQL with RLS |
-| Time-series | Payments, audit logs, fund ticks, onboarding events — high-frequency streams | TimescaleDB hypertables |
+| Time-series | Payments, audit logs, fund ticks, onboarding events — high-frequency streams | pg_partman partitioned tables |
 | FCFS Locking | Capital contribution reservation — prevents fund oversubscription | `SELECT ... FOR UPDATE` via Drizzle transactions |
 | Real-time | Live onboarding dashboard, fund fill rate, investor alerts | Supabase Realtime (WebSockets) |
 
-**7 tables designated as TimescaleDB hypertables:**
+**7 tables partitioned via pg_partman:**
 `payments` · `audit_events` · `activity_logs` · `loan_draws` · `distributions` · `fund_ticks` · `onboarding_events`
 
-> See `docs/15_Database_Infrastructure.md` for full configuration, hypertable SQL, FCFS locking patterns, and the QuestDB upgrade path.
+> See `docs/15_Database_Infrastructure.md` for full configuration, partition SQL, pg_partman setup, FCFS locking patterns, and the QuestDB upgrade path.
 
 ---
 

@@ -10,7 +10,7 @@ The platform is organized into four primary layers:
 
 1. **Frontend Layer** — Next.js portals for borrowers, investors, and internal staff
 2. **Backend Layer** — Server Actions, API routes, and Edge Functions
-3. **Data Infrastructure Layer** — Supabase (PostgreSQL + TimescaleDB) with Drizzle ORM
+3. **Data Infrastructure Layer** — Supabase (PostgreSQL + pg_partman) with Drizzle ORM
 4. **Optional Protocol Layer** — Blockchain settlement and tokenized participation (Phase 5)
 
 ---
@@ -69,10 +69,10 @@ Stores all regulated, relational "source of truth" data:
 - Investor subscriptions, capital calls, allocations
 - Compliance records, KYC/AML status
 
-### Time-Series Performance — TimescaleDB Extension
-Enabled within Supabase. High-frequency append-only tables are converted to **hypertables** for consistent write performance and automatic time-based partitioning:
+### Time-Series Performance — pg_partman Extension
+Enabled within Supabase. High-frequency append-only tables are declared as `PARTITION BY RANGE` and managed by **pg_partman** for consistent write performance and automatic time-based partitioning. TimescaleDB is not used — it does not support PostgreSQL 17, which Supabase provisions by default.
 
-| Table | Why Hypertable |
+| Table | Why Partitioned |
 |---|---|
 | `payments` | Every loan repayment event |
 | `audit_events` | Immutable compliance/security log |
@@ -81,6 +81,8 @@ Enabled within Supabase. High-frequency append-only tables are converted to **hy
 | `distributions` | Investor distribution events |
 | `fund_ticks` | Real-time investor activity stream |
 | `onboarding_events` | Investor onboarding funnel tracking |
+
+Partition maintenance runs hourly via `pg_cron`: `SELECT partman.run_maintenance_proc()`
 
 ### ORM — Drizzle ORM
 Drizzle is used for all backend data access requiring:
@@ -173,7 +175,7 @@ See `docs/05_Loan_State_Machine.md` for valid transitions and guards.
 | Component | Service |
 |---|---|
 | Frontend hosting | Vercel (auto-deploy from `main`) |
-| Database | Supabase (managed PostgreSQL + TimescaleDB) |
+| Database | Supabase (managed PostgreSQL 17 + pg_partman) |
 | File storage | Supabase Storage |
 | Background jobs | Supabase Edge Functions |
 | Email delivery | Resend |
@@ -202,7 +204,7 @@ This layer connects to the platform via events — it does not have direct datab
 | Phase | Data Infrastructure Additions |
 |---|---|
 | Phase 1 | Marketing site, Resend email — **complete** |
-| Phase 2 | Supabase setup, TimescaleDB, Drizzle ORM, Auth, RBAC, borrower + investor portals |
+| Phase 2 | Supabase setup, pg_partman, Drizzle ORM, Auth, RBAC, borrower + investor portals |
 | Phase 3 | Full loan lifecycle, underwriting engine, document OCR, fund accounting |
 | Phase 4 | Workflow automation (n8n), compliance hardening, SOC 2 controls |
 | Phase 5 | Tokenization layer (Base/Ethereum L2) |

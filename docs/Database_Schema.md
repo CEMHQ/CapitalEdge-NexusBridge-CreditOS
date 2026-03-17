@@ -25,13 +25,13 @@ The schema must follow these principles:
 - Support audit logging and compliance review
 - Avoid overloading a single `loans` table with unrelated data
 - Support future extensibility for tokenization and protocol integration
-- High-frequency append-only tables are **TimescaleDB hypertables** — marked with `⚡ HYPERTABLE`
+- High-frequency append-only tables are **pg_partman partitioned tables** — marked with `⚡ PARTITIONED`
 - All financial calculations use `numeric(18,2)` — never floating point
 - Financial records are append-only — corrections use reversing entries, not silent mutations
 
-## TimescaleDB Hypertable Summary
+## pg_partman Partitioned Table Summary
 
-| Table | Partition Key | Chunk Interval |
+| Table | Partition Key | Interval |
 |---|---|---|
 | `payments` ⚡ | `payment_date` | 1 month |
 | `audit_events` ⚡ | `created_at` | 1 month |
@@ -41,7 +41,7 @@ The schema must follow these principles:
 | `fund_ticks` ⚡ | `ts` | 1 day |
 | `onboarding_events` ⚡ | `ts` | 1 day |
 
-See `docs/15_Database_Infrastructure.md` for hypertable SQL, compression policies, and FCFS locking patterns.
+See `docs/15_Database_Infrastructure.md` for partitioned table SQL, pg_partman setup, maintenance scheduling, and FCFS locking patterns.
 
 ---
 
@@ -439,7 +439,7 @@ Primary funded loan table.
 | created_at | timestamptz | Default now() |
 | updated_at | timestamptz | Default now() |
 
-## `loan_draws` ⚡ HYPERTABLE (partition: `created_at`, interval: 1 month)
+## `loan_draws` ⚡ PARTITIONED (partition: `created_at`, interval: 1 month)
 
 For staged funding or draw schedules.
 
@@ -452,7 +452,7 @@ For staged funding or draw schedules.
 | draw_status | text | requested, approved, funded, cancelled |
 | requested_at | timestamptz | Nullable |
 | funded_at | timestamptz | Nullable |
-| created_at | timestamptz | Default now() — hypertable partition key |
+| created_at | timestamptz | Default now() — partition key |
 
 ## `payment_schedules`
 
@@ -470,7 +470,7 @@ Expected payment schedule.
 | schedule_status | text | upcoming, due, paid, late |
 | created_at | timestamptz | Default now() |
 
-## `payments` ⚡ HYPERTABLE (partition: `payment_date`, interval: 1 month)
+## `payments` ⚡ PARTITIONED (partition: `payment_date`, interval: 1 month)
 
 Actual payment records.
 
@@ -478,7 +478,7 @@ Actual payment records.
 |---|---|---|
 | id | uuid | Primary key |
 | loan_id | uuid | FK -> loans.id |
-| payment_date | date | Payment date — hypertable partition key |
+| payment_date | date | Payment date — partition key |
 | payment_amount | numeric(18,2) | Amount received |
 | principal_applied | numeric(18,2) | Principal portion |
 | interest_applied | numeric(18,2) | Interest portion |
@@ -614,7 +614,7 @@ Maps investor capital to loans or pools.
 | allocation_status | text | active, exited, reduced |
 | created_at | timestamptz | Default now() |
 
-## `distributions` ⚡ HYPERTABLE (partition: `distribution_date`, interval: 1 month)
+## `distributions` ⚡ PARTITIONED (partition: `distribution_date`, interval: 1 month)
 
 Investor distribution records.
 
@@ -622,7 +622,7 @@ Investor distribution records.
 |---|---|---|
 | id | uuid | Primary key |
 | subscription_id | uuid | FK -> subscriptions.id |
-| distribution_date | date | Distribution date — hypertable partition key |
+| distribution_date | date | Distribution date — partition key |
 | principal_amount | numeric(18,2) | Principal distributed |
 | interest_amount | numeric(18,2) | Interest distributed |
 | fee_amount | numeric(18,2) | Fee offsets if applicable |
@@ -661,7 +661,7 @@ Investor tax form records.
 
 # 8. Operations and Control Tables
 
-## `activity_logs` ⚡ HYPERTABLE (partition: `created_at`, interval: 1 week)
+## `activity_logs` ⚡ PARTITIONED (partition: `created_at`, interval: 1 week)
 
 User-facing or operational events.
 
@@ -673,9 +673,9 @@ User-facing or operational events.
 | entity_id | uuid | Related record |
 | action | text | created, updated, viewed, uploaded, approved |
 | metadata | jsonb | Optional event metadata |
-| created_at | timestamptz | Default now() — hypertable partition key |
+| created_at | timestamptz | Default now() — partition key |
 
-## `audit_events` ⚡ HYPERTABLE (partition: `created_at`, interval: 1 month)
+## `audit_events` ⚡ PARTITIONED (partition: `created_at`, interval: 1 month)
 
 Immutable administrative and security events. Append-only — never update or delete rows.
 
@@ -689,7 +689,7 @@ Immutable administrative and security events. Append-only — never update or de
 | ip_address | inet | Optional |
 | user_agent | text | Optional |
 | event_payload | jsonb | Optional |
-| created_at | timestamptz | Default now() — hypertable partition key |
+| created_at | timestamptz | Default now() — partition key |
 
 ## `webhook_events`
 
@@ -774,7 +774,7 @@ Sensitive fields such as tax IDs, raw extraction text, and certain financial dat
 
 # 11. Real-Time and Analytics Tables
 
-## `fund_ticks` ⚡ HYPERTABLE (partition: `ts`, interval: 1 day)
+## `fund_ticks` ⚡ PARTITIONED (partition: `ts`, interval: 1 day)
 
 Real-time investor activity stream. Links to the relational `investors` and `funds` tables via UUID foreign keys. Powers real-time fund fill rate dashboards and contribution velocity charts.
 
@@ -787,7 +787,7 @@ Real-time investor activity stream. Links to the relational `investors` and `fun
 | amount | numeric(18,2) | Nullable — not all events carry amounts |
 | metadata | jsonb | Optional event context |
 
-## `onboarding_events` ⚡ HYPERTABLE (partition: `ts`, interval: 1 day)
+## `onboarding_events` ⚡ PARTITIONED (partition: `ts`, interval: 1 day)
 
 Investor onboarding funnel tracking for the real-time internal dashboard. Enables contribution velocity analysis, dropout detection, and out-of-order event handling.
 

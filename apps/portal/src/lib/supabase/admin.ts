@@ -1,3 +1,4 @@
+import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 
 // Admin client uses the service role key — server-side only, never expose to the browser

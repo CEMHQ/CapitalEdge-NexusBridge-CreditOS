@@ -162,17 +162,7 @@ npm run dev
 # → http://localhost:3001
 ```
 
-Requires `apps/portal/.env.local` with:
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-NEXUSBRIDGE_PORTAL_KEY=
-NEXT_PUBLIC_APP_URL=http://localhost:3001
-DATABASE_URL=
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
-```
+Requires `apps/portal/.env.local` — contact the platform team for credentials.
 
 ### Supabase Local Development
 

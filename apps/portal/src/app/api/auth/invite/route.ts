@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-
-const INVITABLE_ROLES = ['investor', 'admin', 'manager', 'underwriter', 'servicing']
+import { getUserRole } from '@/lib/auth/roles'
+import { validateBody } from '@/lib/validation/validate'
+import { inviteUserSchema } from '@/lib/validation/schemas'
+import { inviteLimiter } from '@/lib/rate-limit/index'
+import { applyRateLimit } from '@/lib/rate-limit/apply'
 
 export async function POST(request: Request) {
-  // Verify the requesting user is an admin or manager
+  const validation = await validateBody(request, inviteUserSchema)
+  if (!validation.success) return validation.response
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -13,31 +18,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const requestingRole = user.user_metadata?.role
+  const requestingRole = await getUserRole(supabase, user.id)
   if (!['admin', 'manager'].includes(requestingRole)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const body = await request.json()
-  const { email, role } = body
+  const blocked = await applyRateLimit(inviteLimiter, user.id)
+  if (blocked) return blocked
 
-  if (!email || !role) {
-    return NextResponse.json({ error: 'Email and role are required' }, { status: 400 })
-  }
-
-  if (!INVITABLE_ROLES.includes(role)) {
-    return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
-  }
+  const { email, role } = validation.data
 
   const adminClient = createAdminClient()
 
-  const { error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+  const { data: inviteData, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { role },
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/set-password`,
   })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // Seed user_roles immediately so the role is in the DB before the user accepts.
+  // The handle_new_user trigger will also run on acceptance, but this ensures
+  // the role is set even if the trigger hasn't fired yet.
+  if (inviteData?.user?.id) {
+    await adminClient.from('user_roles').upsert(
+      { user_id: inviteData.user.id, role, granted_by: user.id },
+      { onConflict: 'user_id' }
+    )
   }
 
   return NextResponse.json({ success: true })

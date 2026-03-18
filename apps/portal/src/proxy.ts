@@ -1,8 +1,26 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canAccess, getDefaultRoute, type UserRole } from '@/lib/auth/roles'
+import { signupLimiter, forgotPasswordLimiter } from '@/lib/rate-limit/index'
+import { applyRateLimit, getClientIp } from '@/lib/rate-limit/apply'
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ── IP-based rate limiting for public endpoints ──────────────────────────
+  // Check before Supabase is called — blocks abusive requests at the edge.
+  if (pathname.startsWith('/signup') || pathname === '/api/auth/signup') {
+    const ip = getClientIp(request)
+    const blocked = await applyRateLimit(signupLimiter, ip)
+    if (blocked) return blocked
+  }
+
+  if (pathname.startsWith('/forgot-password')) {
+    const ip = getClientIp(request)
+    const blocked = await applyRateLimit(forgotPasswordLimiter, ip)
+    if (blocked) return blocked
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -30,7 +48,6 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
   const isProtected = pathname.startsWith('/dashboard')
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup')
 
@@ -39,15 +56,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Authenticated user trying to access auth routes — redirect to their dashboard
-  if (isAuthRoute && user) {
-    const role = (user.user_metadata?.role ?? 'borrower') as UserRole
-    return NextResponse.redirect(new URL(getDefaultRoute(role), request.url))
-  }
+  // Authenticated user — fetch role from DB (not JWT metadata, which can be spoofed)
+  if (user && (isAuthRoute || isProtected)) {
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
+    const role = (roleData?.role ?? 'borrower') as UserRole
 
-  // Authenticated user trying to access a route their role doesn't allow
-  if (isProtected && user) {
-    const role = (user.user_metadata?.role ?? 'borrower') as UserRole
+    // Authenticated user trying to access auth routes — redirect to their dashboard
+    if (isAuthRoute) {
+      return NextResponse.redirect(new URL(getDefaultRoute(role), request.url))
+    }
+
+    // Authenticated user trying to access a route their role doesn't allow
     if (!canAccess(role, pathname)) {
       return NextResponse.redirect(new URL(getDefaultRoute(role), request.url))
     }

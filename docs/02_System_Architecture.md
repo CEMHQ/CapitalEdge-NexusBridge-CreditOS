@@ -20,17 +20,16 @@ The platform is organized into four primary layers:
 | App | Audience | Status |
 |---|---|---|
 | `apps/web-marketing` | Public — borrowers and investors | ✅ Live |
-| `apps/borrower-portal` | Authenticated borrowers | Phase 2 |
-| `apps/investor-portal` | Authenticated accredited investors | Phase 2 |
-| `apps/underwriting-console` | Internal underwriting team | Phase 2 |
-| `apps/admin-console` | Platform administrators | Phase 3 |
+| `apps/portal` | Unified portal: borrower, investor, admin, underwriting, servicing | 🔵 Phase 2 |
 
 **Stack**: Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS v4, shadcn/ui v4
 
+`apps/portal` uses RBAC route guards enforced at the middleware layer. All six roles (`borrower`, `investor`, `admin`, `manager`, `underwriter`, `servicing`) are served from a single app with per-role dashboard routes.
+
 Frontend communicates with the backend exclusively through:
-- Next.js **Server Actions** for transactional/financial operations (FCFS locking, capital commitments)
-- Next.js **API Routes** for form handling and webhook ingestion
-- **Supabase Client** for auth, real-time subscriptions, and file storage
+- Next.js **API Routes** for all form submissions and data mutations
+- **Supabase Client** for auth operations only (sign in, sign out, sign up)
+- Server Components query Supabase server-side via the session-aware server client — never the browser client
 
 ---
 
@@ -157,15 +156,62 @@ See `docs/05_Loan_State_Machine.md` for valid transitions and guards.
 
 ## 7. Security Architecture
 
+### Defense-in-Depth Layers
+
+Requests pass through six sequential enforcement layers. A breach at any one layer is contained by the layers below it.
+
+| Layer | Where | What it enforces |
+|---|---|---|
+| **1. Vercel WAF / Spend Cap** | Infrastructure | DDoS mitigation, hard billing cap to prevent runaway costs |
+| **2. Middleware (proxy.ts)** | Next.js Edge | IP-based rate limiting for public endpoints, auth presence, role-based route access |
+| **3. API Route** | Next.js Server | Zod input validation, per-user rate limiting (Upstash), role authorization (DB lookup) |
+| **4. Supabase RLS** | PostgreSQL | Row-level enforcement — prevents data access even if layers above are bypassed |
+| **5. Drizzle ORM** | Server | Parameterized queries — SQL injection prevention by construction |
+| **6. Budget Alerts** | Vercel + Supabase + Upstash | Detects and caps volumetric billing attacks |
+
+### Rate Limiting
+
+Upstash Redis serves as the rate-limit counter store — serverless-native, Edge-compatible, sub-millisecond.
+
+| Endpoint | Identifier | Limit | Window |
+|---|---|---|---|
+| Signup | IP | 5 requests | 10 min |
+| Forgot password | IP | 3 requests | 15 min |
+| Submit application | User ID | 5 requests | 1 hour |
+| Invite user | User ID | 20 requests | 1 hour |
+| Status / metrics update | User ID | 60 requests | 1 hour |
+
+### Role-Based Access Control
+
+Roles are stored in the `user_roles` table — not in JWT metadata. All role checks (middleware, API routes, RLS `is_admin()` function) query this table.
+
+Public signups are forced to `borrower` at the database trigger level regardless of what the client sends. Invite-only roles (`investor`, `admin`, `manager`, `underwriter`, `servicing`) are seeded by the invite API route using the service role key.
+
+### Environment Variable Classification
+
+| Variable | Exposed to browser | Safe |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | ✅ — public URL by design |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | ✅ — security comes from RLS, not hiding this key |
+| `NEXT_PUBLIC_APP_URL` | Yes | ✅ — not a secret |
+| `SUPABASE_SERVICE_ROLE_KEY` | No | ✅ — server-only, guarded with `import 'server-only'` |
+| `DATABASE_URL` | No | ✅ — server-only |
+| `NEXUSBRIDGE_PORTAL_KEY` | No | ✅ — Resend API key, server-only |
+| `UPSTASH_REDIS_REST_URL` | No | ✅ — server-only |
+| `UPSTASH_REDIS_REST_TOKEN` | No | ✅ — server-only |
+
+### Controls Summary
+
 | Control | Implementation |
 |---|---|
-| Authentication | Supabase Auth (email/password, magic link, MFA) |
-| Authorization | RBAC via `roles` + `organization_members` tables |
-| Row-level security | Supabase RLS policies on every table |
-| Audit logging | Immutable `audit_events` hypertable |
-| Document access | Supabase Storage + RLS policies |
-| Secrets management | Vercel environment variables |
-| Transport security | TLS everywhere; no plaintext credentials |
+| Authentication | Supabase Auth (email/password, invite flow) |
+| Authorization | `user_roles` table — DB-verified RBAC |
+| Row-level security | Supabase RLS on every table |
+| Rate limiting | Upstash Redis — IP and user-based |
+| Input validation | Zod schemas on every API route |
+| Audit logging | Immutable `audit_events` table (Phase 3) |
+| Secrets management | Vercel environment variables + `server-only` imports |
+| Transport security | TLS everywhere |
 | Financial integrity | Fixed-precision decimals (`numeric(18,2)`) throughout |
 
 ---
@@ -176,6 +222,7 @@ See `docs/05_Loan_State_Machine.md` for valid transitions and guards.
 |---|---|
 | Frontend hosting | Vercel (auto-deploy from `main`) |
 | Database | Supabase (managed PostgreSQL 17 + pg_partman) |
+| Rate limit store | Upstash Redis — serverless, Edge-compatible |
 | File storage | Supabase Storage |
 | Background jobs | Supabase Edge Functions |
 | Email delivery | Resend |

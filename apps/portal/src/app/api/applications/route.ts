@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendApplicationSubmittedEmail } from '@/lib/email'
+import { validateBody } from '@/lib/validation/validate'
+import { createApplicationSchema } from '@/lib/validation/schemas'
+import { submitApplicationLimiter } from '@/lib/rate-limit/index'
+import { applyRateLimit } from '@/lib/rate-limit/apply'
 
 function generateApplicationNumber(): string {
   const date = new Date()
@@ -12,6 +16,9 @@ function generateApplicationNumber(): string {
 }
 
 export async function POST(request: Request) {
+  const validation = await validateBody(request, createApplicationSchema)
+  if (!validation.success) return validation.response
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -19,8 +26,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await request.json()
-  const { profile, property, loan } = body
+  const blocked = await applyRateLimit(submitApplicationLimiter, user.id)
+  if (blocked) return blocked
+
+  const { profile, property, loan } = validation.data
 
   // 1. Upsert profile
   const { error: profileError } = await supabase
@@ -122,7 +131,7 @@ export async function POST(request: Request) {
     borrowerEmail: user.email!,
     borrowerName: profile.full_name,
     loanPurpose: loan.loan_purpose,
-    requestedAmount: loan.requested_amount,
+    requestedAmount: String(loan.requested_amount),
     applicationId: application.id,
   })
 

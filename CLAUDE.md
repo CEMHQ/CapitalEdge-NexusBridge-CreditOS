@@ -121,13 +121,34 @@ supabase functions serve # Serve Edge Functions locally
 ### Monorepo Structure
 
 ```
-apps/          # Next.js frontends (borrower-portal, investor-portal, underwriting-console, admin-console, web-marketing)
-services/      # Backend domain services (loan-origination, servicing, investor, fund-accounting, compliance, notifications)
-core/          # Shared: database schema, auth, event-bus, shared-models, ui-components, design-tokens
-infrastructure/ # Docker, Terraform, Kubernetes, CI/CD
-compliance/    # SOC2, Reg A, Reg D artifacts
-docs/          # Architecture documentation
+apps/
+  web-marketing/   # Marketing site — live on Vercel
+  portal/          # Unified portal: borrower, investor, admin, underwriting, servicing
+services/          # Backend domain services (Phase 2+)
+core/              # Shared libraries (Phase 2+)
+infrastructure/    # Docker, Terraform, CI/CD (Phase 2+)
+compliance/        # SOC2, Reg A, Reg D artifacts
+docs/              # Architecture documentation
 ```
+
+### Security Architecture — Request Enforcement Order
+
+Every request passes through these layers in order. **Do not skip or reorder them.**
+
+```
+1. Middleware (proxy.ts)       — IP rate limit (Upstash) → auth check → role route guard
+2. API Route: validateBody()   — Zod schema → 400 if invalid
+3. API Route: applyRateLimit() — Upstash user-ID counter → 429 if exceeded
+4. API Route: getUser()        — Supabase session → 401 if not authenticated
+5. API Route: getUserRole()    — user_roles table lookup → 403 if wrong role
+6. DB operation                — Supabase RLS enforces row-level access
+```
+
+**Rules:**
+- All role checks must use `getUserRole(supabase, user.id)` — never `user.user_metadata?.role`
+- `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` must only be imported in server-only files — add `import 'server-only'` to any file that uses them
+- Rate limiter instances live in `src/lib/rate-limit/index.ts` — reuse them, do not create ad-hoc limiters
+- Zod schemas live in `src/lib/validation/schemas.ts` — add new schemas here when adding new routes
 
 ### Domain Boundaries
 

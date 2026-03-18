@@ -1,3 +1,5 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 export type UserRole =
   | 'borrower'
   | 'investor'
@@ -5,6 +7,18 @@ export type UserRole =
   | 'underwriter'
   | 'servicing'
   | 'manager'
+
+// Fetch the authenticated user's role from the user_roles table.
+// Falls back to 'borrower' if no row exists (safe default — least privilege).
+// Uses the anon client with the user's session so RLS applies.
+export async function getUserRole(supabase: SupabaseClient, userId: string): Promise<UserRole> {
+  const { data } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .single()
+  return (data?.role ?? 'borrower') as UserRole
+}
 
 // Which roles can access each route prefix
 export const ROLE_ROUTE_MAP: Record<string, UserRole[]> = {

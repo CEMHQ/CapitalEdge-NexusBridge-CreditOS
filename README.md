@@ -68,6 +68,7 @@ A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized inve
 | Database | Supabase (PostgreSQL 17 + pg_partman extension) |
 | ORM | Drizzle ORM — type-safe, FCFS locking, Supabase Transaction Pooler (port 6543) |
 | Auth & Storage | Supabase Auth, Supabase Storage |
+| Rate Limiting | Upstash Redis — serverless, Edge-compatible IP and user-based rate limiting |
 | Real-time | Supabase Realtime (WebSocket subscriptions) |
 | Background Jobs | Supabase Edge Functions |
 | Email | Resend SDK |
@@ -169,6 +170,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXUSBRIDGE_PORTAL_KEY=
 NEXT_PUBLIC_APP_URL=http://localhost:3001
 DATABASE_URL=
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 ### Supabase Local Development

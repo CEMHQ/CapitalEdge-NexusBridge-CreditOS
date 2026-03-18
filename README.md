@@ -193,6 +193,7 @@ supabase functions serve # Serve Edge Functions locally
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
 | Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
+| **SQL reference (all queries organized by topic)** | **`docs/SQL_Reference.md`** |
 | **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
 
 ---

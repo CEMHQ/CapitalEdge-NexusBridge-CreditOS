@@ -10,7 +10,7 @@ NexusBridge CreditOS is a hybrid financial infrastructure platform connecting bo
 
 **Business model**: Originate and manage short-duration loans (6–12 months), secured by real assets, with conservative LTV ratios. Investors participate through NexusBridge Capital LP. Long-term vision includes a hybrid "HyFi" layer — blockchain-based tokenized participation on top of the centralized lending platform.
 
-The marketing site (`apps/web-marketing`) is **live on Vercel**. All other `apps/`, `services/`, `core/`, and `infrastructure/` directories are scaffolding pending Phase 2.
+The marketing site (`apps/web-marketing`) is **live on Vercel** (Phase 1 complete). All other `apps/`, `services/`, `core/`, and `infrastructure/` directories are scaffolding — **currently in Phase 2**.
 
 Design docs live in `/docs/`. Before implementing any feature, read the relevant doc:
 
@@ -201,7 +201,10 @@ Tests must verify **state transitions**, not only return values.
 
 ## Implementation Phasing
 
-1. **Phase 1** — Marketing site + borrower/investor dashboards + auth + RBAC
-2. **Phase 2** — Full loan lifecycle + underwriting + document management + fund operations
-3. **Phase 3** — Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening
-4. **Phase 4** — Tokenization layer (Base/Ethereum L2, optional)
+| Phase | Scope | Status |
+|---|---|---|
+| **Phase 1** | Marketing site — all 8 pages live, lead capture forms, email routing | ✅ Complete |
+| **Phase 2** | Supabase auth + RBAC, borrower portal, investor portal, domain migration | 🔵 In Progress |
+| **Phase 3** | Full loan lifecycle + underwriting + document management + fund operations | ⚪ Planned |
+| **Phase 4** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
+| **Phase 5** | Tokenization layer (Base/Ethereum L2) — HyFi vision | ⚪ Optional |

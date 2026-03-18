@@ -50,8 +50,8 @@ export function Footer() {
               >
                 Capital Edge Management
               </a>
-              {" "}through{" "}
-              <span className="text-foreground/60">Obsidian & Co. Holdings, LLC</span>
+              {/* {" "}through{" "} */}
+              {/* <span className="text-foreground/60">Obsidian & Co. Holdings, LLC</span> */}
             </p>
             <NewsletterForm />
           </div>

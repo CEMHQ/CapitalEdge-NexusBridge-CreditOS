@@ -99,10 +99,7 @@ The platform uses a **hybrid relational + time-series architecture** within a si
 ```
 apps/
   web-marketing/        ← Marketing website (Phase 1 — live)
-  borrower-portal/      ← Borrower dashboard (Phase 2)
-  investor-portal/      ← Investor dashboard (Phase 2)
-  underwriting-console/ ← Internal underwriting tools (Phase 2)
-  admin-console/        ← Platform admin (Phase 2)
+  portal/               ← Unified portal: borrower, investor, admin, underwriting (Phase 2 — in progress)
 
 services/               ← Backend domain services (Phase 2)
   loan-origination/
@@ -131,7 +128,7 @@ images/                 ← Brand assets
 | Phase | Scope | Status |
 |---|---|---|
 | **Phase 1** | Marketing site — all 8 pages live, lead capture forms, email routing | ✅ Complete |
-| **Phase 2** | Supabase auth + RBAC, borrower portal, investor portal, domain migration | 🔵 Next |
+| **Phase 2** | Supabase auth + RBAC, borrower portal, investor portal, domain migration | 🔵 In Progress |
 | **Phase 3** | Full loan lifecycle + underwriting + document management + fund operations | ⚪ Planned |
 | **Phase 4** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
 | **Phase 5** | Tokenization layer (Base/Ethereum L2) — HyFi vision | ⚪ Optional |
@@ -153,6 +150,25 @@ cd apps/web-marketing
 npm install
 npm run dev
 # → http://localhost:3000
+```
+
+### Portal (Phase 2)
+
+```bash
+cd apps/portal
+npm install
+npm run dev
+# → http://localhost:3001
+```
+
+Requires `apps/portal/.env.local` with:
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXUSBRIDGE_PORTAL_KEY=
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+DATABASE_URL=
 ```
 
 ### Supabase Local Development

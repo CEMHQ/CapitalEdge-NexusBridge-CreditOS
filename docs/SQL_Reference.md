@@ -452,13 +452,13 @@ ALTER TABLE loan_requests
 
 ### Check if a user's records exist
 
+**Check profile only:**
 ```sql
--- Check profile
 SELECT * FROM profiles WHERE email = 'user@example.com';
 ```
 
+**Check all records for a user:**
 ```sql
--- Check all records for a user
 SELECT
   p.id, p.email, p.status,
   r.role,
@@ -471,14 +471,13 @@ LEFT JOIN investors i ON i.profile_id = p.id
 WHERE p.email = 'user@example.com';
 ```
 
-### Manual cascade delete (use only if cascade FK is not yet applied)
+### Manual cascade delete
 
-> If ON DELETE CASCADE is in place (migration 0008), simply delete the user
-> from Supabase Auth → Authentication → Users and everything cascades automatically.
-> Use these manual steps only if needed for cleanup before migration 0008 was applied.
+> Migration 0008 is applied — deleting a user from Supabase Auth → Authentication → Users
+> now cascades automatically. Use these manual steps only for emergency cleanup.
 
+**Step 1 — delete loan_requests:**
 ```sql
--- Step 1: delete loan_requests
 DELETE FROM loan_requests WHERE application_id IN (
   SELECT id FROM applications WHERE borrower_id IN (
     SELECT id FROM borrowers WHERE profile_id = (
@@ -488,8 +487,8 @@ DELETE FROM loan_requests WHERE application_id IN (
 );
 ```
 
+**Step 2 — delete properties:**
 ```sql
--- Step 2: delete properties
 DELETE FROM properties WHERE application_id IN (
   SELECT id FROM applications WHERE borrower_id IN (
     SELECT id FROM borrowers WHERE profile_id = (
@@ -499,8 +498,8 @@ DELETE FROM properties WHERE application_id IN (
 );
 ```
 
+**Step 3 — delete applications:**
 ```sql
--- Step 3: delete applications
 DELETE FROM applications WHERE borrower_id IN (
   SELECT id FROM borrowers WHERE profile_id = (
     SELECT id FROM profiles WHERE email = 'user@example.com'
@@ -508,29 +507,29 @@ DELETE FROM applications WHERE borrower_id IN (
 );
 ```
 
+**Step 4 — delete investor record:**
 ```sql
--- Step 4: delete investor record
 DELETE FROM investors WHERE profile_id = (
   SELECT id FROM profiles WHERE email = 'user@example.com'
 );
 ```
 
+**Step 5 — delete user_roles:**
 ```sql
--- Step 5: delete user_roles
 DELETE FROM user_roles WHERE user_id = (
   SELECT id FROM profiles WHERE email = 'user@example.com'
 );
 ```
 
+**Step 6 — delete borrower:**
 ```sql
--- Step 6: delete borrower
 DELETE FROM borrowers WHERE profile_id = (
   SELECT id FROM profiles WHERE email = 'user@example.com'
 );
 ```
 
+**Step 7 — delete profile:**
 ```sql
--- Step 7: delete profile
 DELETE FROM profiles WHERE email = 'user@example.com';
 ```
 

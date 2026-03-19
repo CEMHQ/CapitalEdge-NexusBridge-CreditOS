@@ -57,6 +57,9 @@ export default function AdminDocumentReviewPage() {
   const [rejectionReason, setRejection]   = useState('')
   const [error, setError]                 = useState<string | null>(null)
   const [successMsg, setSuccessMsg]       = useState<string | null>(null)
+  const [deleting, setDeleting]           = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleteError, setDeleteError]     = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/documents/${id}`)
@@ -82,6 +85,14 @@ export default function AdminDocumentReviewPage() {
     } finally {
       setDownloading(false)
     }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    const res = await fetch(`/api/documents/${id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (!res.ok) { setDeleteError(data.error ?? 'Delete failed'); setDeleting(false); return }
+    router.push('/dashboard/admin/documents')
   }
 
   async function submit(reviewStatus: 'verified' | 'rejected') {
@@ -141,7 +152,47 @@ export default function AdminDocumentReviewPage() {
             {doc.document_type.replace(/_/g, ' ')} · {formatFileSize(doc.file_size_bytes)}
           </p>
         </div>
-        <StatusBadge status={doc.review_status} />
+        <div className="flex flex-col items-end gap-2">
+          <StatusBadge status={doc.review_status} />
+          {!deleteConfirm && (
+            <button
+              onClick={() => setDeleteConfirm(true)}
+              className="text-xs text-red-500 hover:text-red-700 font-medium"
+            >
+              Delete document
+            </button>
+          )}
+          {deleteConfirm && !deleting && (
+            <span className="text-xs text-gray-600">
+              Are you sure?{' '}
+              <button
+                onClick={() => { setDeleteConfirm(false); setDeleteError(null) }}
+                className="text-gray-500 hover:text-gray-700 font-medium underline"
+              >
+                Cancel
+              </button>
+              {' · '}
+              <button
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-800 font-medium"
+              >
+                Confirm Delete
+              </button>
+            </span>
+          )}
+          {deleting && <span className="text-xs text-gray-400">Deleting…</span>}
+          {deleteError && (
+            <span className="text-xs text-red-600">
+              {deleteError}{' '}
+              <button
+                onClick={() => { setDeleteConfirm(false); setDeleteError(null) }}
+                className="underline"
+              >
+                Try again
+              </button>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Document card */}

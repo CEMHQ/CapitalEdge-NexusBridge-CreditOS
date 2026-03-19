@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from '@/lib/format'
 import ApplicationStatusForm from '@/components/admin/ApplicationStatusForm'
 import UnderwriterMetricsForm from '@/components/admin/UnderwriterMetricsForm'
 import CreateLoanForm from '@/components/admin/CreateLoanForm'
+import DeleteApplicationButton from '@/components/admin/DeleteApplicationButton'
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   sfh: 'Single Family Home', multifamily: 'Multifamily (2–4 units)',
@@ -89,7 +90,10 @@ export default async function ApplicationDetailPage({
           <h1 className="text-2xl font-semibold text-gray-900 mt-1">#{app.application_number}</h1>
           <p className="text-sm text-gray-500 mt-0.5">Submitted {formatDate(app.submitted_at)}</p>
         </div>
-        <ApplicationStatusForm applicationId={app.id} currentStatus={app.application_status} />
+        <div className="flex flex-col items-end gap-2">
+          <ApplicationStatusForm applicationId={app.id} currentStatus={app.application_status} />
+          <DeleteApplicationButton applicationId={app.id} />
+        </div>
       </div>
 
       {/* Borrower */}

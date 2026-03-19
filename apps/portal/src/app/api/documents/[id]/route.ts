@@ -240,3 +240,61 @@ export async function PATCH(
 
   return NextResponse.json({ success: true })
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const role = await getUserRole(supabase, user.id)
+  if (!['admin', 'manager'].includes(role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const adminClient = createAdminClient()
+
+  const { data: doc, error: fetchError } = await adminClient
+    .from('documents')
+    .select('storage_path, owner_type')
+    .eq('id', id)
+    .single()
+
+  if (fetchError || !doc) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  const bucket = BUCKET_MAP[doc.owner_type] ?? 'borrower-documents'
+
+  const { error: storageError } = await adminClient
+    .storage
+    .from(bucket)
+    .remove([doc.storage_path])
+
+  if (storageError) {
+    return NextResponse.json({ error: storageError.message }, { status: 500 })
+  }
+
+  const { error: dbError } = await adminClient
+    .from('documents')
+    .delete()
+    .eq('id', id)
+
+  if (dbError) {
+    return NextResponse.json({ error: dbError.message }, { status: 500 })
+  }
+
+  emitAuditEvent({
+    actorProfileId: user.id,
+    eventType:      'document_action',
+    entityType:     'document',
+    entityId:       id,
+    newValue:       { action: 'deleted' },
+  })
+
+  return NextResponse.json({ success: true })
+}

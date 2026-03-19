@@ -166,3 +166,89 @@ export async function PATCH(
 
   return NextResponse.json({ success: true })
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const role = await getUserRole(supabase, user.id)
+  if (!['admin', 'manager'].includes(role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const adminClient = createAdminClient()
+
+  // Block deletion if a loan record exists (ON DELETE RESTRICT in DB)
+  const { data: existingLoan } = await adminClient
+    .from('loans')
+    .select('id')
+    .eq('application_id', id)
+    .limit(1)
+    .maybeSingle()
+
+  if (existingLoan) {
+    return NextResponse.json(
+      { error: 'Cannot delete an application that has a loan record. Close the loan first.' },
+      { status: 409 }
+    )
+  }
+
+  // Delete documents linked to this application (no FK cascade)
+  const { error: docsError } = await adminClient
+    .from('documents')
+    .delete()
+    .eq('owner_type', 'application')
+    .eq('owner_id', id)
+
+  if (docsError) {
+    return NextResponse.json({ error: docsError.message }, { status: 500 })
+  }
+
+  // Delete loan_requests (no FK cascade)
+  const { error: lrError } = await adminClient
+    .from('loan_requests')
+    .delete()
+    .eq('application_id', id)
+
+  if (lrError) {
+    return NextResponse.json({ error: lrError.message }, { status: 500 })
+  }
+
+  // Delete properties (no FK cascade)
+  const { error: propError } = await adminClient
+    .from('properties')
+    .delete()
+    .eq('application_id', id)
+
+  if (propError) {
+    return NextResponse.json({ error: propError.message }, { status: 500 })
+  }
+
+  // Delete the application (underwriting_cases cascade automatically)
+  const { error: appError } = await adminClient
+    .from('applications')
+    .delete()
+    .eq('id', id)
+
+  if (appError) {
+    return NextResponse.json({ error: appError.message }, { status: 500 })
+  }
+
+  emitAuditEvent({
+    actorProfileId: user.id,
+    eventType:      'application_status_change',
+    entityType:     'application',
+    entityId:       id,
+    eventPayload:   { action: 'deleted' },
+  })
+
+  return NextResponse.json({ success: true })
+}

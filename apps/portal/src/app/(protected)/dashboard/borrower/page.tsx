@@ -71,7 +71,11 @@ export default async function BorrowerDashboard({
           <h2 className="text-base font-semibold text-gray-900 mb-3">Your Applications</h2>
           <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
             {applications!.map((app) => (
-              <div key={app.id} className="flex items-center justify-between px-5 py-4">
+              <a
+                key={app.id}
+                href={`/dashboard/borrower/applications/${app.id}`}
+                className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+              >
                 <div>
                   <p className="text-sm font-medium text-gray-900">#{app.application_number}</p>
                   <p className="text-xs text-gray-500 capitalize mt-0.5">
@@ -81,7 +85,7 @@ export default async function BorrowerDashboard({
                 <span className={`text-xs px-2 py-1 rounded-full capitalize font-medium ${statusColor(app.application_status)}`}>
                   {app.application_status.replace(/_/g, ' ')}
                 </span>
-              </div>
+              </a>
             ))}
           </div>
         </div>

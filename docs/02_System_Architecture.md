@@ -20,7 +20,7 @@ The platform is organized into four primary layers:
 | App | Audience | Status |
 |---|---|---|
 | `apps/web-marketing` | Public — borrowers and investors | ✅ Live |
-| `apps/portal` | Unified portal: borrower, investor, admin, underwriting, servicing | 🔵 Phase 2 |
+| `apps/portal` | Unified portal: borrower, investor, admin, underwriting, servicing | ✅ Phase 3 complete |
 
 **Stack**: Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS v4, shadcn/ui v4
 
@@ -187,6 +187,26 @@ Roles are stored in the `user_roles` table — not in JWT metadata. All role che
 
 Public signups are forced to `borrower` at the database trigger level regardless of what the client sends. Invite-only roles (`investor`, `admin`, `manager`, `underwriter`, `servicing`) are seeded by the invite API route using the service role key.
 
+### Role Permission Matrix
+
+All API routes enforce role-specific access. The matrix below shows what each role can do:
+
+| Operation | admin | manager | underwriter | servicing | borrower | investor |
+|---|---|---|---|---|---|---|
+| Applications CRUD | Full | Full | Read | Read | Own only | -- |
+| Application fields edit | Yes | Yes | -- | -- | -- | -- |
+| Investors CRUD | Full | Read + Update | -- | -- | -- | -- |
+| Investor delete | Yes | -- | -- | -- | -- | -- |
+| Users CRUD | Full | -- | -- | -- | -- | -- |
+| Documents review | Full | Full | Read | Read | Upload own | -- |
+| Underwriting | Full | Full | Assigned cases | -- | -- | -- |
+| Loans/Payments/Draws | Full | Full | Read | Full | -- | -- |
+| Tasks | All tasks | All tasks | Assigned only | Assigned only | -- | -- |
+| Audit log | View | View | -- | -- | -- | -- |
+| Invite users | Yes | Yes | -- | -- | -- | -- |
+| Fund operations | Full | Full | -- | -- | -- | Own portfolio |
+| Notifications | All | All | Own | Own | Own | Own |
+
 ### Environment Variable Classification
 
 | Variable | Exposed to browser | Safe |
@@ -267,7 +287,7 @@ This layer connects to the platform via events — it does not have direct datab
 | Phase | Data Infrastructure Additions |
 |---|---|
 | Phase 1 | Marketing site, Resend email — **complete** |
-| Phase 2 | Supabase setup, pg_partman, Drizzle ORM, Auth, RBAC, borrower + investor portals |
-| Phase 3 | Full loan lifecycle, underwriting engine, document OCR, fund accounting |
-| Phase 4 | Workflow automation (n8n), compliance hardening, SOC 2 controls |
-| Phase 5 | Tokenization layer (Base/Ethereum L2) |
+| Phase 2 | Supabase setup, pg_partman, Drizzle ORM, Auth, RBAC, borrower + investor portals — **complete** |
+| Phase 3 | Full loan lifecycle, underwriting engine, document management, fund accounting, notifications UI, audit log viewer, tasks system, admin CRUD (users/investors/applications), RBAC per operation — **complete** |
+| Phase 4 | Workflow automation (n8n), OCR (Ocrolus/Argyle), compliance hardening, SOC 2 controls — **planned** |
+| Phase 5 | Tokenization layer (Base/Ethereum L2) — **optional** |

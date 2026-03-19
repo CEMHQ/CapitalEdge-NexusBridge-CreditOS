@@ -53,7 +53,7 @@ NexusBridge addresses a common inefficiency in private credit markets: the gap b
 - Structured exposure to short-duration, asset-backed credit via NexusBridge Capital LP
 - Reg D / Rule 506(c) offering -- accredited investors only
 - Capital deployed across Asset-Backed Lending, GAP Funding, and Micro-Lending strategies
-- Investor portal with portfolio tracking and statements (fund operations coming in Phase 3 Step 5)
+- Investor portal with portfolio tracking, fund subscriptions, and statements
 
 **Long-Term Vision**
 A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized investor participation on top of the centralized lending platform -- without compromising regulatory compliance.
@@ -102,7 +102,7 @@ All other tables (loans, payments, draws, documents, underwriting_cases, etc.) a
 ```
 apps/
   web-marketing/        ← Marketing website (Phase 1 — live on Vercel, localhost:3000)
-  portal/               ← Unified portal (Phase 2 complete, Phase 3 in progress, localhost:3001)
+  portal/               ← Unified portal (Phase 3 complete, localhost:3001)
 
 services/               ← Backend domain services (scaffolding only)
 core/                   ← Shared libraries (scaffolding only)
@@ -133,6 +133,20 @@ images/                 ← Brand assets
 | Step 3 | Underwriting Engine: underwriting_cases, decisions, conditions, risk_flags + pure-function rules engine + 7 API routes + underwriter UI | ✅ Complete |
 | Step 4 | Loan Lifecycle: loans, payment_schedule, payments, draws + 6 API routes + servicing UI + loan detail + record payment + admin create-loan | ✅ Complete |
 | Step 5 | Fund Operations: funds, fund_subscriptions, fund_allocations, nav_snapshots + FCFS locking + investor portfolio/statements + admin fund dashboard | ✅ Complete |
+
+### Post-Phase 3 Improvements
+
+After Phase 3 completion, the following enhancements were added:
+
+- **RBAC per operation** -- all API routes enforce role-specific access (admin=full CRUD, manager=CRUD minus user management and investor delete, underwriter=underwriting+read, servicing=loans/payments/draws+read)
+- **Admin CRUD -- Users** -- PATCH /api/admin/users/[id] for role/status updates, EditUserRoleButton component
+- **Admin CRUD -- Investors** -- PATCH and DELETE /api/admin/investors/[id] with fund subscription guard on delete
+- **Admin CRUD -- Applications** -- PATCH /api/applications/[id]/fields for editing loan and property fields
+- **Borrower application pages** -- real application list and full detail page (loan info, property, conditions, documents) with ownership gating
+- **Notifications system** -- NotificationBell component, full inbox page, GET/PATCH API routes, emitNotification() helper, wired to document review and application status changes
+- **Audit log viewer** -- /dashboard/admin/audit with pagination, filters (event type, entity type, date range), color-coded badges, collapsible payload
+- **Tasks system** -- full CRUD API, status filter tabs, priority badges, due date warnings, assignee dropdown, role-scoped visibility (underwriter/servicing see only assigned tasks)
+- **Updated nav links** -- admin/manager: +Tasks, +Audit Log; underwriter/servicing: +Tasks
 
 ---
 

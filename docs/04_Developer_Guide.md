@@ -10,13 +10,11 @@ buried.
 The best move is **not** to build the full hybrid CeFi/DeFi protocol
 first. Build it in controlled phases:
 
--   **Phase 1:** website + borrower dashboard + investor portal
--   **Phase 2:** underwriting workflow + document vault + fund
-    operations
--   **Phase 3:** wallet rails, tokenized participation, on-chain pool
-    accounting
--   **Phase 4:** full protocol logic, smart contracts, and optional
-    secondary liquidity
+-   **Phase 1:** Marketing site -- all 8 pages, lead capture, email routing (complete)
+-   **Phase 2:** Auth + RBAC, all role dashboards, borrower portal, investor portal, admin console (complete)
+-   **Phase 3:** Loan lifecycle, underwriting, document management, fund operations, notifications, audit log, tasks, admin CRUD (complete)
+-   **Phase 4:** Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening (planned)
+-   **Phase 5:** Tokenization layer (Base/Ethereum L2) -- HyFi vision (optional)
 
 That sequencing matters because the regulated, revenue-producing part is
 the **centralized lending business**, not the token layer.

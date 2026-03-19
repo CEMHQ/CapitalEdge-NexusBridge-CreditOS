@@ -26,11 +26,8 @@ CREATE TABLE IF NOT EXISTS audit_events (
   created_at       timestamptz NOT NULL DEFAULT now()
 ) PARTITION BY RANGE (created_at);
 
--- ─── 2. Seed first partition for audit_events ─────────────────────────────────
-CREATE TABLE IF NOT EXISTS audit_events_default
-  PARTITION OF audit_events DEFAULT;
-
--- ─── 3. Register audit_events with pg_partman ────────────────────────────────
+-- ─── 2. Register audit_events with pg_partman ────────────────────────────────
+-- pg_partman creates its own default partition — do NOT manually create one first.
 -- Supabase installs pg_partman in the 'extensions' schema
 SELECT extensions.create_parent(
   p_parent_table   => 'public.audit_events',
@@ -69,11 +66,8 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   created_at       timestamptz NOT NULL DEFAULT now()
 ) PARTITION BY RANGE (created_at);
 
--- ─── 7. Seed first partition for activity_logs ────────────────────────────────
-CREATE TABLE IF NOT EXISTS activity_logs_default
-  PARTITION OF activity_logs DEFAULT;
-
--- ─── 8. Register activity_logs with pg_partman ───────────────────────────────
+-- ─── 7. Register activity_logs with pg_partman ───────────────────────────────
+-- pg_partman creates its own default partition — do NOT manually create one first.
 -- Supabase installs pg_partman in the 'extensions' schema
 SELECT extensions.create_parent(
   p_parent_table   => 'public.activity_logs',

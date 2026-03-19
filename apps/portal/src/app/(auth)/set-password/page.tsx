@@ -39,7 +39,18 @@ export default function SetPasswordPage() {
       return
     }
 
-    const role = (data.user?.user_metadata?.role ?? 'investor') as UserRole
+    // Read role from DB — never from JWT metadata, which can be stale or spoofed
+    const userId = data.user?.id
+    let role: UserRole = 'investor'
+    if (userId) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single()
+      role = (roleData?.role ?? 'investor') as UserRole
+    }
+
     router.push(getDefaultRoute(role))
     router.refresh()
   }

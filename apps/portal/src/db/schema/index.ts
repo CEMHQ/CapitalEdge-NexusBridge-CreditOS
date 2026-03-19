@@ -5,3 +5,8 @@ export * from './properties'
 export * from './loan_requests'
 export * from './user_roles'
 export * from './investors'
+// Phase 3
+export * from './audit_events'
+export * from './activity_logs'
+export * from './notifications'
+export * from './tasks'

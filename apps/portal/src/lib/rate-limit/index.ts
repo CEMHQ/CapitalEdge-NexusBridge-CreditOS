@@ -46,3 +46,40 @@ export const updateLimiter = new Ratelimit({
   limiter: Ratelimit.fixedWindow(60, '1 h'),
   prefix: 'rl:update',
 })
+
+// ─── Phase 3 limiters ─────────────────────────────────────────────────────────
+
+// Create loan (from approved application): 10 per user per hour
+export const createLoanLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(10, '1 h'),
+  prefix: 'rl:create-loan',
+})
+
+// Record payment: 30 per user per hour
+export const recordPaymentLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(30, '1 h'),
+  prefix: 'rl:record-payment',
+})
+
+// Underwriting decisions: 20 per user per hour
+export const underwritingLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(20, '1 h'),
+  prefix: 'rl:underwriting',
+})
+
+// Document upload URL requests: 30 per user per hour
+export const documentUploadLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(30, '1 h'),
+  prefix: 'rl:document-upload',
+})
+
+// Subscription creation: 5 per user per hour
+export const subscriptionLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(5, '1 h'),
+  prefix: 'rl:subscription',
+})

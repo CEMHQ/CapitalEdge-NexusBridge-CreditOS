@@ -57,6 +57,7 @@ function NavLinks({ role }: { role: UserRole }) {
       { label: 'Dashboard', href: '/dashboard/admin' },
       { label: 'Applications', href: '/dashboard/admin/applications' },
       { label: 'Investors', href: '/dashboard/admin/investors' },
+      { label: 'Documents', href: '/dashboard/admin/documents' },
       { label: 'Underwriting', href: '/dashboard/underwriter' },
       { label: 'Invite User', href: '/dashboard/admin/invite' },
     ],
@@ -64,6 +65,7 @@ function NavLinks({ role }: { role: UserRole }) {
       { label: 'Dashboard', href: '/dashboard/admin' },
       { label: 'Applications', href: '/dashboard/admin/applications' },
       { label: 'Investors', href: '/dashboard/admin/investors' },
+      { label: 'Documents', href: '/dashboard/admin/documents' },
       { label: 'Invite User', href: '/dashboard/admin/invite' },
     ],
     underwriter: [

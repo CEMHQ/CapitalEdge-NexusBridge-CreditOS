@@ -113,7 +113,6 @@ export async function PATCH(
   const { error: updateError } = await adminClient.from('documents').update({
     review_status,
     rejection_reason: rejection_reason ?? null,
-    reviewed_by: user.id,
     reviewed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }).eq('id', id)

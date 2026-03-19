@@ -13,8 +13,9 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 -- ─── 3. Schedule pg_partman maintenance ──────────────────────────────────────
 -- Runs hourly to create future partitions and drop expired ones.
+-- Note: Supabase installs pg_partman in the 'extensions' schema, not 'partman'
 SELECT cron.schedule(
   'partman-maintenance',
   '0 * * * *',
-  $$SELECT partman.run_maintenance_proc()$$
+  $$SELECT extensions.run_maintenance_proc()$$
 );

@@ -119,15 +119,44 @@ export async function PATCH(
 
   // Confirm upload — called by client after direct upload to Storage succeeds
   if (body.action === 'confirm') {
-    const { data: doc } = await supabase.from('documents').select('uploaded_by').eq('id', id).single()
+    const { data: doc } = await supabase
+      .from('documents')
+      .select('uploaded_by, owner_type')
+      .eq('id', id)
+      .single()
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (doc.uploaded_by !== user.id && !['admin', 'manager'].includes(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const adminClient = createAdminClient()
+
+    // Derive the correct initial review_status based on the borrower's application status.
+    // If the application is already under_review, start the doc there too instead of pending_review.
+    let reviewStatus = 'pending_review'
+    if (doc.owner_type === 'borrower' && doc.uploaded_by) {
+      const { data: borrower } = await adminClient
+        .from('borrowers')
+        .select('id')
+        .eq('profile_id', doc.uploaded_by)
+        .maybeSingle()
+      if (borrower) {
+        const { data: app } = await adminClient
+          .from('applications')
+          .select('application_status')
+          .eq('borrower_id', borrower.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (app?.application_status === 'under_review') {
+          reviewStatus = 'under_review'
+        }
+      }
+    }
+
     await adminClient.from('documents').update({
       upload_status: 'uploaded',
+      review_status: reviewStatus,
       updated_at: new Date().toISOString(),
     }).eq('id', id)
 

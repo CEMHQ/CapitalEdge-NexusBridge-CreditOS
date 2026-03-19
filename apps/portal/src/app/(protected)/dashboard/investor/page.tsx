@@ -52,7 +52,7 @@ export default async function InvestorDashboard() {
       .maybeSingle()
 
     subscription = sub
-    fund = sub?.funds ?? null
+    fund = (sub?.funds as { id: string; fund_name: string; fund_status: string } | null) ?? null
 
     if (subscription) {
       metrics.total_committed = Number(subscription.commitment_amount)

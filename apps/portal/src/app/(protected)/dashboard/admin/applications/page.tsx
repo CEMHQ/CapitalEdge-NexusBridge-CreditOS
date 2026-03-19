@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/format'
+import DeleteApplicationRowButton from '@/components/admin/DeleteApplicationRowButton'
 
 const STATUS_OPTIONS = [
   'all', 'submitted', 'under_review', 'conditionally_approved', 'approved', 'declined', 'funded', 'closed',
@@ -92,12 +93,13 @@ export default async function AdminApplicationsPage({
               <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted</th>
               <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
               <th className="px-5 py-3" />
+              <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {!applications?.length && (
               <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400">
                   No applications found.
                 </td>
               </tr>
@@ -134,6 +136,9 @@ export default async function AdminApplicationsPage({
                     >
                       Review →
                     </a>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <DeleteApplicationRowButton applicationId={app.id} />
                   </td>
                 </tr>
               )

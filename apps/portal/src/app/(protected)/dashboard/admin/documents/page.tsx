@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
 import Link from 'next/link'
+import DeleteDocumentRowButton from '@/components/admin/DeleteDocumentRowButton'
 
 export default async function AdminDocumentsPage() {
   const supabase = await createClient()
@@ -127,12 +128,13 @@ function DocumentTable({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+              <th className="px-6 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {documents.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-400">
                   No documents.
                 </td>
               </tr>
@@ -175,6 +177,9 @@ function DocumentTable({
                     >
                       Review
                     </Link>
+                  </td>
+                  <td className="px-6 py-4">
+                    <DeleteDocumentRowButton documentId={doc.id} />
                   </td>
                 </tr>
               )

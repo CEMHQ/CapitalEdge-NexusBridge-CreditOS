@@ -35,7 +35,7 @@ export default async function InvestorDashboard() {
   let subscription = null
   let metrics = { total_committed: 0, total_deployed: 0, undeployed: 0, allocation_count: 0 }
   let nav = null
-  let fund = null
+  let fund: { id: string; fund_name: string; fund_status: string } | null = null
 
   if (investor) {
     const { data: sub } = await supabase

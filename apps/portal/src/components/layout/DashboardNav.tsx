@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { UserRole } from '@/lib/auth/roles'
+import NotificationBell from './NotificationBell'
 
 export default function DashboardNav({ user, role }: { user: User; role: UserRole }) {
   const router = useRouter()
@@ -24,6 +25,7 @@ export default function DashboardNav({ user, role }: { user: User; role: UserRol
             <NavLinks role={role} />
           </div>
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-sm text-gray-500">{user.email}</span>
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize">
               {role}

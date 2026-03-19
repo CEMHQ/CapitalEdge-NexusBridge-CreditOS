@@ -7,6 +7,7 @@ import { updateApplicationStatusSchemaV2 } from '@/lib/validation/schemas'
 import { updateLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
+import { emitNotification } from '@/lib/notifications/emit'
 import { canTransitionApplication, canRoleTransitionApplication } from '@/lib/loan/state-machine'
 import { sendApplicationStatusEmail } from '@/lib/email'
 
@@ -144,7 +145,7 @@ export async function PATCH(
         const adminClient = createAdminClient()
         const { data: bRow } = await adminClient
           .from('borrowers')
-          .select('profiles!profile_id ( full_name, email )')
+          .select('profile_id, profiles!profile_id ( full_name, email )')
           .eq('id', current.borrower_id!)
           .single()
         const profile = Array.isArray(bRow?.profiles) ? bRow?.profiles[0] : bRow?.profiles
@@ -156,6 +157,15 @@ export async function PATCH(
             applicationId:     id,
             newStatus:         application_status,
             notes:             notes ?? null,
+          })
+        }
+        if (bRow?.profile_id) {
+          const statusLabel = application_status.replace(/_/g, ' ')
+          await emitNotification({
+            recipientProfileId: bRow.profile_id,
+            subject:  `Application #${current.application_number} updated`,
+            message:  `Your application status has changed to: ${statusLabel}.${notes ? ` Note: ${notes}` : ''}`,
+            linkUrl:  `/dashboard/borrower/applications/${id}`,
           })
         }
       } catch {

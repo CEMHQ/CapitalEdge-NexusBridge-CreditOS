@@ -5,6 +5,7 @@ import { getUserRole } from '@/lib/auth/roles'
 import { validateBody } from '@/lib/validation/validate'
 import { reviewDocumentSchema } from '@/lib/validation/schemas'
 import { emitAuditEvent } from '@/lib/audit/emit'
+import { emitNotification } from '@/lib/notifications/emit'
 import { sendDocumentReviewEmail } from '@/lib/email'
 
 const BUCKET_MAP: Record<string, string> = {
@@ -212,7 +213,7 @@ export async function PATCH(
     newValue: { review_status, rejection_reason },
   })
 
-  // Fire-and-forget uploader notification
+  // Fire-and-forget uploader email + in-app notification
   if (existing.uploaded_by) {
     void (async () => {
       try {
@@ -233,9 +234,19 @@ export async function PATCH(
           console.warn('[documents] No email found for uploader:', existing.uploaded_by)
         }
       } catch (err) {
-        console.error('[documents] Failed to send review notification:', err)
+        console.error('[documents] Failed to send review email:', err)
       }
     })()
+
+    const statusLabel = review_status === 'verified' ? 'approved' : 'rejected'
+    void emitNotification({
+      recipientProfileId: existing.uploaded_by,
+      subject:            `Document ${statusLabel}`,
+      message:            review_status === 'verified'
+        ? `Your document "${existing.file_name}" has been verified.`
+        : `Your document "${existing.file_name}" was rejected${rejection_reason ? `: ${rejection_reason}` : '.'}`,
+      linkUrl:            '/dashboard/borrower/documents',
+    })
   }
 
   return NextResponse.json({ success: true })

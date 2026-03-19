@@ -36,6 +36,7 @@ Design docs live in `/docs/`. Before implementing any feature, read the relevant
 | **SQL reference — Phase 1 & 2** | **`docs/SQL_Reference_Phase1_2.md`** |
 | **SQL reference — Phase 3** | **`docs/SQL_Reference_Phase3.md`** |
 | **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
+| **Phase 4 implementation plan** | **`docs/Phase4_Implementation_Plan.md`** |
 
 UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md` (application portals).
 
@@ -326,7 +327,7 @@ emitAuditEvent({ ... });
 | **Phase 1** | Marketing site -- all 8 pages live, lead capture forms, email routing | ✅ Complete |
 | **Phase 2** | Supabase auth + RBAC, all role dashboards, borrower portal, investor portal, admin console, underwriter workspace, servicing dashboard | ✅ Complete |
 | **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | ✅ Complete |
-| **Phase 4** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
+| **Phase 4** | Workflow automation (n8n) + e-signatures + OCR (Ocrolus/Argyle) + compliance hardening (KYC/AML, Reg A/D enforcement) | ⚪ Planned |
 | **Phase 5** | Tokenization layer (Base/Ethereum L2) -- HyFi vision | ⚪ Optional |
 
 ### Phase 3 Progress:

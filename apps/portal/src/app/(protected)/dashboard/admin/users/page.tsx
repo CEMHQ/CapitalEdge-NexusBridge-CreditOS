@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
 import DeleteUserButton from '@/components/admin/DeleteUserButton'
+import EditUserRoleButton from '@/components/admin/EditUserRoleButton'
 
 type UserRole = {
   role: string
@@ -52,15 +53,15 @@ export default async function AdminUsersPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Joined
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Action
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" colSpan={2}>
+                Actions
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {(!users || users.length === 0) && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
+                <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-400">
                   No users found.
                 </td>
               </tr>
@@ -93,6 +94,13 @@ export default async function AdminUsersPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {formatDate(u.created_at)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <EditUserRoleButton
+                      userId={u.id}
+                      currentRole={roleName}
+                      isSelf={u.id === currentUser?.id}
+                    />
                   </td>
                   <td className="px-6 py-4">
                     <DeleteUserButton

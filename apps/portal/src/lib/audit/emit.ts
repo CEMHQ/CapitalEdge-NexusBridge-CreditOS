@@ -18,6 +18,9 @@ export type AuditEventType =
   | 'permission_change'
   | 'user_invited'
   | 'user_deleted'
+  | 'user_updated'
+  | 'investor_updated'
+  | 'investor_deleted'
 
 export type AuditEntityType =
   | 'loan'
@@ -26,6 +29,7 @@ export type AuditEntityType =
   | 'subscription'
   | 'fund'
   | 'user'
+  | 'investor'
   | 'underwriting_case'
   | 'underwriting_decision'
   | 'payment'

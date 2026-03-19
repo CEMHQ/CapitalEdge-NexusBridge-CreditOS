@@ -1,10 +1,69 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserRole } from '@/lib/auth/roles'
-import { deleteUserLimiter } from '@/lib/rate-limit/index'
+import { deleteUserLimiter, updateLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
+
+const VALID_ROLES = ['admin', 'manager', 'underwriter', 'servicing', 'investor', 'borrower'] as const
+const patchUserSchema = z.object({
+  role: z.enum(VALID_ROLES).optional(),
+  status: z.enum(['active', 'inactive', 'suspended']).optional(),
+})
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const callerRole = await getUserRole(supabase, user.id)
+  if (callerRole !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const blocked = await applyRateLimit(updateLimiter, user.id)
+  if (blocked) return blocked
+
+  const body = await request.json().catch(() => null)
+  const parsed = patchUserSchema.safeParse(body)
+  if (!parsed.success) return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+
+  const { role, status } = parsed.data
+  const adminClient = createAdminClient()
+
+  if (role !== undefined) {
+    // Upsert into user_roles
+    const { error: roleError } = await adminClient
+      .from('user_roles')
+      .upsert({ user_id: id, role }, { onConflict: 'user_id' })
+
+    if (roleError) return NextResponse.json({ error: roleError.message }, { status: 500 })
+  }
+
+  if (status !== undefined) {
+    const { error: statusError } = await adminClient
+      .from('profiles')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+
+    if (statusError) return NextResponse.json({ error: statusError.message }, { status: 500 })
+  }
+
+  emitAuditEvent({
+    actorProfileId: user.id,
+    eventType: 'user_updated',
+    entityType: 'user',
+    entityId: id,
+    eventPayload: { role, status },
+  })
+
+  return NextResponse.json({ success: true })
+}
 
 export async function DELETE(
   _request: Request,

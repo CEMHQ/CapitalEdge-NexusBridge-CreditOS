@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
+import EditInvestorStatusButton from '@/components/admin/EditInvestorStatusButton'
+import DeleteInvestorButton from '@/components/admin/DeleteInvestorButton'
 
 export default async function AdminInvestorsPage() {
   const supabase = await createClient()
@@ -38,12 +40,14 @@ export default async function AdminInvestorsPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Onboarding</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+              <th className="px-6 py-3" />
+              <th className="px-6 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {investors?.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-400">
                   No investors yet.
                 </td>
               </tr>
@@ -51,7 +55,7 @@ export default async function AdminInvestorsPage() {
             {investors?.map((inv) => {
               const profile = Array.isArray(inv.profiles) ? inv.profiles[0] : inv.profiles
               return (
-                <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={inv.id} className="hover:bg-gray-50 transition-colors align-top">
                   <td className="px-6 py-4">
                     <p className="text-sm font-medium text-gray-900">{profile?.full_name ?? '—'}</p>
                     <p className="text-xs text-gray-500">{profile?.email ?? '—'}</p>
@@ -68,6 +72,17 @@ export default async function AdminInvestorsPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {formatDate(inv.created_at)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <EditInvestorStatusButton
+                      investorId={inv.id}
+                      accreditationStatus={inv.accreditation_status}
+                      kycStatus={inv.kyc_status}
+                      onboardingStatus={inv.onboarding_status}
+                    />
+                  </td>
+                  <td className="px-6 py-4">
+                    <DeleteInvestorButton investorId={inv.id} />
                   </td>
                 </tr>
               )

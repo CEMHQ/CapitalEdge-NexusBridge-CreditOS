@@ -200,15 +200,31 @@ Public signups are forced to `borrower` at the database trigger level regardless
 | `UPSTASH_REDIS_REST_URL` | No | ✅ — server-only |
 | `UPSTASH_REDIS_REST_TOKEN` | No | ✅ — server-only |
 
+### Authentication Flows
+
+Two server-side routes handle all post-auth redirects. Raw JWTs are never exposed in the URL.
+
+| Flow | Route | Method | Detail |
+|---|---|---|---|
+| Invite (email) | `/auth/confirm` | `verifyOtp(token_hash)` | Supabase email template sends `{{ .TokenHash }}` as a query param — hashed, not the raw JWT. Verified server-side, then redirected to `/set-password`. |
+| Password reset | `/auth/confirm` | `verifyOtp(token_hash)` | Same token_hash flow as invite. |
+| Magic link | `/auth/callback` | `exchangeCodeForSession(code)` | PKCE — browser client generates a code verifier stored in cookies. Auth server returns a one-time `code`, exchanged server-side. |
+| OAuth (future) | `/auth/callback` | `exchangeCodeForSession(code)` | Same PKCE flow as magic link. |
+
+**PKCE** (`flowType: 'pkce'`) is configured on the browser Supabase client. It prevents authorization code interception — even if someone intercepts the redirect URL, they cannot exchange the code without the code verifier stored in the user's cookies.
+
+**Invite flow does not use PKCE** because invites are server-initiated (no browser session exists when the admin sends the invite). `verifyOtp(token_hash)` is the correct server-side equivalent for this case.
+
 ### Controls Summary
 
 | Control | Implementation |
 |---|---|
-| Authentication | Supabase Auth (email/password, invite flow) |
+| Authentication | Supabase Auth — password, invite (token_hash), magic link + OAuth (PKCE) |
 | Authorization | `user_roles` table — DB-verified RBAC |
 | Row-level security | Supabase RLS on every table |
 | Rate limiting | Upstash Redis — IP and user-based |
 | Input validation | Zod schemas on every API route |
+| Auth token safety | Invite/reset: hashed token in query param · Magic link/OAuth: PKCE code flow |
 | Audit logging | Immutable `audit_events` table (Phase 3) |
 | Secrets management | Vercel environment variables + `server-only` imports |
 | Transport security | TLS everywhere |

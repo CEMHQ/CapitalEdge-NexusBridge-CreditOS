@@ -150,6 +150,21 @@ Every request passes through these layers in order. **Do not skip or reorder the
 - Rate limiter instances live in `src/lib/rate-limit/index.ts` — reuse them, do not create ad-hoc limiters
 - Zod schemas live in `src/lib/validation/schemas.ts` — add new schemas here when adding new routes
 
+### Auth Callback Routes
+
+Two server-side routes handle all post-auth redirects. Never expose raw JWTs in URLs.
+
+| Route | Flow | Method |
+|---|---|---|
+| `/auth/confirm` | Invite, password reset | `verifyOtp(token_hash)` — hashed token in query param, no raw JWT |
+| `/auth/callback` | Magic link, OAuth | `exchangeCodeForSession(code)` — PKCE, code verifier in cookies |
+
+**Rules:**
+- Do not add a third auth redirect route — extend these two
+- Invite `redirectTo` must point to `${NEXT_PUBLIC_APP_URL}/auth/confirm`
+- The browser client (`src/lib/supabase/client.ts`) has `flowType: 'pkce'` — do not remove it
+- Supabase invite email template must use `{{ .TokenHash }}` — not `{{ .ConfirmationURL }}`
+
 ### Domain Boundaries
 
 Services map strictly to domains — **do not mix domain logic across service boundaries**:

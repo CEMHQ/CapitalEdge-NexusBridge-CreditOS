@@ -43,6 +43,19 @@ Six enforcement layers are applied to every request. Each layer is independent �
 - Role-based route access — wrong role redirected to own dashboard
 - Open redirect protection on `/auth/callback` — only relative paths allowed for `next` param
 
+## Auth Callback Routes
+
+Two server-side routes handle all post-authentication redirects. Raw JWTs are never exposed in the URL or browser history.
+
+| Route | Handles | Method |
+|---|---|---|
+| `/auth/confirm` | Invite emails, password reset | `verifyOtp(token_hash)` — Supabase email template sends a hashed token as a query param; verified server-side |
+| `/auth/callback` | Magic links, OAuth | `exchangeCodeForSession(code)` — PKCE flow; browser stores code verifier in cookies, exchange is server-side |
+
+**Invite flow uses token_hash** because invites are server-initiated — no browser session exists when the admin sends the invite, so PKCE code verifier generation is not possible. The hashed token is useless without Supabase's server-side secret.
+
+**Magic links and OAuth use PKCE** (`flowType: 'pkce'` on the browser client). An intercepted redirect URL is useless without the code verifier stored in the user's cookies.
+
 ## Layer 3 — API Route Handlers
 Every API route enforces in this exact order:
 1. **Zod validation** — malformed or out-of-bounds input returns 400 before Supabase is called

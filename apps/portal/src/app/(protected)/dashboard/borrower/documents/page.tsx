@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const DOCUMENT_TYPES = [
@@ -15,12 +15,61 @@ const DOCUMENT_TYPES = [
 
 type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
+type Doc = {
+  id: string
+  file_name: string
+  document_type: string
+  review_status: string
+  rejection_reason: string | null
+  file_size_bytes: number
+  created_at: string
+}
+
+const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
+  pending_review: { label: 'Pending Review',  classes: 'bg-amber-50 text-amber-700 border-amber-200' },
+  under_review:   { label: 'Under Review',    classes: 'bg-blue-50 text-blue-700 border-blue-200' },
+  verified:       { label: 'Verified',        classes: 'bg-green-50 text-green-700 border-green-200' },
+  rejected:       { label: 'Rejected',        classes: 'bg-red-50 text-red-700 border-red-200' },
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? { label: status, classes: 'bg-gray-50 text-gray-700 border-gray-200' }
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.classes}`}>
+      {cfg.label}
+    </span>
+  )
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function BorrowerDocumentsPage() {
   const [documentType, setDocumentType] = useState(DOCUMENT_TYPES[0].value)
-  const [uploadState, setUploadState] = useState<UploadState>('idle')
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [uploadedDocs, setUploadedDocs] = useState<{ name: string; type: string }[]>([])
+  const [uploadState, setUploadState]   = useState<UploadState>('idle')
+  const [errorMsg, setErrorMsg]         = useState<string | null>(null)
+  const [docs, setDocs]                 = useState<Doc[]>([])
+  const [loadingDocs, setLoadingDocs]   = useState(true)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function fetchDocs() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('documents')
+      .select('id, file_name, document_type, review_status, rejection_reason, file_size_bytes, created_at')
+      .eq('uploaded_by', user.id)
+      .eq('upload_status', 'uploaded')
+      .order('created_at', { ascending: false })
+    setDocs(data ?? [])
+    setLoadingDocs(false)
+  }
+
+  useEffect(() => { fetchDocs() }, [])
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
@@ -40,11 +89,11 @@ export default function BorrowerDocumentsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          owner_type: 'borrower',
-          owner_id: user.id,
-          document_type: documentType,
-          file_name: file.name,
-          mime_type: file.type,
+          owner_type:      'borrower',
+          owner_id:        user.id,
+          document_type:   documentType,
+          file_name:       file.name,
+          mime_type:       file.type,
           file_size_bytes: file.size,
         }),
       })
@@ -65,16 +114,16 @@ export default function BorrowerDocumentsPage() {
 
       if (!uploadRes.ok) throw new Error('Upload to storage failed')
 
-      // 3. Confirm upload is complete
+      // 3. Confirm upload
       await fetch(`/api/documents/${document_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'confirm' }),
       })
 
-      setUploadedDocs((prev) => [...prev, { name: file.name, type: documentType }])
       setUploadState('success')
       if (fileRef.current) fileRef.current.value = ''
+      fetchDocs() // refresh list
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Upload failed')
       setUploadState('error')
@@ -86,7 +135,7 @@ export default function BorrowerDocumentsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Documents</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Upload documents required for your loan application.
+          Upload and track documents required for your loan application.
         </p>
       </div>
 
@@ -120,7 +169,6 @@ export default function BorrowerDocumentsPage() {
           </div>
 
           {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
-
           {uploadState === 'success' && (
             <p className="text-sm text-green-600">Document uploaded successfully.</p>
           )}
@@ -135,23 +183,37 @@ export default function BorrowerDocumentsPage() {
         </form>
       </div>
 
-      {/* Uploaded this session */}
-      {uploadedDocs.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Uploaded This Session</h2>
-          <ul className="space-y-2">
-            {uploadedDocs.map((doc, i) => (
-              <li key={i} className="flex items-center gap-3 text-sm">
-                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                <span className="text-gray-900 font-medium">{doc.name}</span>
-                <span className="text-gray-400 text-xs capitalize">{doc.type.replace(/_/g, ' ')}</span>
-              </li>
+      {/* Document list */}
+      <div>
+        <h2 className="text-base font-semibold text-gray-900 mb-3">Your Documents</h2>
+        {loadingDocs ? (
+          <p className="text-sm text-gray-400">Loading…</p>
+        ) : docs.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 px-6 py-8 text-center text-sm text-gray-400">
+            No documents uploaded yet.
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+            {docs.map((doc) => (
+              <div key={doc.id} className="px-6 py-4 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{doc.file_name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 capitalize">
+                    {doc.document_type.replace(/_/g, ' ')} · {formatFileSize(doc.file_size_bytes)} · {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  {doc.rejection_reason && (
+                    <p className="text-xs text-red-600 mt-1">
+                      <span className="font-medium">Reason: </span>{doc.rejection_reason}
+                    </p>
+                  )}
+                </div>
+                <StatusBadge status={doc.review_status} />
+              </div>
             ))}
-          </ul>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Pending review notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
         <p className="text-sm font-medium text-blue-800">Documents are reviewed by our team</p>
         <p className="text-sm text-blue-700 mt-0.5">

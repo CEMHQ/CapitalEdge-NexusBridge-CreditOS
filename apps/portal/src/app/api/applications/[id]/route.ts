@@ -77,9 +77,11 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Auto-create underwriting case when moved to under_review
+  // Auto-create underwriting case + sync document statuses when moved to under_review
   if (application_status === 'under_review') {
     const adminClient = createAdminClient()
+
+    // Auto-create underwriting case if not already present
     const { data: existing } = await adminClient
       .from('underwriting_cases')
       .select('id')
@@ -93,6 +95,30 @@ export async function PATCH(
         priority:       'normal',
         created_by:     user.id,
       })
+    }
+
+    // Move all pending documents linked to this application into under_review
+    await adminClient
+      .from('documents')
+      .update({ review_status: 'under_review', updated_at: new Date().toISOString() })
+      .eq('owner_type', 'application')
+      .eq('owner_id', id)
+      .eq('review_status', 'pending_review')
+
+    // Also sync borrower-level docs uploaded by the borrower's profile
+    const { data: borrower } = await adminClient
+      .from('borrowers')
+      .select('profile_id')
+      .eq('id', current.borrower_id!)
+      .single()
+
+    if (borrower?.profile_id) {
+      await adminClient
+        .from('documents')
+        .update({ review_status: 'under_review', updated_at: new Date().toISOString() })
+        .eq('owner_type', 'borrower')
+        .eq('uploaded_by', borrower.profile_id)
+        .eq('review_status', 'pending_review')
     }
   }
 

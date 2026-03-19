@@ -166,7 +166,13 @@ export async function DELETE(
     return NextResponse.json({ error: nullifyError.message }, { status: 500 })
   }
 
-  // 7. Delete profile (no FK cascade from auth.users)
+  // 7. Nullify audit_events actor reference (FK blocks profile delete)
+  await adminClient
+    .from('audit_events')
+    .update({ actor_profile_id: null })
+    .eq('actor_profile_id', id)
+
+  // 8. Delete profile (no FK cascade from auth.users)
   const { error: profileError } = await adminClient
     .from('profiles')
     .delete()
@@ -176,7 +182,7 @@ export async function DELETE(
     return NextResponse.json({ error: profileError.message }, { status: 500 })
   }
 
-  // 8. Delete auth user
+  // 9. Delete auth user
   const { error: authError } = await adminClient.auth.admin.deleteUser(id)
 
   if (authError) {

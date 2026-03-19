@@ -8,6 +8,7 @@ import { updateLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
 import { canTransitionApplication, canRoleTransitionApplication } from '@/lib/loan/state-machine'
+import { sendApplicationStatusEmail } from '@/lib/email'
 
 export async function PATCH(
   request: Request,
@@ -34,10 +35,14 @@ export async function PATCH(
 
   const { application_status, notes } = validation.data
 
-  // Fetch current status to validate transition
+  // Fetch current status + borrower profile for notification
   const { data: current } = await supabase
     .from('applications')
-    .select('application_status, application_number')
+    .select(`
+      application_status,
+      application_number,
+      profiles!borrower_profile_id ( full_name, email )
+    `)
     .eq('id', id)
     .single()
 
@@ -108,6 +113,19 @@ export async function PATCH(
       actor_role: role,
     },
   })
+
+  // Fire-and-forget borrower notification — does not block response
+  const borrower = Array.isArray(current.profiles) ? current.profiles[0] : current.profiles
+  if (borrower?.email) {
+    sendApplicationStatusEmail({
+      borrowerEmail:     borrower.email,
+      borrowerName:      borrower.full_name ?? '',
+      applicationNumber: current.application_number,
+      applicationId:     id,
+      newStatus:         application_status,
+      notes:             notes ?? null,
+    })
+  }
 
   return NextResponse.json({ success: true })
 }

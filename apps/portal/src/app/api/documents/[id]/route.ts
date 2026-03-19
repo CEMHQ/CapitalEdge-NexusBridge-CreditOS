@@ -5,6 +5,7 @@ import { getUserRole } from '@/lib/auth/roles'
 import { validateBody } from '@/lib/validation/validate'
 import { reviewDocumentSchema } from '@/lib/validation/schemas'
 import { emitAuditEvent } from '@/lib/audit/emit'
+import { sendDocumentReviewEmail } from '@/lib/email'
 
 const BUCKET_MAP: Record<string, string> = {
   borrower:    'borrower-documents',
@@ -102,7 +103,11 @@ export async function PATCH(
   const { review_status, rejection_reason } = validation.data
   const adminClient = createAdminClient()
 
-  const { data: existing } = await adminClient.from('documents').select('review_status').eq('id', id).single()
+  const { data: existing } = await adminClient
+    .from('documents')
+    .select('review_status, file_name, uploaded_by')
+    .eq('id', id)
+    .single()
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   await adminClient.from('documents').update({
@@ -121,6 +126,24 @@ export async function PATCH(
     oldValue: { review_status: existing.review_status },
     newValue: { review_status, rejection_reason },
   })
+
+  // Fire-and-forget uploader notification
+  if (existing.uploaded_by) {
+    const { data: uploaderProfile } = await adminClient
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', existing.uploaded_by)
+      .single()
+    if (uploaderProfile?.email) {
+      sendDocumentReviewEmail({
+        uploaderEmail:    uploaderProfile.email,
+        uploaderName:     uploaderProfile.full_name ?? '',
+        fileName:         existing.file_name,
+        reviewStatus:     review_status,
+        rejectionReason:  rejection_reason ?? null,
+      })
+    }
+  }
 
   return NextResponse.json({ success: true })
 }

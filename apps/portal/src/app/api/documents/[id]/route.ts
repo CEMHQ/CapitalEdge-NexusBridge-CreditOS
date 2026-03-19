@@ -110,13 +110,18 @@ export async function PATCH(
     .single()
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  await adminClient.from('documents').update({
+  const { error: updateError } = await adminClient.from('documents').update({
     review_status,
     rejection_reason: rejection_reason ?? null,
     reviewed_by: user.id,
     reviewed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }).eq('id', id)
+
+  if (updateError) {
+    console.error('[documents] Update failed:', updateError)
+    return NextResponse.json({ error: updateError.message }, { status: 500 })
+  }
 
   await emitAuditEvent({
     actorProfileId: user.id,
@@ -129,20 +134,28 @@ export async function PATCH(
 
   // Fire-and-forget uploader notification
   if (existing.uploaded_by) {
-    const { data: uploaderProfile } = await adminClient
-      .from('profiles')
-      .select('full_name, email')
-      .eq('id', existing.uploaded_by)
-      .single()
-    if (uploaderProfile?.email) {
-      sendDocumentReviewEmail({
-        uploaderEmail:    uploaderProfile.email,
-        uploaderName:     uploaderProfile.full_name ?? '',
-        fileName:         existing.file_name,
-        reviewStatus:     review_status,
-        rejectionReason:  rejection_reason ?? null,
-      })
-    }
+    void (async () => {
+      try {
+        const { data: uploaderProfile } = await adminClient
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', existing.uploaded_by!)
+          .single()
+        if (uploaderProfile?.email) {
+          await sendDocumentReviewEmail({
+            uploaderEmail:    uploaderProfile.email,
+            uploaderName:     uploaderProfile.full_name ?? '',
+            fileName:         existing.file_name,
+            reviewStatus:     review_status,
+            rejectionReason:  rejection_reason ?? null,
+          })
+        } else {
+          console.warn('[documents] No email found for uploader:', existing.uploaded_by)
+        }
+      } catch (err) {
+        console.error('[documents] Failed to send review notification:', err)
+      }
+    })()
   }
 
   return NextResponse.json({ success: true })

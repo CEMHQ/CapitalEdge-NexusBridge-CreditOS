@@ -59,6 +59,7 @@ function NavLinks({ role }: { role: UserRole }) {
       { label: 'Investors', href: '/dashboard/admin/investors' },
       { label: 'Documents', href: '/dashboard/admin/documents' },
       { label: 'Underwriting', href: '/dashboard/underwriter' },
+      { label: 'Users', href: '/dashboard/admin/users' },
       { label: 'Invite User', href: '/dashboard/admin/invite' },
     ],
     manager: [

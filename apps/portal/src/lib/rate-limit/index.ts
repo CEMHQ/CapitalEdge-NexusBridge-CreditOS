@@ -83,3 +83,10 @@ export const subscriptionLimiter = new Ratelimit({
   limiter: Ratelimit.fixedWindow(5, '1 h'),
   prefix: 'rl:subscription',
 })
+
+// User deletion: 10 per admin per hour
+export const deleteUserLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(10, '1 h'),
+  prefix: 'rl:delete-user',
+})

@@ -36,7 +36,7 @@ SELECT extensions.create_parent(
   p_parent_table   => 'public.audit_events',
   p_control        => 'created_at',
   p_type           => 'range',
-  p_interval       => 'monthly',
+  p_interval       => '1 month',
   p_premake        => 3
 );
 
@@ -79,7 +79,7 @@ SELECT extensions.create_parent(
   p_parent_table   => 'public.activity_logs',
   p_control        => 'created_at',
   p_type           => 'range',
-  p_interval       => 'weekly',
+  p_interval       => '7 days',
   p_premake        => 4
 );
 

@@ -42,8 +42,7 @@ export default async function InvestorDashboard() {
       .from('fund_subscriptions')
       .select(`
         id, commitment_amount, funded_amount, subscription_status,
-        fcfs_position, confirmed_at, reservation_expires_at,
-        funds ( id, fund_name, fund_status )
+        fcfs_position, confirmed_at, reservation_expires_at
       `)
       .eq('investor_id', investor.id)
       .in('subscription_status', ['pending', 'approved', 'active'])
@@ -52,7 +51,18 @@ export default async function InvestorDashboard() {
       .maybeSingle()
 
     subscription = sub
-    fund = (sub?.funds as { id: string; fund_name: string; fund_status: string } | null) ?? null
+
+    // Query active fund separately — avoids Supabase join union type inference.
+    // Only needed when investor has no subscription (used for the subscribe CTA).
+    if (!sub) {
+      const { data: activeFund } = await supabase
+        .from('funds')
+        .select('id, fund_name, fund_status')
+        .eq('fund_status', 'active')
+        .limit(1)
+        .maybeSingle()
+      fund = activeFund
+    }
 
     if (subscription) {
       metrics.total_committed = Number(subscription.commitment_amount)

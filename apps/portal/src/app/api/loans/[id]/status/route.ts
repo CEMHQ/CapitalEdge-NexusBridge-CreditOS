@@ -45,7 +45,7 @@ export async function PATCH(
     )
   }
 
-  if (!canRoleTransitionLoan(role as any, loan.loan_status, loan_status)) {
+  if (!canRoleTransitionLoan(role as any, loan_status)) {
     return NextResponse.json(
       { error: 'Your role is not permitted to make this status change' },
       { status: 403 }
@@ -70,12 +70,11 @@ export async function PATCH(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'loan.status_changed',
-    entity_type: 'loan',
-    entity_id:   id,
-    payload: { from: loan.loan_status, to: loan_status, notes: notes ?? null },
+    actorProfileId: user.id,
+    eventType:      'loan_status_change',
+    entityType:     'loan',
+    entityId:       id,
+    eventPayload:   { from: loan.loan_status, to: loan_status, notes: notes ?? null, actor_role: role },
   })
 
   return NextResponse.json({ success: true })

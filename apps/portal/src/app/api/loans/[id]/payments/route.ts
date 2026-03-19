@@ -109,16 +109,16 @@ export async function POST(
   }
 
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'loan.payment_recorded',
-    entity_type: 'payment',
-    entity_id:   payment.id,
-    payload: {
-      loan_id:          id,
-      payment_amount:   data.payment_amount,
-      payment_date:     data.payment_date,
+    actorProfileId: user.id,
+    eventType:      'payment_recorded',
+    entityType:     'payment',
+    entityId:       payment.id,
+    eventPayload: {
+      loan_id:           id,
+      payment_amount:    data.payment_amount,
+      payment_date:      data.payment_date,
       principal_applied: data.principal_applied,
+      actor_role:        role,
     },
   })
 

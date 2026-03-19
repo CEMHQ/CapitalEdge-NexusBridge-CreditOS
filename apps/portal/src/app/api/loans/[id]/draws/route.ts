@@ -52,12 +52,11 @@ export async function POST(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'loan.draw_requested',
-    entity_type: 'draw',
-    entity_id:   draw.id,
-    payload:     { loan_id: id, draw_amount: validation.data.draw_amount },
+    actorProfileId: user.id,
+    eventType:      'draw_action',
+    entityType:     'draw',
+    entityId:       draw.id,
+    eventPayload:   { loan_id: id, draw_amount: validation.data.draw_amount, action: 'requested', actor_role: role },
   })
 
   return NextResponse.json({ success: true, draw_id: draw.id }, { status: 201 })

@@ -127,12 +127,11 @@ export async function POST(request: Request) {
     .eq('id', data.application_id)
 
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'loan.created',
-    entity_type: 'loan',
-    entity_id:   loan.id,
-    payload: { application_id: data.application_id, loan_number: loan.loan_number },
+    actorProfileId: user.id,
+    eventType:      'loan_created',
+    entityType:     'loan',
+    entityId:       loan.id,
+    eventPayload:   { application_id: data.application_id, loan_number: loan.loan_number, actor_role: role },
   })
 
   return NextResponse.json({ success: true, loan_id: loan.id, loan_number: loan.loan_number }, { status: 201 })

@@ -52,7 +52,7 @@ export async function PATCH(
     )
   }
 
-  if (!canRoleTransitionApplication(role as any, current.application_status, application_status)) {
+  if (!canRoleTransitionApplication(role as any, application_status)) {
     return NextResponse.json(
       { error: 'Your role is not permitted to make this status change' },
       { status: 403 }
@@ -97,15 +97,15 @@ export async function PATCH(
 
   // Emit audit event
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'application.status_changed',
-    entity_type: 'application',
-    entity_id:   id,
-    payload: {
-      from:  current.application_status,
-      to:    application_status,
-      notes: notes ?? null,
+    actorProfileId: user.id,
+    eventType:      'application_status_change',
+    entityType:     'application',
+    entityId:       id,
+    eventPayload: {
+      from:       current.application_status,
+      to:         application_status,
+      notes:      notes ?? null,
+      actor_role: role,
     },
   })
 

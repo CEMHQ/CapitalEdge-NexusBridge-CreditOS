@@ -87,12 +87,11 @@ export async function POST(
   }
 
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'underwriting.decision_recorded',
-    entity_type: 'underwriting_decision',
-    entity_id:   decision.id,
-    payload: { application_id: id, case_id: uwCase.id, decision_type: data.decision_type },
+    actorProfileId: user.id,
+    eventType:      'underwriting_decision',
+    entityType:     'underwriting_decision',
+    entityId:       decision.id,
+    eventPayload:   { application_id: id, case_id: uwCase.id, decision_type: data.decision_type, actor_role: role },
   })
 
   return NextResponse.json({ success: true, decision_id: decision.id })

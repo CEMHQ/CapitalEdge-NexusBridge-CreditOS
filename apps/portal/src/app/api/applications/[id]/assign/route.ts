@@ -49,12 +49,11 @@ export async function POST(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'underwriting.assigned',
-    entity_type: 'underwriting_case',
-    entity_id:   uwCase.id,
-    payload: { application_id: id, assigned_to: assigned_to ?? null },
+    actorProfileId: user.id,
+    eventType:      'underwriting_assigned',
+    entityType:     'underwriting_case',
+    entityId:       uwCase.id,
+    eventPayload:   { application_id: id, assigned_to: assigned_to ?? null, actor_role: role },
   })
 
   return NextResponse.json({ success: true })

@@ -44,12 +44,11 @@ export async function PATCH(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await emitAuditEvent({
-    actor_id:    user.id,
-    actor_role:  role,
-    event_type:  'underwriting.condition_updated',
-    entity_type: 'condition',
-    entity_id:   conditionId,
-    payload:     { case_id: caseId, status, notes: notes ?? null },
+    actorProfileId: user.id,
+    eventType:      'condition_updated',
+    entityType:     'condition',
+    entityId:       conditionId,
+    eventPayload:   { case_id: caseId, status, notes: notes ?? null, actor_role: role },
   })
 
   return NextResponse.json({ success: true })

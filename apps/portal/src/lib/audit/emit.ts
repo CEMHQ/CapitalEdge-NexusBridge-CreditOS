@@ -3,8 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export type AuditEventType =
   | 'loan_status_change'
+  | 'loan_created'
   | 'application_status_change'
   | 'underwriting_decision'
+  | 'underwriting_assigned'
+  | 'condition_updated'
   | 'document_action'
   | 'payment_recorded'
   | 'draw_action'
@@ -24,7 +27,10 @@ export type AuditEntityType =
   | 'fund'
   | 'user'
   | 'underwriting_case'
+  | 'underwriting_decision'
   | 'payment'
+  | 'draw'
+  | 'condition'
   | 'distribution'
 
 export interface AuditEventParams {

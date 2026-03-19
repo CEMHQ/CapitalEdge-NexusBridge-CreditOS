@@ -66,6 +66,34 @@ export const createApplicationSchema = z.object({
 
 export type CreateApplicationInput = z.infer<typeof createApplicationSchema>
 
+// ─── PATCH /api/applications/[id]/fields ─────────────────────────────────────
+
+export const editApplicationFieldsSchema = z.object({
+  loan_purpose: z.enum(['bridge', 'renovation', 'contingency', 'other']),
+  requested_amount: positiveAmount.pipe(
+    z.number().min(25000, 'Minimum loan is $25,000').max(10000000, 'Maximum loan is $10,000,000')
+  ),
+  requested_term_months: z
+    .union([z.string(), z.number()])
+    .transform((v) => Number(v))
+    .pipe(z.number().int().min(1).max(360)),
+  exit_strategy: z.enum(['sale', 'refinance', 'repayment']),
+  property: z.object({
+    address_line_1:  z.string().trim().min(5).max(200),
+    address_line_2:  z.string().trim().max(100).optional().or(z.literal('')),
+    city:            z.string().trim().min(2).max(100),
+    state:           z.string().trim().length(2).toUpperCase(),
+    postal_code:     z.string().trim().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP'),
+    property_type:   z.enum(['sfh', 'multifamily', 'condo', 'land', 'mixed_use', 'commercial']),
+    occupancy_type:  z.enum(['owner_occupied', 'rental', 'vacant']),
+    current_value:   currencyAmount,
+    arv_value:       currencyAmount,
+    purchase_price:  currencyAmount,
+  }),
+})
+
+export type EditApplicationFieldsInput = z.infer<typeof editApplicationFieldsSchema>
+
 // ─── PATCH /api/applications/[id] ────────────────────────────────────────────
 
 export const updateApplicationStatusSchema = z.object({

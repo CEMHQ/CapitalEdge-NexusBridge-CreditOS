@@ -5,6 +5,7 @@ import ApplicationStatusForm from '@/components/admin/ApplicationStatusForm'
 import UnderwriterMetricsForm from '@/components/admin/UnderwriterMetricsForm'
 import CreateLoanForm from '@/components/admin/CreateLoanForm'
 import DeleteApplicationButton from '@/components/admin/DeleteApplicationButton'
+import EditApplicationFieldsForm from '@/components/admin/EditApplicationFieldsForm'
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   sfh: 'Single Family Home', multifamily: 'Multifamily (2–4 units)',
@@ -129,6 +130,16 @@ export default async function ApplicationDetailPage({
         <DetailRow label="Term" value={app.requested_term_months ? `${app.requested_term_months} months` : '—'} />
         <DetailRow label="Exit Strategy" value={EXIT_STRATEGY_LABELS[app.exit_strategy] ?? app.exit_strategy} />
       </Section>
+
+      {/* Edit core fields — admin/manager */}
+      <EditApplicationFieldsForm
+        applicationId={app.id}
+        loanPurpose={app.loan_purpose}
+        requestedAmount={app.requested_amount}
+        requestedTermMonths={app.requested_term_months}
+        exitStrategy={app.exit_strategy}
+        property={property ?? null}
+      />
 
       {/* Create Loan — only show for approved applications */}
       {app.application_status === 'approved' && (

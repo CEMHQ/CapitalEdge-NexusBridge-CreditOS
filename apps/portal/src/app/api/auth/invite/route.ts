@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
   const { data: inviteData, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
     data: { role },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/set-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/confirm`,
   })
 
   if (error) {

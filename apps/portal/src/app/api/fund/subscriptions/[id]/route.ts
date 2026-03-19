@@ -9,8 +9,10 @@ import { emitAuditEvent } from '@/lib/audit/emit'
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
+
   const validation = await validateBody(request, updateSubscriptionSchema)
   if (!validation.success) return validation.response
 
@@ -31,7 +33,7 @@ export async function PATCH(
   const { data: current } = await supabase
     .from('fund_subscriptions')
     .select('id, subscription_status, reservation_status, investor_id, fund_id, commitment_amount')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!current) return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
@@ -57,7 +59,7 @@ export async function PATCH(
   const { data: updated, error } = await supabase
     .from('fund_subscriptions')
     .update(updates)
-    .eq('id', params.id)
+    .eq('id', id)
     .select('id, subscription_status, reservation_status')
     .single()
 
@@ -69,7 +71,7 @@ export async function PATCH(
     actorProfileId: user.id,
     eventType:      'subscription_action',
     entityType:     'subscription',
-    entityId:       params.id,
+    entityId:       id,
     oldValue:       { subscription_status: current.subscription_status },
     newValue:       { subscription_status },
     eventPayload:   { fund_id: current.fund_id, commitment_amount: current.commitment_amount },

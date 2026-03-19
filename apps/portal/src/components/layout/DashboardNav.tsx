@@ -5,10 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { UserRole } from '@/lib/auth/roles'
 
-export default function DashboardNav({ user }: { user: User }) {
+export default function DashboardNav({ user, role }: { user: User; role: UserRole }) {
   const router = useRouter()
   const supabase = createClient()
-  const role = (user.user_metadata?.role ?? 'borrower') as UserRole
 
   async function handleSignOut() {
     await supabase.auth.signOut()

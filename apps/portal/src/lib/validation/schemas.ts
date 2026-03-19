@@ -220,7 +220,14 @@ export const requestUploadUrlSchema = z.object({
     'closing_disclosure', 'payoff_letter',
   ]),
   file_name:     z.string().trim().min(1).max(255),
-  mime_type:     z.string().trim().min(1).max(100),
+  mime_type:     z.enum([
+    'application/pdf',
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ]),
   file_size_bytes: z.number().int().positive().max(52428800), // 50 MB max
 })
 

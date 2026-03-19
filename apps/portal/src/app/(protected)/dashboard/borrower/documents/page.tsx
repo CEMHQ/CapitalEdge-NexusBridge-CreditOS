@@ -113,10 +113,10 @@ export default function BorrowerDocumentsPage() {
               ref={fileRef}
               type="file"
               required
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              accept="application/pdf,image/jpeg,image/jpg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-gray-700"
             />
-            <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, DOC up to 50 MB</p>
+            <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, DOC, DOCX — max 50 MB</p>
           </div>
 
           {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}

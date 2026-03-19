@@ -25,7 +25,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const role = await getUserRole(supabase, user.id)
-  if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!['admin', 'manager'].includes(role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const blocked = await applyRateLimit(updateLimiter, user.id)
   if (blocked) return blocked

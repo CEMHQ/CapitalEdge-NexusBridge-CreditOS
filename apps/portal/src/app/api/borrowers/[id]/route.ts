@@ -15,7 +15,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const role = await getUserRole(supabase, user.id)
-  if (role !== 'admin') {
+  if (!['admin', 'manager'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

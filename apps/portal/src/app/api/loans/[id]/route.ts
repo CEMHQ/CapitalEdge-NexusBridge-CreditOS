@@ -12,6 +12,9 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const role = await getUserRole(supabase, user.id)
+  if (!['admin', 'manager', 'servicing', 'underwriter'].includes(role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { data: loan, error } = await supabase
     .from('loans')

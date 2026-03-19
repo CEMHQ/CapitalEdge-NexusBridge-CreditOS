@@ -39,15 +39,47 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Generate signed download URL (1 hour expiry)
   const adminClient = createAdminClient()
+
+  // Generate signed download URL (1 hour expiry)
   const bucket = BUCKET_MAP[doc.owner_type] ?? 'borrower-documents'
   const { data: signedData } = await adminClient
     .storage
     .from(bucket)
     .createSignedUrl(doc.storage_path, 3600)
 
-  return NextResponse.json({ ...doc, download_url: signedData?.signedUrl ?? null })
+  // Enrich with owner label so the UI can show which entity this belongs to
+  let ownerLabel: string = doc.owner_type
+  let ownerLink: string | null = null
+
+  if (doc.owner_type === 'application') {
+    const { data: app } = await adminClient
+      .from('applications')
+      .select('application_number')
+      .eq('id', doc.owner_id)
+      .single()
+    if (app) {
+      ownerLabel = app.application_number
+      ownerLink  = `/dashboard/admin/applications/${doc.owner_id}`
+    }
+  } else if (doc.owner_type === 'loan') {
+    const { data: loan } = await adminClient
+      .from('loans')
+      .select('loan_number')
+      .eq('id', doc.owner_id)
+      .single()
+    if (loan) {
+      ownerLabel = loan.loan_number ?? `Loan`
+      ownerLink  = `/dashboard/servicing/loans/${doc.owner_id}`
+    }
+  }
+
+  return NextResponse.json({
+    ...doc,
+    download_url: signedData?.signedUrl ?? null,
+    owner_label:  ownerLabel,
+    owner_link:   ownerLink,
+  })
 }
 
 // PATCH /api/documents/[id] — confirm upload or update review status

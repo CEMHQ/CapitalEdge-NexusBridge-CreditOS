@@ -25,9 +25,28 @@ export default async function AdminDocumentsPage() {
     .eq('upload_status', 'uploaded')
     .order('created_at', { ascending: false })
 
-  const pending   = documents?.filter((d) => d.review_status === 'pending_review') ?? []
-  const inReview  = documents?.filter((d) => d.review_status === 'under_review') ?? []
-  const completed = documents?.filter((d) => ['verified', 'rejected'].includes(d.review_status)) ?? []
+  const docs = documents ?? []
+
+  // Batch-enrich application owner labels
+  const appIds = [...new Set(docs.filter(d => d.owner_type === 'application').map(d => d.owner_id))]
+  const { data: apps } = appIds.length
+    ? await supabase.from('applications').select('id, application_number').in('id', appIds)
+    : { data: [] }
+  const appMap = Object.fromEntries((apps ?? []).map(a => [a.id, a.application_number as string]))
+
+  function getOwner(doc: { owner_type: string; owner_id: string }) {
+    if (doc.owner_type === 'application') {
+      const num = appMap[doc.owner_id]
+      return { label: num ?? 'Application', link: `/dashboard/admin/applications/${doc.owner_id}` }
+    }
+    return { label: doc.owner_type.charAt(0).toUpperCase() + doc.owner_type.slice(1), link: null }
+  }
+
+  const enriched = docs.map(d => ({ ...d, owner: getOwner(d) }))
+
+  const pending   = enriched.filter((d) => d.review_status === 'pending_review')
+  const inReview  = enriched.filter((d) => d.review_status === 'under_review')
+  const completed = enriched.filter((d) => ['verified', 'rejected'].includes(d.review_status))
 
   return (
     <div className="space-y-8">
@@ -68,6 +87,7 @@ function DocumentTable({
             <tr className="bg-gray-50">
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded By</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Associated With</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
@@ -77,13 +97,14 @@ function DocumentTable({
           <tbody className="divide-y divide-gray-100">
             {documents.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400">
+                <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-400">
                   No documents.
                 </td>
               </tr>
             )}
             {documents.map((doc) => {
               const uploader = Array.isArray(doc.profiles) ? doc.profiles[0] : doc.profiles
+              const owner = doc.owner as { label: string; link: string | null }
               return (
                 <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
@@ -93,6 +114,15 @@ function DocumentTable({
                   <td className="px-6 py-4">
                     <p className="text-sm text-gray-900">{uploader?.full_name ?? '—'}</p>
                     <p className="text-xs text-gray-400">{uploader?.email ?? '—'}</p>
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    {owner.link ? (
+                      <Link href={owner.link} className="font-medium text-gray-900 hover:underline">
+                        {owner.label}
+                      </Link>
+                    ) : (
+                      <span className="text-gray-600 capitalize">{owner.label}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 capitalize">
                     {doc.document_type.replace(/_/g, ' ')}

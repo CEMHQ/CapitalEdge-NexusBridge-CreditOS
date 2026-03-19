@@ -12,6 +12,9 @@ type Doc = {
   rejection_reason: string | null
   file_size_bytes: number
   owner_type: string
+  owner_id: string
+  owner_label: string | null
+  owner_link: string | null
   created_at: string
   reviewed_at: string | null
   download_url: string | null
@@ -145,8 +148,14 @@ export default function AdminDocumentReviewPage() {
       <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
         <div className="px-6 py-4 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-xs text-gray-500 mb-0.5">Owner type</p>
-            <p className="font-medium text-gray-900 capitalize">{doc.owner_type}</p>
+            <p className="text-xs text-gray-500 mb-0.5">Associated with</p>
+            {doc.owner_link ? (
+              <Link href={doc.owner_link} className="font-medium text-gray-900 hover:underline">
+                {doc.owner_label ?? doc.owner_type}
+              </Link>
+            ) : (
+              <p className="font-medium text-gray-900 capitalize">{doc.owner_label ?? doc.owner_type}</p>
+            )}
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-0.5">Uploaded</p>

@@ -35,14 +35,10 @@ export async function PATCH(
 
   const { application_status, notes } = validation.data
 
-  // Fetch current status + borrower profile for notification
+  // Fetch current application status
   const { data: current } = await supabase
     .from('applications')
-    .select(`
-      application_status,
-      application_number,
-      profiles!borrower_profile_id ( full_name, email )
-    `)
+    .select('application_status, application_number, borrower_id')
     .eq('id', id)
     .single()
 
@@ -114,17 +110,32 @@ export async function PATCH(
     },
   })
 
-  // Fire-and-forget borrower notification — does not block response
-  const borrower = Array.isArray(current.profiles) ? current.profiles[0] : current.profiles
-  if (borrower?.email) {
-    sendApplicationStatusEmail({
-      borrowerEmail:     borrower.email,
-      borrowerName:      borrower.full_name ?? '',
-      applicationNumber: current.application_number,
-      applicationId:     id,
-      newStatus:         application_status,
-      notes:             notes ?? null,
-    })
+  // Fire-and-forget borrower notification — does not block response.
+  // applications → borrowers → profiles (two-hop join)
+  if (current.borrower_id) {
+    void (async () => {
+      try {
+        const adminClient = createAdminClient()
+        const { data: bRow } = await adminClient
+          .from('borrowers')
+          .select('profiles!profile_id ( full_name, email )')
+          .eq('id', current.borrower_id!)
+          .single()
+        const profile = Array.isArray(bRow?.profiles) ? bRow?.profiles[0] : bRow?.profiles
+        if (profile?.email) {
+          await sendApplicationStatusEmail({
+            borrowerEmail:     profile.email,
+            borrowerName:      profile.full_name ?? '',
+            applicationNumber: current.application_number,
+            applicationId:     id,
+            newStatus:         application_status,
+            notes:             notes ?? null,
+          })
+        }
+      } catch {
+        // notification failure must not surface to caller
+      }
+    })()
   }
 
   return NextResponse.json({ success: true })

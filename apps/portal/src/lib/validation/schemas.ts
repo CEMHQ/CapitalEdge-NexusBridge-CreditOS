@@ -235,7 +235,7 @@ export type RequestUploadUrlInput = z.infer<typeof requestUploadUrlSchema>
 
 export const reviewDocumentSchema = z.object({
   review_status:    z.enum(['verified', 'rejected']),
-  rejection_reason: z.string().trim().max(500).optional(),
+  rejection_reason: z.string().trim().max(500).nullish(),
 })
 
 // ─── Phase 3: Fund operations ─────────────────────────────────────────────────

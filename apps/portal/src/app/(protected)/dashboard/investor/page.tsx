@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
+import { SubscribeForm } from '@/components/investor/SubscribeForm'
 
 export default async function InvestorDashboard() {
   const supabase = await createClient()
@@ -30,7 +31,66 @@ export default async function InvestorDashboard() {
     investor = newInvestor
   }
 
+  // Fetch capital account if investor record exists
+  let subscription = null
+  let metrics = { total_committed: 0, total_deployed: 0, undeployed: 0, allocation_count: 0 }
+  let nav = null
+  let fund = null
+
+  if (investor) {
+    const { data: sub } = await supabase
+      .from('fund_subscriptions')
+      .select(`
+        id, commitment_amount, funded_amount, subscription_status,
+        fcfs_position, confirmed_at, reservation_expires_at,
+        funds ( id, fund_name, fund_status )
+      `)
+      .eq('investor_id', investor.id)
+      .in('subscription_status', ['pending', 'approved', 'active'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    subscription = sub
+    fund = sub?.funds ?? null
+
+    if (subscription) {
+      metrics.total_committed = Number(subscription.commitment_amount)
+      metrics.total_deployed  = Number(subscription.funded_amount)
+      metrics.undeployed      = metrics.total_committed - metrics.total_deployed
+
+      const { data: allocs } = await supabase
+        .from('fund_allocations')
+        .select('id')
+        .eq('subscription_id', subscription.id)
+        .eq('allocation_status', 'active')
+
+      metrics.allocation_count = allocs?.length ?? 0
+    }
+
+    const { data: latestNav } = await supabase
+      .from('nav_snapshots')
+      .select('snapshot_date, total_nav, nav_per_unit, total_deployed, total_committed, investor_count')
+      .order('snapshot_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    nav = latestNav
+
+    // Get open fund for subscribe form
+    if (!fund) {
+      const { data: openFund } = await supabase
+        .from('funds')
+        .select('id, fund_name, fund_status')
+        .eq('fund_status', 'open')
+        .single()
+      fund = openFund
+    }
+  }
+
   const displayName = profile?.full_name ?? user?.email
+  const isVerified  = investor?.accreditation_status === 'verified'
+  const hasActiveSub = subscription?.subscription_status === 'active'
 
   return (
     <div className="space-y-8">
@@ -51,7 +111,7 @@ export default async function InvestorDashboard() {
         </div>
       )}
 
-      {/* Account summary cards */}
+      {/* Account summary */}
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-3">Account Summary</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -98,26 +158,72 @@ export default async function InvestorDashboard() {
               <p className="text-sm font-medium text-gray-900 mt-0.5">Capital Edge Management</p>
             </div>
           </div>
+
+          {/* Subscribe CTA — only if verified and no active subscription */}
+          {isVerified && !subscription && fund && (
+            <div className="pt-2 border-t border-gray-100">
+              <SubscribeForm fundId={fund.id} />
+            </div>
+          )}
+
+          {/* Pending subscription notice */}
+          {subscription && subscription.subscription_status === 'pending' && (
+            <div className="pt-2 border-t border-gray-100">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                <p className="text-sm font-medium text-amber-800">
+                  Subscription pending review · Queue position #{subscription.fcfs_position}
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Committed: {formatCurrency(Number(subscription.commitment_amount))}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Capital account — Phase 3 placeholder */}
+      {/* Capital account */}
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-3">Capital Account</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <PlaceholderCard title="Total Committed" note="Available Phase 3" />
-          <PlaceholderCard title="Capital Deployed" note="Available Phase 3" />
-          <PlaceholderCard title="Distributions Received" note="Available Phase 3" />
-          <PlaceholderCard title="Current Yield" note="Available Phase 3" />
+          <MetricCard
+            title="Total Committed"
+            value={metrics.total_committed > 0 ? formatCurrency(metrics.total_committed) : null}
+            note={metrics.total_committed > 0 ? subscriptionStatusLabel(subscription?.subscription_status) : 'No active subscription'}
+          />
+          <MetricCard
+            title="Capital Deployed"
+            value={metrics.total_deployed > 0 ? formatCurrency(metrics.total_deployed) : null}
+            note={metrics.total_deployed > 0 ? `${metrics.allocation_count} loan allocation${metrics.allocation_count !== 1 ? 's' : ''}` : 'Pending deployment'}
+          />
+          <MetricCard
+            title="Undeployed"
+            value={metrics.total_committed > 0 ? formatCurrency(metrics.undeployed) : null}
+            note="Available for allocation"
+          />
+          <MetricCard
+            title="NAV per Unit"
+            value={nav ? `$${Number(nav.nav_per_unit).toFixed(4)}` : null}
+            note={nav ? `As of ${formatDate(nav.snapshot_date)}` : 'No NAV recorded yet'}
+          />
         </div>
       </div>
 
-      {/* Statements & Documents — Phase 3 placeholder */}
+      {/* Statements & Documents */}
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-3">Statements & Documents</h2>
         <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-          <p className="text-sm text-gray-500">Quarterly statements and tax documents will appear here.</p>
-          <p className="text-xs text-gray-400 mt-1">Available when fund operations begin (Phase 3)</p>
+          {hasActiveSub ? (
+            <>
+              <p className="text-sm text-gray-600">Quarterly statements and K-1 tax documents will appear here.</p>
+              <p className="text-xs text-gray-400 mt-1">First statement generated after quarter close.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-gray-500">Quarterly statements and tax documents will appear here.</p>
+              <p className="text-xs text-gray-400 mt-1">Available once your subscription is active.</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -131,43 +237,46 @@ function formatStatus(status: string) {
   return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+function formatCurrency(n: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+}
+
+function subscriptionStatusLabel(status?: string) {
+  switch (status) {
+    case 'pending':  return 'Pending admin review'
+    case 'approved': return 'Approved — deploying capital'
+    case 'active':   return 'Active'
+    default: return ''
+  }
+}
+
 function accreditationBadge(status: string) {
   switch (status) {
     case 'verified': return 'bg-green-50 text-green-700'
-    case 'pending': return 'bg-amber-50 text-amber-700'
-    case 'expired': return 'bg-red-50 text-red-700'
+    case 'pending':  return 'bg-amber-50 text-amber-700'
+    case 'expired':  return 'bg-red-50 text-red-700'
     default: return 'bg-gray-100 text-gray-600'
   }
 }
 
 function kycBadge(status: string) {
   switch (status) {
-    case 'approved': return 'bg-green-50 text-green-700'
+    case 'approved':    return 'bg-green-50 text-green-700'
     case 'in_progress': return 'bg-blue-50 text-blue-700'
     case 'not_started': return 'bg-gray-100 text-gray-600'
-    case 'failed': return 'bg-red-50 text-red-700'
+    case 'failed':      return 'bg-red-50 text-red-700'
     default: return 'bg-gray-100 text-gray-600'
   }
 }
 
 // ─── Components ───────────────────────────────────────────────────────────────
 
-function StatusCard({
-  title,
-  value,
-  badge,
-}: {
-  title: string
-  value: string
-  badge: string | null
-}) {
+function StatusCard({ title, value, badge }: { title: string; value: string; badge: string | null }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
       <p className="text-sm font-medium text-gray-500">{title}</p>
       {badge ? (
-        <span className={`inline-block text-sm px-2.5 py-1 rounded-full font-medium ${badge}`}>
-          {value}
-        </span>
+        <span className={`inline-block text-sm px-2.5 py-1 rounded-full font-medium ${badge}`}>{value}</span>
       ) : (
         <p className="text-sm font-semibold text-gray-900">{value}</p>
       )}
@@ -175,11 +284,13 @@ function StatusCard({
   )
 }
 
-function PlaceholderCard({ title, note }: { title: string; note: string }) {
+function MetricCard({ title, value, note }: { title: string; value: string | null; note: string }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-1">
       <p className="text-sm font-medium text-gray-500">{title}</p>
-      <p className="text-2xl font-semibold text-gray-300">—</p>
+      <p className={`text-2xl font-semibold ${value ? 'text-gray-900' : 'text-gray-300'}`}>
+        {value ?? '—'}
+      </p>
       <p className="text-xs text-gray-400">{note}</p>
     </div>
   )

@@ -317,7 +317,7 @@ emitAuditEvent({ ... });
 |---|---|---|
 | **Phase 1** | Marketing site -- all 8 pages live, lead capture forms, email routing | ✅ Complete |
 | **Phase 2** | Supabase auth + RBAC, all role dashboards, borrower portal, investor portal, admin console, underwriter workspace, servicing dashboard | ✅ Complete |
-| **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | 🔵 In Progress |
+| **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | ✅ Complete |
 | **Phase 4** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
 | **Phase 5** | Tokenization layer (Base/Ethereum L2) -- HyFi vision | ⚪ Optional |
 
@@ -329,4 +329,4 @@ emitAuditEvent({ ... });
 | Step 2 | Document Management: documents table, Supabase Storage buckets, upload API (signed URLs), admin review queue, borrower upload UI | ✅ Complete |
 | Step 3 | Underwriting Engine: underwriting_cases, decisions, conditions, risk_flags + pure-function rules engine + 7 API routes + underwriter UI | ✅ Complete |
 | Step 4 | Loan Lifecycle: loans, payment_schedule, payments, draws tables + 6 API routes + servicing UI + loan detail + record payment + admin create-loan | ✅ Complete |
-| Step 5 | Fund Operations: fund_subscriptions, fund_allocations, nav_snapshots | ⚪ Next |
+| Step 5 | Fund Operations: funds, fund_subscriptions, fund_allocations, nav_snapshots + FCFS locking + investor portfolio/statements + admin fund dashboard | ✅ Complete |

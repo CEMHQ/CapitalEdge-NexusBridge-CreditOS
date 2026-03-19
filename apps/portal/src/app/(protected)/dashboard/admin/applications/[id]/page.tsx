@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/format'
 import ApplicationStatusForm from '@/components/admin/ApplicationStatusForm'
 import UnderwriterMetricsForm from '@/components/admin/UnderwriterMetricsForm'
+import CreateLoanForm from '@/components/admin/CreateLoanForm'
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   sfh: 'Single Family Home', multifamily: 'Multifamily (2–4 units)',
@@ -124,6 +125,15 @@ export default async function ApplicationDetailPage({
         <DetailRow label="Term" value={app.requested_term_months ? `${app.requested_term_months} months` : '—'} />
         <DetailRow label="Exit Strategy" value={EXIT_STRATEGY_LABELS[app.exit_strategy] ?? app.exit_strategy} />
       </Section>
+
+      {/* Create Loan — only show for approved applications */}
+      {app.application_status === 'approved' && (
+        <CreateLoanForm
+          applicationId={app.id}
+          requestedAmount={app.requested_amount ?? 0}
+          requestedTermMonths={app.requested_term_months ?? 12}
+        />
+      )}
 
       {/* Underwriter Metrics — internal only */}
       {loanReq && (

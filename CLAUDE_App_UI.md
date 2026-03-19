@@ -1,15 +1,13 @@
+# CLAUDE_App_UI.md -- Application UI / Product Interface Rules
 
-# CLAUDE_App_UI.md — Application UI / Product Interface Rules
+This file defines design and frontend execution standards for **application interfaces** in the unified portal (`apps/portal`), including:
 
-This file defines design and frontend execution standards for **application interfaces**, including:
-
-- investor portal
 - borrower portal
-- underwriting workspace
+- investor portal
 - admin console
-- servicing dashboards
-- fund management views
-- compliance and reporting tools
+- underwriter workspace
+- servicing dashboard
+- manager views
 
 These rules extend `CLAUDE_Web_Design.md` but focus specifically on **complex product interfaces and workflow-heavy systems**.
 
@@ -33,12 +31,12 @@ Users must **understand system state immediately**.
 
 # 2. App Layout Structure
 
-Every application screen should follow a predictable structure.
+Every application screen follows a predictable structure.
 
 Standard layout:
 
 ```
-Top Navigation / App Header
+Top Navigation Bar (role-specific links)
 ↓
 Context Header (page title + primary actions)
 ↓
@@ -57,28 +55,29 @@ Avoid layouts where users must hunt for important actions.
 
 # 3. Navigation Rules
 
-Navigation must remain stable across the platform.
+Navigation uses a **top navigation bar** (not a sidebar). The nav bar is persistent across all portal pages.
 
-Typical primary navigation:
+### Nav bar styling:
+- `bg-white border-b border-gray-200`
+- Role-specific links rendered based on the authenticated user's role
 
-- Dashboard
-- Borrowers
-- Loans
-- Investors
-- Funds
-- Documents
-- Tasks
-- Reports
-- Settings
+### Role-specific navigation links:
 
-Guidelines:
+| Role | Links |
+|---|---|
+| `borrower` | Dashboard, My Applications, Documents |
+| `investor` | Dashboard, Portfolio, Statements |
+| `admin` | Dashboard, Applications, Investors, Documents, Underwriting, Invite User |
+| `manager` | Dashboard, Applications, Investors, Documents, Invite User |
+| `underwriter` | Dashboard, Cases |
+| `servicing` | Dashboard, Loans |
 
-- persistent sidebar navigation
-- clear active state
-- collapsible on smaller screens
-- icons optional but consistent
-
-Never move core navigation between screens.
+### Rules:
+- Persistent top nav bar on every authenticated page
+- Clear active state on the current link
+- Responsive collapse on smaller screens
+- Never move core navigation between screens
+- Do not convert to a sidebar layout
 
 ---
 
@@ -137,7 +136,54 @@ Never hide critical workflow states.
 
 ---
 
-# 6. Workflow Visualization
+# 6. Established Tailwind Patterns
+
+These are the actual CSS patterns used throughout the portal. **Reuse them consistently.**
+
+### Page layout:
+- Page wrapper: `space-y-8`
+- Page title: `text-2xl font-semibold text-gray-900`
+
+### Cards:
+- `bg-white rounded-xl border border-gray-200 p-6`
+
+### Tables:
+- Table: `min-w-full divide-y divide-gray-200`
+- Table header: `bg-gray-50`
+- Table header text: `text-xs font-semibold text-gray-400 uppercase tracking-wide`
+- Table rows: alternating or simple with `divide-y divide-gray-200`
+
+### Status badges:
+- Base: `inline-block text-xs px-2 py-0.5 rounded-full font-medium`
+- Color semantics:
+  - **Green** (`bg-green-100 text-green-700`) -- success, approved, active, paid
+  - **Amber** (`bg-amber-100 text-amber-700`) -- warning, pending review, in progress
+  - **Red** (`bg-red-100 text-red-700`) -- error, rejected, defaulted, overdue
+  - **Blue** (`bg-blue-100 text-blue-700`) -- info, submitted, pending, processing
+  - **Gray** (`bg-gray-100 text-gray-600`) -- neutral, closed, draft, inactive
+
+### Buttons:
+- Primary: `bg-gray-900 text-white rounded-md hover:bg-gray-700`
+- Secondary: `border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50`
+- Destructive: `bg-red-600 text-white rounded-md hover:bg-red-700`
+
+### Section headers:
+- `text-xs font-semibold text-gray-400 uppercase tracking-wide`
+
+### Detail rows (Section/DetailRow pattern):
+- Label left / value right on the same row
+- `border-b border-gray-100` between rows
+- Label: `text-sm text-gray-500`
+- Value: `text-sm text-gray-900 font-medium`
+
+### Empty states:
+- Centered text in a card
+- Brief explanation of why the page is empty
+- Primary action button to create the first item
+
+---
+
+# 7. Workflow Visualization
 
 Many platform operations span multiple steps.
 
@@ -176,7 +222,7 @@ Users should be able to see **where they are in the process**.
 
 ---
 
-# 7. Data Tables
+# 8. Data Tables
 
 Most app views are table-based.
 
@@ -199,15 +245,15 @@ Recommended columns:
 
 Tables must handle:
 
-- loading state
-- empty state
-- error state
+- loading state (skeleton rows)
+- empty state (explanation + action)
+- error state (explanation + retry)
 
 ---
 
-# 8. Summary Metric Cards
+# 9. Summary Metric Cards
 
-Every operational dashboard should start with **high level metrics**.
+Every operational dashboard should start with **high-level metrics**.
 
 Example cards:
 
@@ -219,8 +265,9 @@ Example cards:
 
 Card design:
 
-- clear label
-- large value
+- `bg-white rounded-xl border border-gray-200 p-6`
+- clear label (`text-xs font-semibold text-gray-400 uppercase tracking-wide`)
+- large value (`text-2xl font-semibold text-gray-900`)
 - contextual indicator if applicable
 - optional delta or trend
 
@@ -228,7 +275,7 @@ Avoid cluttering cards with too many details.
 
 ---
 
-# 9. Forms for Operational Workflows
+# 10. Forms for Operational Workflows
 
 Forms must support **long workflows without frustration**.
 
@@ -258,9 +305,9 @@ Never present extremely long single forms.
 
 ---
 
-# 10. Document Handling UI
+# 11. Document Handling UI
 
-The platform will handle significant document flows.
+The platform handles significant document flows (implemented in Phase 3 Step 2).
 
 Required UI elements:
 
@@ -270,7 +317,7 @@ Required UI elements:
 - version history
 - verification status
 
-Statuses may include:
+Statuses:
 
 - uploaded
 - processing
@@ -282,7 +329,7 @@ Users must always know document state.
 
 ---
 
-# 11. Activity Timeline
+# 12. Activity Timeline
 
 Operational platforms benefit from **audit-friendly activity history**.
 
@@ -303,7 +350,7 @@ Timeline helps users:
 
 ---
 
-# 12. Error and Empty States
+# 13. Error and Empty States
 
 Do not leave blank interfaces.
 
@@ -328,7 +375,7 @@ Error states must include:
 
 ---
 
-# 13. Real-Time Updates
+# 14. Real-Time Updates
 
 Some workflows run asynchronously.
 
@@ -342,7 +389,7 @@ Examples:
 The UI must support:
 
 - polling
-- websocket updates
+- Supabase Realtime (WebSocket subscriptions)
 - status refresh buttons
 - visible processing indicators
 
@@ -350,21 +397,22 @@ Users must never wonder if the system froze.
 
 ---
 
-# 14. Role-Based Interfaces
+# 15. Role-Based Interfaces
 
-Different users require different views.
+Six roles require tailored views:
 
-Roles may include:
-
-- borrower
-- investor
-- analyst
-- admin
-- compliance officer
+| Role | Focus |
+|---|---|
+| `borrower` | Loan applications, document uploads, application status |
+| `investor` | Portfolio overview, statements, fund participation |
+| `admin` | Full platform management, user invites, all workflows |
+| `manager` | Same as admin with restricted overrides |
+| `underwriter` | Assigned cases, risk assessment, decision recording |
+| `servicing` | Loan management, payment recording, draw management |
 
 The UI should:
 
-- hide irrelevant actions
+- hide irrelevant actions per role
 - display role-specific data
 - simplify the interface for each role
 
@@ -372,7 +420,7 @@ Never expose unnecessary controls.
 
 ---
 
-# 15. Security Visibility
+# 16. Security Visibility
 
 For sensitive financial workflows, the UI should surface:
 
@@ -389,7 +437,7 @@ Destructive actions require:
 
 ---
 
-# 16. Performance Considerations
+# 17. Performance Considerations
 
 Heavy dashboards must remain responsive.
 
@@ -405,7 +453,7 @@ Avoid blocking UI during long operations.
 
 ---
 
-# 17. Accessibility
+# 18. Accessibility
 
 Application interfaces must support:
 
@@ -415,18 +463,18 @@ Application interfaces must support:
 - semantic structure
 - accessible form labels
 
-Operational tools are often used for long sessions — accessibility improves usability.
+Operational tools are often used for long sessions -- accessibility improves usability.
 
 ---
 
-# 18. Consistency Rules
+# 19. Consistency Rules
 
 Across the entire application:
 
-- button styles remain consistent
-- status badge colors remain consistent
-- icons remain consistent
-- spacing rhythm remains consistent
+- button styles remain consistent (see Section 6)
+- status badge colors remain consistent (green/amber/red/blue/gray)
+- section header style remains consistent
+- spacing rhythm remains consistent (`space-y-8` page wrapper, `p-6` cards)
 
 If a pattern works once, reuse it.
 
@@ -434,7 +482,7 @@ Do not redesign UI patterns page by page.
 
 ---
 
-# 19. QA Checklist
+# 20. QA Checklist
 
 Before considering a UI complete:
 
@@ -443,22 +491,24 @@ Visual
 - hierarchy is clear
 - spacing consistent
 - typography readable
+- Tailwind patterns match Section 6
 
 Functional
 
 - workflows are understandable
-- statuses visible
+- statuses visible with correct badge colors
 - forms validated properly
+- empty and error states covered
 
 System
 
-- patterns reused
-- components consistent
+- patterns reused from established conventions
+- components consistent across roles
 - UI scalable to additional modules
 
 ---
 
-# 20. Final Principle
+# 21. Final Principle
 
 This platform manages **money, compliance, and operational workflows**.
 

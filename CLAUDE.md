@@ -8,9 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NexusBridge CreditOS is a hybrid financial infrastructure platform connecting borrowers seeking short-term asset-backed financing (bridge loans, real estate) with investors seeking yield-generating private credit exposure. It handles Reg A/D offerings, investor management, fund accounting, and borrower workflows.
 
-**Business model**: Originate and manage short-duration loans (6–12 months), secured by real assets, with conservative LTV ratios. Investors participate through NexusBridge Capital LP. Long-term vision includes a hybrid "HyFi" layer — blockchain-based tokenized participation on top of the centralized lending platform.
+**Business model**: Originate and manage short-duration loans (6-12 months), secured by real assets, with conservative LTV ratios. Investors participate through NexusBridge Capital LP. Long-term vision includes a hybrid "HyFi" layer -- blockchain-based tokenized participation on top of the centralized lending platform.
 
-The marketing site (`apps/web-marketing`) is **live on Vercel** (Phase 1 complete). All other `apps/`, `services/`, `core/`, and `infrastructure/` directories are scaffolding — **currently in Phase 2**.
+The marketing site (`apps/web-marketing`) is **live on Vercel** (Phase 1 complete). The unified portal (`apps/portal`) is **live in development** (Phase 2 complete, Phase 3 in progress). The `services/`, `core/`, and `infrastructure/` directories are scaffolding -- not yet built.
 
 Design docs live in `/docs/`. Before implementing any feature, read the relevant doc:
 
@@ -32,13 +32,16 @@ Design docs live in `/docs/`. Before implementing any feature, read the relevant
 | Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
 | **Database infrastructure & config** | **`docs/15_Database_Infrastructure.md`** |
+| **SQL reference index** | **`docs/SQL_Reference.md`** |
+| **SQL reference — Phase 1 & 2** | **`docs/SQL_Reference_Phase1_2.md`** |
+| **SQL reference — Phase 3** | **`docs/SQL_Reference_Phase3.md`** |
 | **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
 
 UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md` (application portals).
 
 ---
 
-## Entity Separation — Critical Rule
+## Entity Separation -- Critical Rule
 
 Two brands. Two licenses. Two regulatory lanes. **Never cross them.**
 
@@ -48,18 +51,18 @@ Two brands. Two licenses. Two regulatory lanes. **Never cross them.**
 | NexusBridge Lending LLC | **Debt** | Lending License | nexusbridgelending.com |
 
 ### CEM owns (equity side):
-- Real Estate Fund (Reg A / Reg D) — income-producing, value-add, distressed properties
-- Crowdfund (Reg CF) — startups and growth-stage companies
+- Real Estate Fund (Reg A / Reg D) -- income-producing, value-add, distressed properties
+- Crowdfund (Reg CF) -- startups and growth-stage companies
 - Advisory / Education
 
 ### NexusBridge owns (debt side):
 - Bridge Loans, Renovation Financing, Asset-Backed Lending, GAP Funding, Micro-Lending
-- NexusBridge Capital LP — private credit fund (Reg D / 506(c)), investor access to loan portfolio
+- NexusBridge Capital LP -- private credit fund (Reg D / 506(c)), investor access to loan portfolio
 
 ### Rules for all code and content decisions:
 - **No equity investment products on the NexusBridge site**
 - **No lending or debt products on the CEM site**
-- The CEM Credit Fund (Asset-Backed, GAP, Micro-Lending) belongs to NexusBridge — it must not appear on capitaledgeinvest.com
+- The CEM Credit Fund (Asset-Backed, GAP, Micro-Lending) belongs to NexusBridge -- it must not appear on capitaledgeinvest.com
 - Each site cross-references the other: NexusBridge footer references CEM as manager; CEM references NexusBridge for lending services
 - See `docs/Entity_Separation_Strategy.md` for full detail
 
@@ -75,17 +78,20 @@ Capital Edge Management, Inc. (CEM)
 
 ## Tech Stack
 
-- **Frontend**: Next.js + TypeScript + Tailwind CSS + shadcn/ui
-- **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- **Monorepo tooling**: TBD (Turborepo or Nx expected)
-- **Infrastructure**: Vercel (frontend), Docker, Terraform
+- **Frontend**: Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
+- **ORM**: Drizzle ORM (type-safe, Supabase Transaction Pooler on port 6543)
+- **Rate Limiting**: Upstash Redis (serverless, Edge-compatible)
+- **Email**: Resend SDK
+- **Hosting**: Vercel (frontend)
+- **Monorepo**: Turborepo (planned)
 - **Integrations**: Plaid, PostHog, Sentry, n8n (automation)
 
 ---
 
 ## Build & Dev Commands
 
-### Marketing site (`apps/web-marketing`) — live
+### Marketing site (`apps/web-marketing`) -- live on Vercel
 ```bash
 cd apps/web-marketing
 npm run dev       # Start dev server (localhost:3000)
@@ -98,16 +104,17 @@ Requires `apps/web-marketing/.env.local` with:
 RESEND_API_KEY=your_key_here
 ```
 
-### Monorepo (Phase 2 — not yet scaffolded)
+### Portal (`apps/portal`) -- Phase 2 complete, Phase 3 in progress
 ```bash
-# Root-level commands once Turborepo/Nx is configured
-npm run dev              # Start all apps
-npm run build            # Build all packages
-npm run lint             # Lint all packages
-npm run test             # Run all tests
+cd apps/portal
+npm run dev       # Start dev server (localhost:3001)
+npm run build     # Production build
+npm run lint      # ESLint
 ```
 
-### Supabase local development (Phase 2)
+Requires `apps/portal/.env.local` with Supabase and Upstash credentials.
+
+### Supabase local development
 ```bash
 supabase start           # Start local Supabase stack
 supabase db reset        # Reset and re-apply migrations
@@ -122,16 +129,16 @@ supabase functions serve # Serve Edge Functions locally
 
 ```
 apps/
-  web-marketing/   # Marketing site — live on Vercel
-  portal/          # Unified portal: borrower, investor, admin, underwriting, servicing
-services/          # Backend domain services (Phase 2+)
-core/              # Shared libraries (Phase 2+)
-infrastructure/    # Docker, Terraform, CI/CD (Phase 2+)
+  web-marketing/   # Marketing site -- live on Vercel (localhost:3000)
+  portal/          # Unified portal -- Phase 2 complete, Phase 3 in progress (localhost:3001)
+services/          # Backend domain services (scaffolding only)
+core/              # Shared libraries (scaffolding only)
+infrastructure/    # Docker, Terraform, CI/CD (scaffolding only)
 compliance/        # SOC2, Reg A, Reg D artifacts
 docs/              # Architecture documentation
 ```
 
-### Security Architecture — Request Enforcement Order
+### Security Architecture -- Request Enforcement Order
 
 Every request passes through these layers in order. **Do not skip or reorder them.**
 
@@ -144,11 +151,20 @@ Every request passes through these layers in order. **Do not skip or reorder the
 6. DB operation                — Supabase RLS enforces row-level access
 ```
 
+**Key files:**
+- Middleware: `apps/portal/src/middleware.ts`
+- Zod schemas: `apps/portal/src/lib/validation/schemas.ts`
+- Rate limiters: `apps/portal/src/lib/rate-limit/index.ts`
+- Auth helpers: `apps/portal/src/lib/supabase/admin.ts` (server-only, service role)
+- Audit events: `apps/portal/src/lib/audit/emit.ts` (fire-and-forget, server-only)
+
 **Rules:**
-- All role checks must use `getUserRole(supabase, user.id)` — never `user.user_metadata?.role`
-- `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` must only be imported in server-only files — add `import 'server-only'` to any file that uses them
-- Rate limiter instances live in `src/lib/rate-limit/index.ts` — reuse them, do not create ad-hoc limiters
-- Zod schemas live in `src/lib/validation/schemas.ts` — add new schemas here when adding new routes
+- All role checks must use `getUserRole(supabase, user.id)` -- never `user.user_metadata?.role`
+- `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` must only be imported in server-only files -- add `import 'server-only'` to any file that uses them
+- Rate limiter instances live in `src/lib/rate-limit/index.ts` -- reuse them, do not create ad-hoc limiters
+- Zod schemas live in `src/lib/validation/schemas.ts` -- add new schemas here when adding new routes
+- Audit events: use `emitAuditEvent()` from `src/lib/audit/emit.ts` for all sensitive actions (fire-and-forget, server-only)
+- Admin client: use `createAdminClient()` from `src/lib/supabase/admin.ts` for service-role operations (server-only)
 
 ### Auth Callback Routes
 
@@ -156,24 +172,54 @@ Two server-side routes handle all post-auth redirects. Never expose raw JWTs in 
 
 | Route | Flow | Method |
 |---|---|---|
-| `/auth/confirm` | Invite, password reset | `verifyOtp(token_hash)` — hashed token in query param, no raw JWT |
-| `/auth/callback` | Magic link, OAuth | `exchangeCodeForSession(code)` — PKCE, code verifier in cookies |
+| `/auth/confirm` | Invite, password reset | `verifyOtp(token_hash)` -- hashed token in query param, no raw JWT |
+| `/auth/callback` | Magic link, OAuth | `exchangeCodeForSession(code)` -- PKCE, code verifier in cookies |
 
 **Rules:**
-- Do not add a third auth redirect route — extend these two
+- Do not add a third auth redirect route -- extend these two
 - Invite `redirectTo` must point to `${NEXT_PUBLIC_APP_URL}/auth/confirm`
-- The browser client (`src/lib/supabase/client.ts`) has `flowType: 'pkce'` — do not remove it
-- Supabase invite email template must use `{{ .TokenHash }}` — not `{{ .ConfirmationURL }}`
+- The browser client (`src/lib/supabase/client.ts`) has `flowType: 'pkce'` -- do not remove it
+- Supabase invite email template must use `{{ .TokenHash }}` -- not `{{ .ConfirmationURL }}`
+
+### Roles (6 roles, all implemented)
+
+| Role | Access | Navigation Links |
+|---|---|---|
+| `borrower` | Apply for loans, upload documents, view application status | Dashboard, My Applications, Documents |
+| `investor` | View portfolio, statements (fund operations coming in Phase 3 Step 5) | Dashboard, Portfolio, Statements |
+| `admin` | Full access: applications, investors, documents, underwriting, invite users | Dashboard, Applications, Investors, Documents, Underwriting, Invite User |
+| `manager` | Same as admin minus some overrides | Dashboard, Applications, Investors, Documents, Invite User |
+| `underwriter` | Underwriting cases assigned to them, record decisions, add conditions | Dashboard, Cases |
+| `servicing` | Loan management, record payments, manage draws | Dashboard, Loans |
+
+### State Machines
+
+State transitions are enforced in `src/lib/loan/state-machine.ts`:
+
+**Application states:**
+```
+ApplicationSubmitted → DocumentsPending → UnderwritingReview →
+Approved → FundingScheduled → Funded → Active → [PaidOff | Defaulted]
+```
+
+**Loan states:**
+```
+Funded → Active → [PaidOff | Defaulted]
+```
+
+Use `canTransitionApplication(currentState, targetState)` and `canTransitionLoan(currentState, targetState)` to validate transitions before executing them.
+
+See `docs/05_Loan_State_Machine.md` for valid transitions and guards.
 
 ### Domain Boundaries
 
-Services map strictly to domains — **do not mix domain logic across service boundaries**:
+Services map strictly to domains -- **do not mix domain logic across service boundaries**:
 
-- **Loan Domain** — borrower onboarding, underwriting, approval, funding
-- **Servicing Domain** — payments, amortization, delinquency, payoff
-- **Investor Domain** — onboarding, accreditation, subscriptions, capital accounts
-- **Fund Domain** — NAV calculations, capital calls, distributions, investor ledger
-- **Compliance Domain** — KYC, AML, accreditation verification, audit logs
+- **Loan Domain** -- borrower onboarding, underwriting, approval, funding
+- **Servicing Domain** -- payments, amortization, delinquency, payoff
+- **Investor Domain** -- onboarding, accreditation, subscriptions, capital accounts
+- **Fund Domain** -- NAV calculations, capital calls, distributions, investor ledger
+- **Compliance Domain** -- KYC, AML, accreditation verification, audit logs
 
 ### Event-Driven Communication
 
@@ -186,24 +232,27 @@ CapitalCallIssued → DistributionProcessed → DocumentVerified
 
 Events drive: notifications, accounting updates, audit records, workflow transitions.
 
-### Loan State Machine
-
-```
-ApplicationSubmitted → DocumentsPending → UnderwritingReview →
-Approved → FundingScheduled → Funded → Active → [PaidOff | Defaulted]
-```
-
-See `docs/05_Loan_State_Machine.md` for valid transitions and guards.
-
 ---
 
 ## Database Rules
 
 - All tables require: `id` (UUID), `created_at`, `updated_at`, `created_by`
-- Financial records are **append-only** — never silently mutate financial history
+- Financial records are **append-only** -- never silently mutate financial history
 - Use fixed-precision decimals for all financial calculations (no floating point)
-- Canonical schema is in `docs/Database_Schema.md` — migrations must match it
+- Canonical schema is in `docs/Database_Schema.md` -- migrations must match it
 - Each service owns its own data model; avoid cross-service DB access
+- Partitioned tables (pg_partman): `audit_events` (monthly), `activity_logs` (weekly)
+- All other tables are standard PostgreSQL with RLS
+
+### Tables implemented (Phase 3 Steps 1-4):
+
+| Step | Tables |
+|---|---|
+| Step 1 (Foundation) | `audit_events`, `activity_logs`, `notifications`, `tasks` |
+| Step 2 (Documents) | `documents` + Supabase Storage buckets |
+| Step 3 (Underwriting) | `underwriting_cases`, `underwriting_decisions`, `conditions`, `risk_flags` |
+| Step 4 (Loan Lifecycle) | `loans`, `payment_schedule`, `payments`, `draws` |
+| Step 5 (Fund Operations) | `fund_subscriptions`, `fund_allocations`, `nav_snapshots` (next) |
 
 ---
 
@@ -228,10 +277,37 @@ Tests must verify **state transitions**, not only return values.
 ## Security & Compliance
 
 - All services enforce authentication, RBAC, and audit logging
-- Sensitive actions (capital movement, loan approval, subscription approval) must emit audit events
+- Sensitive actions (capital movement, loan approval, subscription approval) must emit audit events via `emitAuditEvent()`
 - Row-level security (RLS) must be implemented for all Supabase tables
 - Platform must support SOC2 controls, Reg A investor limits, and Reg D accredited investor verification
 - Compliance systems must remain observable and data-exportable
+
+---
+
+## API Route Patterns
+
+All API routes follow this pattern:
+```typescript
+// 1. Validate request body
+const body = validateBody(req, zodSchema);
+// 2. Rate limit by user ID
+await applyRateLimit(req, rateLimiterInstance);
+// 3. Authenticate
+const user = await getUser(supabase);
+// 4. Authorize
+const role = await getUserRole(supabase, user.id);
+// 5. Execute DB operation
+// 6. Emit audit event (fire-and-forget)
+emitAuditEvent({ ... });
+```
+
+### Implemented API routes:
+
+| Domain | Routes |
+|---|---|
+| Documents | Upload (signed URL), admin review queue |
+| Underwriting | 7 routes: cases list, case detail, assign, decision, conditions CRUD, risk flags |
+| Loan Lifecycle | 6 routes: loans list, loan detail, create loan, record payment, manage draws, state transitions |
 
 ---
 
@@ -239,8 +315,18 @@ Tests must verify **state transitions**, not only return values.
 
 | Phase | Scope | Status |
 |---|---|---|
-| **Phase 1** | Marketing site — all 8 pages live, lead capture forms, email routing | ✅ Complete |
-| **Phase 2** | Supabase auth + RBAC, borrower portal, investor portal, domain migration | 🔵 In Progress |
-| **Phase 3** | Full loan lifecycle + underwriting + document management + fund operations | ⚪ Planned |
+| **Phase 1** | Marketing site -- all 8 pages live, lead capture forms, email routing | ✅ Complete |
+| **Phase 2** | Supabase auth + RBAC, all role dashboards, borrower portal, investor portal, admin console, underwriter workspace, servicing dashboard | ✅ Complete |
+| **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | 🔵 In Progress |
 | **Phase 4** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
-| **Phase 5** | Tokenization layer (Base/Ethereum L2) — HyFi vision | ⚪ Optional |
+| **Phase 5** | Tokenization layer (Base/Ethereum L2) -- HyFi vision | ⚪ Optional |
+
+### Phase 3 Progress:
+
+| Step | Scope | Status |
+|---|---|---|
+| Step 1 | Foundation: audit_events, activity_logs, notifications, tasks + pg_partman + pg_cron + state machine + Zod schemas + rate limiters | ✅ Complete |
+| Step 2 | Document Management: documents table, Supabase Storage buckets, upload API (signed URLs), admin review queue, borrower upload UI | ✅ Complete |
+| Step 3 | Underwriting Engine: underwriting_cases, decisions, conditions, risk_flags + pure-function rules engine + 7 API routes + underwriter UI | ✅ Complete |
+| Step 4 | Loan Lifecycle: loans, payment_schedule, payments, draws tables + 6 API routes + servicing UI + loan detail + record payment + admin create-loan | ✅ Complete |
+| Step 5 | Fund Operations: fund_subscriptions, fund_allocations, nav_snapshots | ⚪ Next |

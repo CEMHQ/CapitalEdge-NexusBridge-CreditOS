@@ -1,4 +1,4 @@
-# CLAUDE.md — Web Design + Frontend Execution Rules
+# CLAUDE_Web_Design.md -- Web Design + Frontend Execution Rules
 
 This file defines the non-negotiable standards for designing and building frontend experiences for this project.
 Use it as the first source of truth before generating layouts, UI systems, components, screenshots, or production-facing frontend code.
@@ -29,9 +29,8 @@ This file should guide:
 
 # 2. Always Do First
 
-- Invoke the **frontend-design** skill before writing any frontend code in a new session.
-- Read this `CLAUDE.md` file before making layout or styling decisions.
-- Review the project’s existing structure before creating new files, sections, or components.
+- Read this `CLAUDE_Web_Design.md` file before making layout or styling decisions.
+- Review the project's existing structure before creating new files, sections, or components.
 - Check whether the task is:
   - reference matching
   - brand extension
@@ -51,7 +50,7 @@ Use when a screenshot, Figma export, or mockup is provided.
 Rules:
 - Match layout, spacing, hierarchy, proportions, typography scale, and color relationships as closely as possible.
 - Do not invent extra sections, cards, buttons, badges, or decorative graphics not present in the reference.
-- Do not “improve” the design unless explicitly requested.
+- Do not "improve" the design unless explicitly requested.
 - Reproduce the visual rhythm before optimizing implementation details.
 - After building, screenshot the result and compare carefully against the reference.
 
@@ -88,10 +87,9 @@ Rules:
 - Start the dev server from the project root.
 - If a server already exists, do not start a second instance.
 - If the project includes a `serve` or `dev` script, use it.
-- Prefer stable preview URLs:
-  - `http://localhost:3000`
-  - `http://localhost:5173`
-  - `http://localhost:8080`
+- Dev server ports:
+  - Marketing site (`apps/web-marketing`): `http://localhost:3000`
+  - Portal (`apps/portal`): `http://localhost:3001`
 
 If a simple static project needs previewing, a local node server is acceptable.
 
@@ -142,7 +140,7 @@ Unless the task says otherwise:
 - prefer reusable components when building app views
 
 If using Tailwind in a lightweight prototype, CDN usage is acceptable for mockups.
-If building production UI, use the project’s actual Tailwind pipeline.
+If building production UI, use the project's actual Tailwind pipeline.
 
 ---
 
@@ -176,10 +174,10 @@ Rules:
 - Accent colors should communicate brand or action, not random decoration.
 - Keep strong contrast for important actions and data.
 - Use status colors consistently:
-  - success
-  - warning
-  - danger
-  - info
+  - success (green)
+  - warning (amber)
+  - danger (red)
+  - info (blue)
 
 ## Typography
 - Use one primary text family unless the brand explicitly supports two.
@@ -252,7 +250,7 @@ For marketing pages:
 - footer clarity
 
 For product dashboards:
-- persistent navigation
+- persistent top navigation
 - clear header context
 - action area
 - summary cards
@@ -409,7 +407,7 @@ Minimum expectations:
 - alt text for meaningful images
 - no color-only meaning
 
-Do not ship “beautiful but unusable” UI.
+Do not ship "beautiful but unusable" UI.
 
 ---
 
@@ -475,18 +473,17 @@ Before considering a screen finished, verify:
 
 ---
 
-# 19. Recommended Default Stack
+# 19. Production Stack
 
-For robust product design work, prefer:
+The confirmed production stack for this project:
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- shadcn/ui where appropriate
-- local design tokens
-- structured component system
-- icon library with consistent stroke/size
-- event-driven status updates for workflow-heavy screens
+- **Next.js** (App Router) + **TypeScript**
+- **Tailwind CSS** + **shadcn/ui**
+- **Supabase** (PostgreSQL, Auth, Storage, Realtime)
+- **Drizzle ORM** for type-safe database access
+- **Upstash Redis** for rate limiting
+- **Resend** for transactional email
+- **Vercel** for hosting
 
 For static concept pages:
 - semantic HTML
@@ -498,7 +495,7 @@ For static concept pages:
 
 # 20. Final Principle
 
-The job is not just to make the page “look good.”
+The job is not just to make the page "look good."
 The job is to create an interface that is:
 
 - faithful when fidelity is required

@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import type { EmailOtpType } from '@supabase/supabase-js'
 
 // Handles token_hash-based email confirmation (invite, recovery, signup).
+// Email template must use {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite
 // Supabase email templates send {{ .TokenHash }} as a query param — unlike the
 // legacy implicit flow, the raw JWT is never exposed in the URL or browser history.
 // verifyOtp() validates the hash server-side and establishes a session via cookies.

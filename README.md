@@ -1,6 +1,6 @@
 # NexusBridge CreditOS
 
-**NexusBridge CreditOS** is the core technology platform powering NexusBridge Lending and NexusBridge Capital LP — a hybrid private credit infrastructure connecting real estate borrowers with institutional private capital.
+**NexusBridge CreditOS** is the core technology platform powering NexusBridge Lending and NexusBridge Capital LP -- a hybrid private credit infrastructure connecting real estate borrowers with institutional private capital.
 
 > Managed by **Capital Edge Management** through **Obsidian & Co. Holdings, LLC**
 
@@ -17,7 +17,7 @@ Capital Edge Management, Inc. (CEM)
 
 ---
 
-## Entity Separation — Debt vs. Equity
+## Entity Separation -- Debt vs. Equity
 
 Two brands. Two licenses. Two regulatory lanes.
 
@@ -27,13 +27,13 @@ Two brands. Two licenses. Two regulatory lanes.
 | NexusBridge Lending LLC | **Debt** | Lending License | nexusbridgelending.com |
 
 **Capital Edge Management owns (equity):**
-- Real Estate Fund — income-producing, value-add, distressed properties (Reg A / Reg D)
-- Crowdfund — startups and growth-stage companies (Reg CF)
+- Real Estate Fund -- income-producing, value-add, distressed properties (Reg A / Reg D)
+- Crowdfund -- startups and growth-stage companies (Reg CF)
 - Advisory and financial education
 
 **NexusBridge Lending owns (debt):**
 - Bridge Loans, Renovation Financing, Asset-Backed Lending, GAP Funding, Micro-Lending
-- NexusBridge Capital LP — private credit fund giving accredited investors exposure to the loan portfolio (Reg D / 506(c))
+- NexusBridge Capital LP -- private credit fund giving accredited investors exposure to the loan portfolio (Reg D / 506(c))
 
 > See `docs/Entity_Separation_Strategy.md` for the full separation policy, migration rules, and cross-reference guidelines.
 
@@ -44,19 +44,19 @@ Two brands. Two licenses. Two regulatory lanes.
 NexusBridge addresses a common inefficiency in private credit markets: the gap between the speed that real estate investors require and what traditional financial institutions can provide.
 
 **For Borrowers**
-- Short-term bridge loans (6–12 months) secured by real property
+- Short-term bridge loans (6-12 months) secured by real property
 - Renovation / fix-and-flip financing with draw schedules
 - Asset-backed lending, GAP funding, and micro-lending products
-- Fast underwriting and funding — 7 to 14 business days from approval
+- Fast underwriting and funding -- 7 to 14 business days from approval
 
 **For Investors**
 - Structured exposure to short-duration, asset-backed credit via NexusBridge Capital LP
-- Reg D / Rule 506(c) offering — accredited investors only
+- Reg D / Rule 506(c) offering -- accredited investors only
 - Capital deployed across Asset-Backed Lending, GAP Funding, and Micro-Lending strategies
-- Investor portal with capital account tracking, distributions, and reporting (Phase 2)
+- Investor portal with portfolio tracking and statements (fund operations coming in Phase 3 Step 5)
 
 **Long-Term Vision**
-A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized investor participation on top of the centralized lending platform — without compromising regulatory compliance.
+A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized investor participation on top of the centralized lending platform -- without compromising regulatory compliance.
 
 ---
 
@@ -64,17 +64,16 @@ A hybrid "HyFi" layer introducing blockchain-based settlement and tokenized inve
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS v4, shadcn/ui v4 |
-| Database | Supabase (PostgreSQL 17 + pg_partman extension) |
-| ORM | Drizzle ORM — type-safe, FCFS locking, Supabase Transaction Pooler (port 6543) |
+| Frontend | Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui |
+| Database | Supabase (PostgreSQL + pg_partman extension) |
+| ORM | Drizzle ORM -- type-safe, Supabase Transaction Pooler (port 6543) |
 | Auth & Storage | Supabase Auth, Supabase Storage |
-| Rate Limiting | Upstash Redis — serverless, Edge-compatible IP and user-based rate limiting |
+| Rate Limiting | Upstash Redis -- serverless, Edge-compatible IP and user-based rate limiting |
 | Real-time | Supabase Realtime (WebSocket subscriptions) |
-| Background Jobs | Supabase Edge Functions |
 | Email | Resend SDK |
 | Monorepo | Turborepo (planned) |
 | Hosting | Vercel (frontend) |
-| Integrations | Plaid, DocuSign/HelloSign, PostHog, Sentry, n8n |
+| Integrations | Plaid, PostHog, Sentry, n8n |
 | Compliance | Reg D / 506(c), Reg CF, KYC/AML, SOC 2 alignment |
 
 ### Database Architecture
@@ -83,13 +82,16 @@ The platform uses a **hybrid relational + time-series architecture** within a si
 
 | Layer | Purpose | Implementation |
 |---|---|---|
-| Relational (ACID) | Loans, investors, subscriptions, KYC/AML — source of truth | PostgreSQL with RLS |
-| Time-series | Payments, audit logs, fund ticks, onboarding events — high-frequency streams | pg_partman partitioned tables |
-| FCFS Locking | Capital contribution reservation — prevents fund oversubscription | `SELECT ... FOR UPDATE` via Drizzle transactions |
+| Relational (ACID) | Loans, investors, subscriptions, KYC/AML -- source of truth | PostgreSQL with RLS |
+| Time-series | Audit logs, activity logs -- high-frequency append-only streams | pg_partman partitioned tables |
+| FCFS Locking | Capital contribution reservation -- prevents fund oversubscription | `SELECT ... FOR UPDATE` via Drizzle transactions |
 | Real-time | Live onboarding dashboard, fund fill rate, investor alerts | Supabase Realtime (WebSockets) |
 
-**7 tables partitioned via pg_partman:**
-`payments` · `audit_events` · `activity_logs` · `loan_draws` · `distributions` · `fund_ticks` · `onboarding_events`
+**2 tables currently partitioned via pg_partman:**
+- `audit_events` -- partitioned monthly
+- `activity_logs` -- partitioned weekly
+
+All other tables (loans, payments, draws, documents, underwriting_cases, etc.) are standard PostgreSQL with RLS.
 
 > See `docs/15_Database_Infrastructure.md` for full configuration, partition SQL, pg_partman setup, FCFS locking patterns, and the QuestDB upgrade path.
 
@@ -99,24 +101,12 @@ The platform uses a **hybrid relational + time-series architecture** within a si
 
 ```
 apps/
-  web-marketing/        ← Marketing website (Phase 1 — live)
-  portal/               ← Unified portal: borrower, investor, admin, underwriting (Phase 2 — in progress)
+  web-marketing/        ← Marketing website (Phase 1 — live on Vercel, localhost:3000)
+  portal/               ← Unified portal (Phase 2 complete, Phase 3 in progress, localhost:3001)
 
-services/               ← Backend domain services (Phase 2)
-  loan-origination/
-  servicing/
-  investor/
-  fund-accounting/
-  compliance/
-  notifications/
-
-core/                   ← Shared libraries (Phase 2)
-  database/
-  auth/
-  event-bus/
-  ui-components/
-
-infrastructure/         ← Docker, Terraform, CI/CD (Phase 2)
+services/               ← Backend domain services (scaffolding only)
+core/                   ← Shared libraries (scaffolding only)
+infrastructure/         ← Docker, Terraform, CI/CD (scaffolding only)
 compliance/             ← SOC2, Reg A/D artifacts
 docs/                   ← Architecture documentation
 images/                 ← Brand assets
@@ -128,11 +118,21 @@ images/                 ← Brand assets
 
 | Phase | Scope | Status |
 |---|---|---|
-| **Phase 1** | Marketing site — all 8 pages live, lead capture forms, email routing | ✅ Complete |
-| **Phase 2** | Supabase auth + RBAC, borrower portal, investor portal, domain migration | 🔵 In Progress |
-| **Phase 3** | Full loan lifecycle + underwriting + document management + fund operations | ⚪ Planned |
+| **Phase 1** | Marketing site -- all 8 pages live, lead capture forms, email routing | ✅ Complete |
+| **Phase 2** | Supabase auth + RBAC, all role dashboards, borrower portal, investor portal, admin console, underwriter workspace, servicing dashboard | ✅ Complete |
+| **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | 🔵 In Progress |
 | **Phase 4** | Workflow automation + OCR (Ocrolus/Argyle) + compliance hardening | ⚪ Planned |
-| **Phase 5** | Tokenization layer (Base/Ethereum L2) — HyFi vision | ⚪ Optional |
+| **Phase 5** | Tokenization layer (Base/Ethereum L2) -- HyFi vision | ⚪ Optional |
+
+### Phase 3 Progress
+
+| Step | Scope | Status |
+|---|---|---|
+| Step 1 | Foundation: audit_events, activity_logs, notifications, tasks + pg_partman + pg_cron + state machine + Zod schemas + rate limiters | ✅ Complete |
+| Step 2 | Document Management: documents table, Supabase Storage buckets, upload API (signed URLs), admin review queue, borrower upload UI | ✅ Complete |
+| Step 3 | Underwriting Engine: underwriting_cases, decisions, conditions, risk_flags + pure-function rules engine + 7 API routes + underwriter UI | ✅ Complete |
+| Step 4 | Loan Lifecycle: loans, payment_schedule, payments, draws + 6 API routes + servicing UI + loan detail + record payment + admin create-loan | ✅ Complete |
+| Step 5 | Fund Operations: fund_subscriptions, fund_allocations, nav_snapshots | ⚪ Next |
 
 ---
 
@@ -153,7 +153,7 @@ npm run dev
 # → http://localhost:3000
 ```
 
-### Portal (Phase 2)
+### Portal (Phase 2+)
 
 ```bash
 cd apps/portal
@@ -162,7 +162,7 @@ npm run dev
 # → http://localhost:3001
 ```
 
-Requires `apps/portal/.env.local` — contact the platform team for credentials.
+Requires `apps/portal/.env.local` -- contact the platform team for credentials.
 
 ### Supabase Local Development
 
@@ -192,22 +192,26 @@ supabase functions serve # Serve Edge Functions locally
 | Institutional ledger | `docs/12_Institutional_Ledger_Architecture.md` |
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
 | Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
+| Database infrastructure | `docs/15_Database_Infrastructure.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
-| **SQL reference (all queries organized by topic)** | **`docs/SQL_Reference.md`** |
-| **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
+| SQL reference index | `docs/SQL_Reference.md` |
+| SQL reference — Phase 1 & 2 | `docs/SQL_Reference_Phase1_2.md` |
+| SQL reference — Phase 3 | `docs/SQL_Reference_Phase3.md` |
+| Entity separation (debt vs. equity) | `docs/Entity_Separation_Strategy.md` |
 
 ---
 
 ## Key Engineering Rules
 
-- **Financial calculations** — fixed-precision decimals only, no floating point
-- **Financial records** — append-only; never silently mutate history
-- **Service boundaries** — services communicate via events, not direct DB access
-- **Security** — RLS on all Supabase tables; RBAC enforced at every service layer
-- **Compliance** — all sensitive actions emit audit events
+- **Financial calculations** -- fixed-precision decimals only, no floating point
+- **Financial records** -- append-only; never silently mutate history
+- **Service boundaries** -- services communicate via events, not direct DB access
+- **Security** -- RLS on all Supabase tables; RBAC enforced at every service layer
+- **Compliance** -- all sensitive actions emit audit events via `emitAuditEvent()`
+- **State machines** -- all loan/application transitions enforced via `canTransitionApplication()` and `canTransitionLoan()`
 
 ---
 
 ## License
 
-Proprietary. All rights reserved. © NexusBridge Lending / Capital Edge Management.
+Proprietary. All rights reserved. (c) NexusBridge Lending / Capital Edge Management.

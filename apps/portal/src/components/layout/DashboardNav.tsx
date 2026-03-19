@@ -62,6 +62,7 @@ function NavLinks({ role }: { role: UserRole }) {
       { label: 'Documents', href: '/dashboard/admin/documents' },
       { label: 'Underwriting', href: '/dashboard/underwriter' },
       { label: 'Users', href: '/dashboard/admin/users' },
+      { label: 'Tasks', href: '/dashboard/admin/tasks' },
       { label: 'Audit Log', href: '/dashboard/admin/audit' },
       { label: 'Invite User', href: '/dashboard/admin/invite' },
     ],
@@ -70,16 +71,19 @@ function NavLinks({ role }: { role: UserRole }) {
       { label: 'Applications', href: '/dashboard/admin/applications' },
       { label: 'Investors', href: '/dashboard/admin/investors' },
       { label: 'Documents', href: '/dashboard/admin/documents' },
+      { label: 'Tasks', href: '/dashboard/admin/tasks' },
       { label: 'Audit Log', href: '/dashboard/admin/audit' },
       { label: 'Invite User', href: '/dashboard/admin/invite' },
     ],
     underwriter: [
       { label: 'Dashboard', href: '/dashboard/underwriter' },
       { label: 'Cases', href: '/dashboard/underwriter/cases' },
+      { label: 'Tasks', href: '/dashboard/admin/tasks' },
     ],
     servicing: [
       { label: 'Dashboard', href: '/dashboard/servicing' },
       { label: 'Loans', href: '/dashboard/servicing/loans' },
+      { label: 'Tasks', href: '/dashboard/admin/tasks' },
     ],
   }
 

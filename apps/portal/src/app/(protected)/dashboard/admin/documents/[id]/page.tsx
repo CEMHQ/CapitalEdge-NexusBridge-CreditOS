@@ -50,6 +50,7 @@ export default function AdminDocumentReviewPage() {
   const [doc, setDoc]                     = useState<Doc | null>(null)
   const [loading, setLoading]             = useState(true)
   const [submitting, setSubmitting]       = useState(false)
+  const [downloading, setDownloading]     = useState(false)
   const [rejectionReason, setRejection]   = useState('')
   const [error, setError]                 = useState<string | null>(null)
   const [successMsg, setSuccessMsg]       = useState<string | null>(null)
@@ -60,6 +61,25 @@ export default function AdminDocumentReviewPage() {
       .then((data) => { setDoc(data); setLoading(false) })
       .catch(() => { setError('Failed to load document.'); setLoading(false) })
   }, [id])
+
+  async function handleDownload() {
+    if (!doc?.download_url) return
+    setDownloading(true)
+    try {
+      const res  = await fetch(doc.download_url)
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = doc.file_name
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('Download failed. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   async function submit(reviewStatus: 'verified' | 'rejected') {
     setSubmitting(true)
@@ -149,17 +169,16 @@ export default function AdminDocumentReviewPage() {
         {/* Download */}
         {doc.download_url && (
           <div className="px-6 py-4">
-            <a
-              href={doc.download_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-gray-900 hover:underline"
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-2 text-sm font-medium text-gray-900 hover:underline disabled:opacity-50"
             >
               <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
               </svg>
-              Download document
-            </a>
+              {downloading ? 'Downloading…' : 'Download document'}
+            </button>
           </div>
         )}
       </div>

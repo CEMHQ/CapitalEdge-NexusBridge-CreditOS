@@ -62,6 +62,26 @@ export async function GET(
       ownerLabel = app.application_number
       ownerLink  = `/dashboard/admin/applications/${doc.owner_id}`
     }
+  } else if (doc.owner_type === 'borrower') {
+    // uploaded_by (profile_id) → borrowers → most-recent application
+    const { data: borrower } = await adminClient
+      .from('borrowers')
+      .select('id')
+      .eq('profile_id', doc.uploaded_by)
+      .maybeSingle()
+    if (borrower) {
+      const { data: app } = await adminClient
+        .from('applications')
+        .select('id, application_number')
+        .eq('borrower_id', borrower.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (app) {
+        ownerLabel = app.application_number
+        ownerLink  = `/dashboard/admin/applications/${app.id}`
+      }
+    }
   } else if (doc.owner_type === 'loan') {
     const { data: loan } = await adminClient
       .from('loans')

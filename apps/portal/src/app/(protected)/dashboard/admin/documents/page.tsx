@@ -9,6 +9,7 @@ export default async function AdminDocumentsPage() {
     .from('documents')
     .select(`
       id,
+      uploaded_by,
       owner_type,
       owner_id,
       document_type,
@@ -27,17 +28,51 @@ export default async function AdminDocumentsPage() {
 
   const docs = documents ?? []
 
-  // Batch-enrich application owner labels
-  const appIds = [...new Set(docs.filter(d => d.owner_type === 'application').map(d => d.owner_id))]
-  const { data: apps } = appIds.length
-    ? await supabase.from('applications').select('id, application_number').in('id', appIds)
-    : { data: [] }
-  const appMap = Object.fromEntries((apps ?? []).map(a => [a.id, a.application_number as string]))
+  // ── Batch-enrich owner labels ──────────────────────────────────────────────
+  // For owner_type='application': direct FK → application_number
+  // For owner_type='borrower':    uploaded_by → borrowers.profile_id → applications
 
-  function getOwner(doc: { owner_type: string; owner_id: string }) {
+  const appIds = [...new Set(docs.filter(d => d.owner_type === 'application').map(d => d.owner_id))]
+  const borrowerProfileIds = [...new Set(
+    docs.filter(d => d.owner_type === 'borrower' && d.uploaded_by).map(d => d.uploaded_by as string)
+  )]
+
+  const [{ data: directApps }, { data: borrowers }] = await Promise.all([
+    appIds.length
+      ? supabase.from('applications').select('id, application_number').in('id', appIds)
+      : Promise.resolve({ data: [] as { id: string; application_number: string }[] }),
+    borrowerProfileIds.length
+      ? supabase.from('borrowers').select('id, profile_id').in('profile_id', borrowerProfileIds)
+      : Promise.resolve({ data: [] as { id: string; profile_id: string }[] }),
+  ])
+
+  const directAppMap = Object.fromEntries((directApps ?? []).map(a => [a.id, a.application_number]))
+
+  // Fetch most-recent application per borrower
+  const borrowerIds = (borrowers ?? []).map(b => b.id)
+  const { data: borrowerApps } = borrowerIds.length
+    ? await supabase
+        .from('applications')
+        .select('id, borrower_id, application_number')
+        .in('borrower_id', borrowerIds)
+        .order('created_at', { ascending: false })
+    : { data: [] as { id: string; borrower_id: string; application_number: string }[] }
+
+  // Build: profile_id → most-recent application
+  const profileAppMap: Record<string, { id: string; application_number: string }> = {}
+  for (const b of (borrowers ?? [])) {
+    const app = (borrowerApps ?? []).find(a => a.borrower_id === b.id)
+    if (app) profileAppMap[b.profile_id] = { id: app.id, application_number: app.application_number }
+  }
+
+  function getOwner(doc: { owner_type: string; owner_id: string; uploaded_by: string | null }) {
     if (doc.owner_type === 'application') {
-      const num = appMap[doc.owner_id]
+      const num = directAppMap[doc.owner_id]
       return { label: num ?? 'Application', link: `/dashboard/admin/applications/${doc.owner_id}` }
+    }
+    if (doc.owner_type === 'borrower' && doc.uploaded_by) {
+      const app = profileAppMap[doc.uploaded_by]
+      if (app) return { label: app.application_number, link: `/dashboard/admin/applications/${app.id}` }
     }
     return { label: doc.owner_type.charAt(0).toUpperCase() + doc.owner_type.slice(1), link: null }
   }

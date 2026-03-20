@@ -1,6 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
 
+type LoanJoin = {
+  loan_number: string | null
+  loan_status: string | null
+  principal_amount: number | null
+  interest_rate: number | null
+  maturity_date: string | null
+  outstanding_balance: number | null
+  applications: {
+    loan_purpose: string | null
+    properties: { city: string | null; state: string | null; property_type: string | null } | null
+  } | null
+} | null
+
 export default async function InvestorPortfolioPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -139,7 +152,7 @@ export default async function InvestorPortfolioPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {activeAllocs.map((alloc) => {
-                  const loan = alloc.loans
+                  const loan = alloc.loans as unknown as LoanJoin
                   const prop = loan?.applications?.properties
                   return (
                     <tr key={alloc.id} className="hover:bg-gray-50 transition-colors">

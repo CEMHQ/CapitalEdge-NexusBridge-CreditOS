@@ -56,6 +56,23 @@ export default async function ServicingLoansPage() {
   )
 }
 
+type LoanTableRow = {
+  id: string
+  loan_number: string
+  loan_status: string
+  principal_amount: number | string
+  outstanding_balance: number | string
+  interest_rate: number | string | null
+  maturity_date: string | null
+  applications: {
+    loan_purpose: string | null
+    borrowers: { profiles: { full_name: string | null } | { full_name: string | null }[] | null } | { profiles: { full_name: string | null } | { full_name: string | null }[] | null }[] | null
+  } | {
+    loan_purpose: string | null
+    borrowers: { profiles: { full_name: string | null } | { full_name: string | null }[] | null } | { profiles: { full_name: string | null } | { full_name: string | null }[] | null }[] | null
+  }[] | null
+}
+
 function LoanTable({
   title,
   loans,
@@ -63,7 +80,7 @@ function LoanTable({
   collapsed = false,
 }: {
   title:      string
-  loans:      any[]
+  loans:      LoanTableRow[]
   highlight?: boolean
   collapsed?: boolean
 }) {

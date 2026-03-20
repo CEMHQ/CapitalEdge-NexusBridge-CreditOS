@@ -100,13 +100,25 @@ export default async function AdminDocumentsPage() {
   )
 }
 
+type EnrichedDocument = {
+  id: string
+  file_name: string
+  file_size_bytes: number
+  document_type: string
+  review_status: string
+  created_at: string
+  uploaded_by: string | null
+  profiles: { full_name: string | null; email: string | null } | { full_name: string | null; email: string | null }[] | null
+  owner: { label: string; link: string | null }
+}
+
 function DocumentTable({
   title,
   documents,
   collapsed = false,
 }: {
   title: string
-  documents: any[]
+  documents: EnrichedDocument[]
   collapsed?: boolean
 }) {
   if (documents.length === 0 && collapsed) return null

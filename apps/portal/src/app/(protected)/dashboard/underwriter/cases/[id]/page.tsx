@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getUserRole } from '@/lib/auth/roles'
 import { formatCurrency, formatDate } from '@/lib/format'
@@ -126,9 +127,9 @@ export default async function UnderwriterCaseDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <a href="/dashboard/underwriter/cases" className="text-sm text-gray-400 hover:text-gray-600">
+          <Link href="/dashboard/underwriter/cases" className="text-sm text-gray-400 hover:text-gray-600">
             ← All Cases
-          </a>
+          </Link>
           <h1 className="text-2xl font-semibold text-gray-900 mt-1">
             Case — #{app?.application_number}
           </h1>

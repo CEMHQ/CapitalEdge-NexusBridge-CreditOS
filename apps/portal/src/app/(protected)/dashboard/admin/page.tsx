@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function AdminDashboard() {
@@ -59,12 +60,12 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="flex gap-3">
-        <a
+        <Link
           href="/dashboard/admin/applications"
           className="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
         >
           View All Applications
-        </a>
+        </Link>
       </div>
     </div>
   )

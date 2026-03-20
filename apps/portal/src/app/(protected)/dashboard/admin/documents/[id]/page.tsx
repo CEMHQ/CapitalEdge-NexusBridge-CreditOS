@@ -124,7 +124,7 @@ export default function AdminDocumentReviewPage() {
     )
   }
 
-  if (!doc || (doc as any).error) {
+  if (!doc || (doc as unknown as { error?: unknown }).error) {
     return (
       <div className="space-y-4">
         <Link href="/dashboard/admin/documents" className="text-sm text-gray-500 hover:text-gray-900">

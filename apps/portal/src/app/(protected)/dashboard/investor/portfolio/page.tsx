@@ -60,7 +60,7 @@ export default async function InvestorPortfolioPage() {
 
   const totalCommitted = subscription ? Number(subscription.commitment_amount) : 0
   const totalDeployed  = subscription ? Number(subscription.funded_amount) : 0
-  const activeAllocs   = allocations.filter((a: any) => a.allocation_status === 'active')
+  const activeAllocs   = allocations.filter((a) => a.allocation_status === 'active')
 
   if (!subscription) {
     return (
@@ -102,7 +102,7 @@ export default async function InvestorPortfolioPage() {
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-3">Subscription</h2>
         <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-          <Row label="Fund"           value={(subscription.funds as any)?.fund_name ?? 'NexusBridge Capital LP'} />
+          <Row label="Fund"           value={(subscription.funds as { fund_name: string } | null)?.fund_name ?? 'NexusBridge Capital LP'} />
           <Row label="Status"         value={subscriptionBadgeLabel(subscription.subscription_status)} />
           <Row label="Queue Position" value={subscription.fcfs_position ? `#${subscription.fcfs_position}` : '—'} />
           <Row label="Subscribed"     value={formatDate(subscription.created_at)} />
@@ -138,7 +138,7 @@ export default async function InvestorPortfolioPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {activeAllocs.map((alloc: any) => {
+                {activeAllocs.map((alloc) => {
                   const loan = alloc.loans
                   const prop = loan?.applications?.properties
                   return (

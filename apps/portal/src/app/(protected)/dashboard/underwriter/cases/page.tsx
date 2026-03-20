@@ -71,7 +71,30 @@ export default async function UnderwriterCasesPage() {
   )
 }
 
-function CaseTable({ title, cases }: { title: string; cases: any[] }) {
+type CaseRow = {
+  id: string
+  case_status: string
+  priority: string
+  opened_at: string
+  assigned_to: string | null
+  applications: {
+    id: string
+    application_number: string
+    application_status: string
+    requested_amount: number | string | null
+    loan_purpose: string | null
+    borrowers: { profiles: { full_name: string | null } | { full_name: string | null }[] | null } | { profiles: { full_name: string | null } | { full_name: string | null }[] | null }[] | null
+  } | {
+    id: string
+    application_number: string
+    application_status: string
+    requested_amount: number | string | null
+    loan_purpose: string | null
+    borrowers: { profiles: { full_name: string | null } | { full_name: string | null }[] | null } | { profiles: { full_name: string | null } | { full_name: string | null }[] | null }[] | null
+  }[] | null
+}
+
+function CaseTable({ title, cases }: { title: string; cases: CaseRow[] }) {
   if (cases.length === 0) return null
 
   return (

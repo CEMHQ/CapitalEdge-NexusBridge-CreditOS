@@ -45,7 +45,7 @@ export async function PATCH(
     )
   }
 
-  if (!canRoleTransitionLoan(role as any, loan_status)) {
+  if (!canRoleTransitionLoan(role, loan_status)) {
     return NextResponse.json(
       { error: 'Your role is not permitted to make this status change' },
       { status: 403 }

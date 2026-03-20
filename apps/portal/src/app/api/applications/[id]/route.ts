@@ -55,7 +55,7 @@ export async function PATCH(
     )
   }
 
-  if (!canRoleTransitionApplication(role as any, application_status)) {
+  if (!canRoleTransitionApplication(role, application_status)) {
     return NextResponse.json(
       { error: 'Your role is not permitted to make this status change' },
       { status: 403 }

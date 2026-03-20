@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/format'
 import ApplicationStatusForm from '@/components/admin/ApplicationStatusForm'
@@ -95,9 +96,9 @@ export default async function ApplicationDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <a href="/dashboard/admin/applications" className="text-sm text-gray-400 hover:text-gray-600">
+          <Link href="/dashboard/admin/applications" className="text-sm text-gray-400 hover:text-gray-600">
             ← All Applications
-          </a>
+          </Link>
           <h1 className="text-2xl font-semibold text-gray-900 mt-1">#{app.application_number}</h1>
           <p className="text-sm text-gray-500 mt-0.5">Submitted {formatDate(app.submitted_at)}</p>
         </div>

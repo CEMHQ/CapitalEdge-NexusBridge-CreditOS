@@ -1,6 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
 
+type InvestorJoin = {
+  id: string
+  accreditation_status: string
+  profiles: { full_name: string | null; email: string | null } | null
+} | null
+
 export default async function AdminFundPage() {
   const supabase = await createClient()
 
@@ -110,7 +116,7 @@ export default async function AdminFundPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pendingSubs.map((sub) => {
-                  const inv = sub.investors as any
+                  const inv = sub.investors as InvestorJoin
                   const expired = sub.reservation_expires_at && new Date(sub.reservation_expires_at) < new Date()
                   return (
                     <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
@@ -171,7 +177,7 @@ export default async function AdminFundPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {allSubs.map((sub) => {
-                  const inv = sub.investors as any
+                  const inv = sub.investors as InvestorJoin
                   return (
                     <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-5 py-3">

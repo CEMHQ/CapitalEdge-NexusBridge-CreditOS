@@ -35,7 +35,7 @@ export default async function InvestorStatementsPage() {
 
   // Get all allocations across all subscriptions
   const subIds = subscriptions?.map(s => s.id) ?? []
-  let allocations: any[] = []
+  let allocations: { id: string; allocation_amount: number | string; allocation_date: string; allocation_status: string; fund_subscriptions: { commitment_amount: number | string } | null; loans: { loan_number: string; loan_status: string; interest_rate: number | string | null; maturity_date: string | null; total_paid: number | string | null } | null }[] = []
   if (subIds.length > 0) {
     const { data } = await supabase
       .from('fund_allocations')
@@ -94,7 +94,7 @@ export default async function InvestorStatementsPage() {
                 {subscriptions.map((sub) => (
                   <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-3 font-medium text-gray-900">
-                      {(sub.funds as any)?.fund_name ?? 'NexusBridge Capital LP'}
+                      {(sub.funds as { fund_name: string } | null)?.fund_name ?? 'NexusBridge Capital LP'}
                     </td>
                     <td className="px-5 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${subStatusBadge(sub.subscription_status)}`}>

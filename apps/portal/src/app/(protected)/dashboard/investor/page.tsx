@@ -33,7 +33,7 @@ export default async function InvestorDashboard() {
 
   // Fetch capital account if investor record exists
   let subscription = null
-  let metrics = { total_committed: 0, total_deployed: 0, undeployed: 0, allocation_count: 0 }
+  const metrics = { total_committed: 0, total_deployed: 0, undeployed: 0, allocation_count: 0 }
   let nav = null
   let fund: { id: string; fund_name: string; fund_status: string } | null = null
 

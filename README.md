@@ -60,7 +60,7 @@ Two brands. Two licenses. Two regulatory lanes. **They must never be crossed.**
 
 **NexusBridge owns (debt side):** Bridge Loans, Renovation Financing, Asset-Backed Lending, GAP Funding, Micro-Lending, NexusBridge Capital LP (Reg D / 506(c))
 
-> See `docs/Entity_Separation_Strategy.md` for the full separation policy and cross-reference guidelines.
+> See `docs/05_Entity_Separation_Strategy.md` for the full separation policy and cross-reference guidelines.
 
 ---
 
@@ -156,6 +156,50 @@ Every request passes through six enforcement layers in order:
 ```
 
 All sensitive actions emit append-only audit events. Row-level security (RLS) is enforced on every Supabase table. The platform is designed to support SOC2 controls, Reg A investor limits, and Reg D accredited investor verification.
+
+---
+
+## Developer Tooling
+
+### Beta Tester Agent
+
+A dedicated subagent runs a 12-section audit of the entire platform. Invoke it in Claude Code by saying **"run the beta tester"** or referencing the agent by name.
+
+**Location:** `.claude/agents/beta-tester.md`
+
+**What it audits:**
+
+| Section | Checks |
+|---|---|
+| 1. Build & Type Check | `npm run build` + `npm run lint` — flag errors and auto-fix lint |
+| 2. Page Route Inventory | Default exports, broken imports, server/client rules, auth guards, role guards |
+| 3. API Route Security | Security enforcement order (validateBody → applyRateLimit → getUser → getUserRole → RLS), missing audit events |
+| 4. Navigation Completeness | Every nav link resolves to a real `page.tsx`; all 6 roles have required nav entries |
+| 5. Component Import Integrity | Circular imports, missing shadcn/ui components, `cn()` usage, server/client boundaries |
+| 6. Drizzle Schema vs Migrations | Column names, types, and table presence match between schema files and migration SQL |
+| 7. SQL Sync Audit | Migration column names match SQL reference docs; stale queries and missing doc entries flagged |
+| 8. State Machine Enforcement | Every status-changing route calls `canTransitionApplication()` or `canTransitionLoan()` |
+| 9. Financial Calculation Integrity | No floating point on monetary values; division guards against zero; rounding applied |
+| 10. Environment Variable Usage | `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` only in server-only files; undocumented vars flagged |
+| 11. Notification & Audit Coverage | Sensitive write operations emit `emitAuditEvent()` and `emitNotification()` |
+| 12. Auth Flow Integrity | `/auth/confirm` and `/auth/callback` routes, PKCE config, middleware redirect guards |
+
+The agent produces a tiered report: **CRITICAL / HIGH / MEDIUM** issues plus a log of everything fixed automatically.
+
+---
+
+### SQL Sync Rule
+
+Defined in `CLAUDE.md`. Triggers automatically whenever a migration file or SQL reference doc is created or modified.
+
+The audit checks for:
+- Column name and type drift between migration SQL and reference docs
+- Stale column names in example queries
+- Migration filenames referenced in doc headers that do not exist on disk
+- New migrations added with no corresponding doc entry
+- Doc sections marked as planned that have since been deployed
+
+**Migration → SQL Reference doc mapping** is maintained in `docs/SQL Reference/00_SQL_Index.md`.
 
 ---
 

@@ -120,6 +120,7 @@ Two brands. Two licenses. Two regulatory lanes. **They must never be crossed.**
 | Email | Resend SDK |
 | E-Signatures | BoldSign (Dropbox Sign preserved for future upgrade) |
 | Workflow Automation | n8n (self-hosted, platform engine complete) |
+| AI | Anthropic Claude API (`@anthropic-ai/sdk`) |
 | Hosting | Vercel (frontend) |
 | Monorepo | Turborepo (planned) |
 | Integrations | Plaid, PostHog, Sentry |
@@ -247,6 +248,7 @@ BOLDSIGN_TEMPLATE_PROMISSORY_NOTE=your_template_id_here
 BOLDSIGN_TEMPLATE_DEED_OF_TRUST=your_template_id_here
 BOLDSIGN_TEMPLATE_LOAN_AGREEMENT=your_template_id_here
 BOLDSIGN_TEMPLATE_SUBSCRIPTION_AGREEMENT=your_template_id_here
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### Supabase (local)
@@ -260,6 +262,8 @@ supabase functions serve # Serve Edge Functions locally
 ---
 
 ## Key Documentation
+
+### Architecture & Domain
 
 | Topic | File |
 |---|---|
@@ -277,9 +281,44 @@ supabase functions serve # Serve Edge Functions locally
 | Institutional ledger | `docs/12_Institutional_Ledger_Architecture.md` |
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
 | Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
+| Fund accounting and NAV engine | `docs/14_Fund_Accounting_NAV_Engine_Architecture.md` |
 | Database infrastructure | `docs/15_Database_Infrastructure.md` |
+| Investor portal and Reg A UX | `docs/15_Investor_Portal_RegA_UX_Flow.md` |
+| DeFi tokenization / RWA | `docs/16_DeFi_Tokenization_RWA_Architecture.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
 | Entity separation strategy | `docs/Entity_Separation_Strategy.md` |
+
+### Implementation Plans
+
+| Topic | File |
+|---|---|
+| Phase 1 implementation plan | `docs/implementation plan/Phase1_Implementation_Plan.md` |
+| Phase 2 implementation plan | `docs/implementation plan/Phase2_Implementation_Plan.md` |
+| Phase 3 implementation plan | `docs/implementation plan/Phase3_Implementation_Plan.md` |
+| Phase 4 implementation plan | `docs/implementation plan/Phase4_Implementation_Plan.md` |
+| Phase 5 implementation plan | `docs/implementation plan/Phase5_Implementation_Plan.md` |
+| Testing checklist | `docs/implementation plan/Testing_Checklist.md` |
+
+### SQL Reference
+
+| Topic | File |
+|---|---|
+| SQL reference index | `docs/SQL Reference/SQL_Reference.md` |
+| SQL reference — Phase 1 and 2 | `docs/SQL Reference/SQL_Ref_Phase1_2.md` |
+| SQL reference — Phase 3 | `docs/SQL Reference/SQL_Ref_Phase3.md` |
+| SQL reference — Phase 4 | `docs/SQL Reference/SQL_Ref_Phase4.md` |
+| SQL reference — Phase 5 | `docs/SQL Reference/SQL_Ref_Phase5.md` |
+| Migration 0015 | `docs/SQL Reference/SQL_Migration_0015.md` |
+
+### Legal
+
+| Topic | File |
+|---|---|
+| Promissory Note (draft template) | `docs/legal/01_Promissory_Note.md` |
+| Deed of Trust (draft template) | `docs/legal/02_Deed_of_Trust.md` |
+| Loan Agreement (draft template) | `docs/legal/03_Loan_Agreement.md` |
+| Subscription Agreement (draft template) | `docs/legal/04_Subscription_Agreement.md` |
+| Private Placement Memorandum (draft template) | `docs/legal/05_Private_Placement_Memorandum.md` |
 
 ---
 

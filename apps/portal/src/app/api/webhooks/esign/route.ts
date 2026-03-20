@@ -34,11 +34,17 @@ interface BoldSignWebhookPayload {
 export async function POST(request: Request) {
   const rawBody = await request.text()
 
-  // Log all headers to identify what BoldSign actually sends
-  const allHeaders: Record<string, string> = {}
-  request.headers.forEach((value, key) => { allHeaders[key] = value })
-  console.log('[esign-webhook] all headers:', JSON.stringify(allHeaders))
-  console.log('[esign-webhook] raw body:', rawBody.slice(0, 200))
+  // Verify secret header set in BoldSign webhook settings (key: x-boldsign-secret)
+  const webhookSecret = process.env.BOLDSIGN_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    console.error('[esign-webhook] BOLDSIGN_WEBHOOK_SECRET not configured')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+
+  const incomingSecret = request.headers.get('x-boldsign-secret')
+  if (incomingSecret !== webhookSecret) {
+    return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
+  }
 
   let payload: BoldSignWebhookPayload
   try {

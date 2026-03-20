@@ -24,12 +24,26 @@ function InviteLinkExpired() {
         </p>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 space-y-1">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 space-y-2">
         <p className="text-sm font-medium text-amber-800">What to do next</p>
         <p className="text-sm text-amber-700">
           Contact your NexusBridge administrator to request a new invitation. Once you receive
           a new email, complete your account setup within 24 hours.
         </p>
+        <div className="text-sm text-amber-700 space-y-0.5 pt-1">
+          <p>
+            <span className="font-medium">Email: </span>
+            <a href="mailto:support@nexusbridgelending.com" className="underline hover:text-amber-900">
+              support@nexusbridgelending.com
+            </a>
+          </p>
+          <p>
+            <span className="font-medium">Phone: </span>
+            <a href="tel:+18005551234" className="underline hover:text-amber-900">
+              (800) 555-1234
+            </a>
+          </p>
+        </div>
       </div>
 
       <div className="border-t border-gray-100 pt-4">

@@ -4,7 +4,7 @@ import { formatDate } from '@/lib/format'
 import { redirect } from 'next/navigation'
 import CreateWorkflowForm from '@/components/workflows/CreateWorkflowForm'
 import WorkflowToggleButton from '@/components/workflows/WorkflowToggleButton'
-import DeleteButton from '@/components/admin/DeleteButton'
+import DeleteWorkflowButton from '@/components/workflows/DeleteWorkflowButton'
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   application_status_changed:   'Application status changed',
@@ -156,16 +156,7 @@ export default async function WorkflowsPage() {
                   </td>
                   {isAdmin && (
                     <td className="px-5 py-4">
-                      <DeleteButton
-                        label="Delete"
-                        confirmMessage="Delete this workflow trigger?"
-                        onDelete={async () => {
-                          const res = await fetch(`/api/admin/workflows/${trigger.id}`, { method: 'DELETE' })
-                          const data = await res.json()
-                          if (!res.ok) return { error: data.error ?? 'Delete failed' }
-                        }}
-                        onSuccess={() => { window.location.reload() }}
-                      />
+                      <DeleteWorkflowButton triggerId={trigger.id} />
                     </td>
                   )}
                 </tr>

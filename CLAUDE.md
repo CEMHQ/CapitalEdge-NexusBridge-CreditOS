@@ -260,6 +260,50 @@ Events drive: notifications, accounting updates, audit records, workflow transit
 
 ---
 
+## SQL Sync Rule — Automatic Audit on Every Schema Change
+
+**Trigger:** Any time you create, modify, or review a migration file (`apps/portal/src/db/migrations/*.sql`) OR a SQL reference doc (`docs/SQL Reference/*.md`), you MUST run the following audit before committing. Do not skip this — it is required on every schema-touching task.
+
+### What to audit
+
+For each migration file touched, verify the corresponding SQL reference doc section matches. Check:
+
+1. **Table structure** — every column name, type, nullability, default, and CHECK constraint in the migration exists in the doc with the same definition. Flag any column present in one but not the other.
+2. **Indexes** — every `CREATE INDEX` in the migration appears in the doc. Name, table, and columns must match.
+3. **Triggers** — every trigger function and `CREATE TRIGGER` in the migration appears in the doc with the same name and target.
+4. **RLS policies** — every `CREATE POLICY` in the migration (name, table, command, USING/WITH CHECK expression) matches the doc.
+5. **Functions** — every `CREATE OR REPLACE FUNCTION` in the migration is reflected in the doc.
+6. **Migration filename references** — every `**Migrations:**` header line in a SQL reference doc names files that actually exist in `apps/portal/src/db/migrations/`. Flag any filename that does not exist.
+7. **Column name drift in queries** — every SELECT/INSERT query in the SQL reference doc that references a column must use the actual column name from the migration schema. Flag stale column names (e.g., `actor_role` instead of `actor_profile_id`).
+8. **New migration, no doc entry** — if a new migration file is added, a corresponding section must exist in the correct SQL reference doc. If it is missing, add it.
+9. **Doc section, no migration** — if a SQL reference doc references a migration that does not exist yet, mark it clearly as `(planned)` in the doc.
+
+### Migration → SQL reference doc mapping
+
+| Migration file(s) | SQL reference doc | Section |
+|---|---|---|
+| `0001_initial_borrower_schema`, `0007_investors`, `0008_cascade_deletes` | `docs/SQL Reference/01_SQL_CoreSchema.md` | Sections 1–4 |
+| `0002`–`0006` (RLS, user roles, auth) | `docs/SQL Reference/02_SQL_Phase2_AuthRoles.md` | Sections 1–5 |
+| `0009_extensions`, `0014_audit_operations` | `docs/SQL Reference/03_SQL_Phase3.md` | Step 1 |
+| `0011_documents` | `docs/SQL Reference/03_SQL_Phase3.md` | Step 2 |
+| `0010_underwriting` | `docs/SQL Reference/03_SQL_Phase3.md` | Step 3 |
+| `0012_loans` | `docs/SQL Reference/03_SQL_Phase3.md` | Step 4 |
+| `0013_fund_operations` | `docs/SQL Reference/03_SQL_Phase3.md` | Step 5 |
+| `0015_workflow_automation` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 1 |
+| `0016_esignatures` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 2 |
+| `0017_document_intelligence` (planned) | `docs/SQL Reference/04_SQL_Phase4.md` | Step 3 |
+| `0018_compliance_hardening` (planned) | `docs/SQL Reference/04_SQL_Phase4.md` | Step 4 |
+| `0019_tokenization` (planned) | `docs/SQL Reference/05_SQL_Phase5_Tokenization.md` | All |
+
+### How to fix discrepancies
+
+- If the **migration is the source of truth** (already run in production or Supabase): update the SQL reference doc to match.
+- If the **doc describes planned or future schema** (migration not yet created): mark it `(planned)` in the doc, do not fabricate a migration.
+- If a **query in a doc uses a wrong column name**: correct the query in the doc — never modify a deployed migration to match a doc.
+- After fixing, update `docs/SQL Reference/00_SQL_Index.md` if any new tables or migrations were added.
+
+---
+
 ## Database Rules
 
 - All tables require: `id` (UUID), `created_at`, `updated_at`, `created_by`

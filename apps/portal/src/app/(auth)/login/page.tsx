@@ -28,7 +28,16 @@ export default function LoginPage() {
       return
     }
 
-    const role = (data.user?.user_metadata?.role ?? 'borrower') as UserRole
+    let role: UserRole = 'borrower'
+    const userId = data.user?.id
+    if (userId) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single()
+      role = (roleData?.role ?? 'borrower') as UserRole
+    }
     router.push(getDefaultRoute(role))
     router.refresh()
   }

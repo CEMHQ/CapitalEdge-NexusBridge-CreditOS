@@ -34,7 +34,18 @@ export default function SetPasswordPage() {
     const { data, error } = await supabase.auth.updateUser({ password })
 
     if (error) {
-      setError(error.message)
+      // Session-expired errors mean the invite link has gone stale
+      if (
+        error.message.toLowerCase().includes('session') ||
+        error.message.toLowerCase().includes('not found') ||
+        error.message.toLowerCase().includes('expired')
+      ) {
+        setError(
+          'Your setup session has expired. Please ask your administrator to send a new invitation.'
+        )
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
       return
     }

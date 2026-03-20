@@ -46,5 +46,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=invite_expired`)
+  return NextResponse.redirect(`${origin}/invite-expired`)
 }

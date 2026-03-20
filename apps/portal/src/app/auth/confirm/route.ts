@@ -46,5 +46,7 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/invite-expired`)
+  // Pass the link type so the expired page can show the right message and next steps
+  const expiredType = type === 'recovery' ? 'reset' : 'invite'
+  return NextResponse.redirect(`${origin}/invite-expired?type=${expiredType}`)
 }

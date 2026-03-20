@@ -10,7 +10,7 @@ NexusBridge CreditOS is a hybrid financial infrastructure platform connecting bo
 
 **Business model**: Originate and manage short-duration loans (6-12 months), secured by real assets, with conservative LTV ratios. Investors participate through NexusBridge Capital LP. Long-term vision includes a hybrid "HyFi" layer -- blockchain-based tokenized participation on top of the centralized lending platform.
 
-The marketing site (`apps/web-marketing`) is **live on Vercel** (Phase 1 complete). The unified portal (`apps/portal`) is **live in development** (Phase 3 complete, post-Phase 3 improvements done). The `services/`, `core/`, and `infrastructure/` directories are scaffolding -- not yet built.
+The marketing site (`apps/web-marketing`) is **live on Vercel** (Phase 1 complete). The unified portal (`apps/portal`) is **live in development** (Phase 4 in progress — workflow automation + e-signatures complete). The `services/`, `core/`, and `infrastructure/` directories are scaffolding -- not yet built.
 
 Design docs live in `/docs/`. Before implementing any feature, read the relevant doc:
 
@@ -33,10 +33,16 @@ Design docs live in `/docs/`. Before implementing any feature, read the relevant
 | Database schema (canonical) | `docs/Database_Schema.md` |
 | **Database infrastructure & config** | **`docs/15_Database_Infrastructure.md`** |
 | **SQL reference index** | **`docs/SQL_Reference.md`** |
-| **SQL reference — Phase 1 & 2** | **`docs/SQL_Reference_Phase1_2.md`** |
-| **SQL reference — Phase 3** | **`docs/SQL_Reference_Phase3.md`** |
+| **SQL reference — Phase 1 & 2** | **`docs/SQL_Ref_Phase1_2.md`** |
+| **SQL reference — Phase 3** | **`docs/SQL_Ref_Phase3.md`** |
+| **SQL reference — Phase 4** | **`docs/SQL_Ref_Phase4.md`** |
+| **SQL reference — Phase 5** | **`docs/SQL_Ref_Phase5.md`** |
 | **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
+| **Phase 1 implementation plan** | **`docs/Phase1_Implementation_Plan.md`** |
+| **Phase 2 implementation plan** | **`docs/Phase2_Implementation_Plan.md`** |
+| **Phase 3 implementation plan** | **`docs/Phase3_Implementation_Plan.md`** |
 | **Phase 4 implementation plan** | **`docs/Phase4_Implementation_Plan.md`** |
+| **Phase 5 implementation plan** | **`docs/Phase5_Implementation_Plan.md`** |
 
 UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md` (application portals).
 
@@ -86,7 +92,7 @@ Capital Edge Management, Inc. (CEM)
 - **Email**: Resend SDK
 - **Hosting**: Vercel (frontend)
 - **Monorepo**: Turborepo (planned)
-- **Integrations**: Plaid, PostHog, Sentry, n8n (automation)
+- **Integrations**: Plaid, PostHog, Sentry, n8n (automation), BoldSign (e-signatures)
 
 ---
 
@@ -105,7 +111,7 @@ Requires `apps/web-marketing/.env.local` with:
 RESEND_API_KEY=your_key_here
 ```
 
-### Portal (`apps/portal`) -- Phase 3 complete
+### Portal (`apps/portal`) -- Phase 4 in progress
 ```bash
 cd apps/portal
 npm run dev       # Start dev server (localhost:3001)
@@ -116,6 +122,12 @@ npm run lint      # ESLint
 Requires `apps/portal/.env.local` with Supabase, Upstash credentials, and Phase 4 integrations:
 ```
 N8N_WEBHOOK_SECRET=your_shared_hmac_secret_here
+BOLDSIGN_API_KEY=your_boldsign_api_key_here
+BOLDSIGN_WEBHOOK_SECRET=your_boldsign_webhook_secret_here
+BOLDSIGN_TEMPLATE_PROMISSORY_NOTE=your_template_id_here
+BOLDSIGN_TEMPLATE_DEED_OF_TRUST=your_template_id_here
+BOLDSIGN_TEMPLATE_LOAN_AGREEMENT=your_template_id_here
+BOLDSIGN_TEMPLATE_SUBSCRIPTION_AGREEMENT=your_template_id_here
 ```
 
 ### Supabase local development
@@ -134,7 +146,7 @@ supabase functions serve # Serve Edge Functions locally
 ```
 apps/
   web-marketing/   # Marketing site -- live on Vercel (localhost:3000)
-  portal/          # Unified portal -- Phase 3 complete (localhost:3001)
+  portal/          # Unified portal -- Phase 4 in progress (localhost:3001)
 services/          # Backend domain services (scaffolding only)
 core/              # Shared libraries (scaffolding only)
 infrastructure/    # Docker, Terraform, CI/CD (scaffolding only)
@@ -260,6 +272,7 @@ Events drive: notifications, accounting updates, audit records, workflow transit
 | Step 4 (Loan Lifecycle) | `loans`, `payment_schedule`, `payments`, `draws` |
 | Step 5 (Fund Operations) | `funds`, `fund_subscriptions`, `fund_allocations`, `nav_snapshots` |
 | Phase 4 Step 1 (Workflows) | `workflow_triggers`, `workflow_executions` |
+| Phase 4 Step 2 (E-Signatures) | `signature_requests` |
 
 ---
 

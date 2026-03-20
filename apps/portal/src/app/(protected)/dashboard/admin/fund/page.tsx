@@ -116,7 +116,7 @@ export default async function AdminFundPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pendingSubs.map((sub) => {
-                  const inv = sub.investors as InvestorJoin
+                  const inv = sub.investors as unknown as InvestorJoin
                   const expired = sub.reservation_expires_at && new Date(sub.reservation_expires_at) < new Date()
                   return (
                     <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
@@ -177,7 +177,7 @@ export default async function AdminFundPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {allSubs.map((sub) => {
-                  const inv = sub.investors as InvestorJoin
+                  const inv = sub.investors as unknown as InvestorJoin
                   return (
                     <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-5 py-3">

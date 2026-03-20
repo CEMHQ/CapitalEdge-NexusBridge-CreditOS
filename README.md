@@ -4,14 +4,35 @@ A hybrid lending and investor platform for originating, managing, and funding sh
 
 ---
 
-## What is NexusBridge CreditOS?
+## Platform Vision
 
-NexusBridge CreditOS connects **borrowers** seeking short-term asset-backed financing (bridge loans, renovation financing, GAP funding) with **investors** seeking yield-generating private credit exposure through NexusBridge Capital LP.
+NexusBridge Lending addresses a persistent inefficiency in private credit markets: the gap between traditional bank financing and private capital availability. Borrowers requiring rapid access to capital — for property acquisitions, renovation funding, or closing contingencies — are frequently underserved by institutions that cannot meet their timelines. Private capital, meanwhile, is fragmented and difficult to access.
 
-The platform handles the full lifecycle: borrower applications, document management, underwriting, loan servicing, fund operations, investor onboarding, Reg A/D compliance, e-signatures, and workflow automation.
+NexusBridge CreditOS is the technology infrastructure built to close that gap. It connects **borrowers** seeking short-term asset-backed financing with **investors** seeking structured, yield-generating exposure to real estate and private credit through NexusBridge Capital LP.
 
-**Marketing site**: Live on Vercel at [nexusbridgelending.com](https://nexusbridgelending.com) (Phase 1 complete)
-**Portal**: Live on Vercel (Phase 4 in progress -- workflow automation + e-signatures complete)
+**Key investment characteristics of the platform:**
+- Asset-backed lending strategies secured by real assets
+- Short-duration loans (typically 6–12 months)
+- Conservative loan-to-value ratios with diversified portfolio exposure
+- Structured investor reporting and full transparency into loan performance
+
+### HyFi — Hybrid Finance Layer
+
+The platform is architected in two layers:
+
+**Centralized layer (current):** Handles all regulated operations — borrower onboarding, KYC/AML compliance, document management, underwriting, loan servicing, fund accounting, and investor reporting. This layer operates under institutional-grade cloud infrastructure with full audit trails.
+
+**Decentralized layer (Phase 5 — future):** Introduces a blockchain protocol on top of the centralized platform for transparent capital pool accounting, tokenized investor participation, on-chain distribution logic, and verifiable lending pool balances. Identity and compliance remain centralized; capital settlement infrastructure becomes programmable and transparent.
+
+```
+Off-chain lending platform  (Phases 1–4)
+        ↓
+NAV & accounting mirror
+        ↓
+Tokenization smart contracts  (Phase 5 — optional)
+```
+
+This separation ensures regulatory alignment while enabling optional DeFi integration — without disrupting core lending operations.
 
 ---
 
@@ -26,7 +47,7 @@ Capital Edge Management, Inc. (CEM)
 
 ---
 
-## Entity Separation -- Debt vs. Equity
+## Entity Separation — Debt vs. Equity
 
 Two brands. Two licenses. Two regulatory lanes. **They must never be crossed.**
 
@@ -35,16 +56,56 @@ Two brands. Two licenses. Two regulatory lanes. **They must never be crossed.**
 | Capital Edge Management, Inc. (CEM) | **Equity** | Real Estate License | capitaledgeinvest.com |
 | NexusBridge Lending LLC | **Debt** | Lending License | nexusbridgelending.com |
 
-**CEM owns (equity side):**
-- Real Estate Fund (Reg A / Reg D) -- income-producing, value-add, distressed properties
-- Crowdfund (Reg CF) -- startups and growth-stage companies
-- Advisory / Education
+**CEM owns (equity side):** Real Estate Fund (Reg A / Reg D), Crowdfund (Reg CF), Advisory / Education
 
-**NexusBridge owns (debt side):**
-- Bridge Loans, Renovation Financing, Asset-Backed Lending, GAP Funding, Micro-Lending
-- NexusBridge Capital LP -- private credit fund (Reg D / 506(c)), investor access to loan portfolio
+**NexusBridge owns (debt side):** Bridge Loans, Renovation Financing, Asset-Backed Lending, GAP Funding, Micro-Lending, NexusBridge Capital LP (Reg D / 506(c))
 
 > See `docs/Entity_Separation_Strategy.md` for the full separation policy and cross-reference guidelines.
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Browser / Client                         │
+│         nexusbridgelending.com  |  portal.vercel.app            │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ HTTPS
+┌────────────────────────▼────────────────────────────────────────┐
+│                    Next.js App Router (Vercel)                   │
+│                                                                  │
+│  apps/web-marketing      apps/portal                            │
+│  (marketing site)        (unified portal — all roles)           │
+│                          ┌───────────────────────────────┐      │
+│                          │  Middleware (IP rate limit +   │      │
+│                          │  auth check + role guard)      │      │
+│                          │  API Routes (Zod + RBAC + RLS) │      │
+│                          └───────────────────────────────┘      │
+└──────────┬──────────────────────────┬───────────────────────────┘
+           │                          │
+┌──────────▼──────────┐   ┌───────────▼──────────────────────────┐
+│  Supabase (hosted)  │   │           Third-Party Integrations    │
+│                     │   │                                       │
+│  PostgreSQL + RLS   │   │  BoldSign       — e-signatures        │
+│  Auth (PKCE/OTP)    │   │  n8n            — workflow automation │
+│  Storage (docs)     │   │  Resend         — transactional email │
+│  Realtime           │   │  Upstash Redis  — rate limiting       │
+│  pg_partman         │   │  Plaid          — bank verification   │
+│  pg_cron            │   │  PostHog        — analytics           │
+└─────────────────────┘   │  Sentry         — error monitoring    │
+                          └───────────────────────────────────────┘
+```
+
+### Core Engines
+
+| Engine | Description |
+|---|---|
+| Underwriting Rules Engine | Pure-function risk scoring, LTV checks, condition generation |
+| Loan State Machine | Enforces valid application and loan state transitions |
+| Workflow Automation Engine | Event-driven triggers → n8n webhooks → automated actions |
+| Fund Accounting Engine | FCFS subscriptions, NAV snapshots, capital allocations |
+| Audit & Compliance Engine | Append-only audit events, partitioned by month (pg_partman) |
 
 ---
 
@@ -57,9 +118,11 @@ Two brands. Two licenses. Two regulatory lanes. **They must never be crossed.**
 | ORM | Drizzle ORM (type-safe, Supabase Transaction Pooler on port 6543) |
 | Rate Limiting | Upstash Redis (serverless, Edge-compatible) |
 | Email | Resend SDK |
+| E-Signatures | BoldSign (Dropbox Sign preserved for future upgrade) |
+| Workflow Automation | n8n (self-hosted, platform engine complete) |
 | Hosting | Vercel (frontend) |
 | Monorepo | Turborepo (planned) |
-| Integrations | Plaid, PostHog, Sentry, n8n (automation), BoldSign (e-signatures) |
+| Integrations | Plaid, PostHog, Sentry |
 
 ---
 
@@ -67,26 +130,82 @@ Two brands. Two licenses. Two regulatory lanes. **They must never be crossed.**
 
 ```
 apps/
-  web-marketing/   # Marketing site -- live on Vercel (localhost:3000)
-  portal/          # Unified portal -- Phase 4 in progress (localhost:3001)
+  web-marketing/   # Marketing site — live on Vercel (localhost:3000)
+  portal/          # Unified portal — Phase 4 in progress (localhost:3001)
 services/          # Backend domain services (scaffolding only)
 core/              # Shared libraries (scaffolding only)
 infrastructure/    # Docker, Terraform, CI/CD (scaffolding only)
 compliance/        # SOC2, Reg A, Reg D artifacts
-docs/              # Architecture documentation
+docs/              # Architecture and implementation documentation
 ```
 
 ---
 
-## Implementation Phases
+## Security Architecture
 
-| Phase | Scope | Status |
+Every request passes through six enforcement layers in order:
+
+```
+1. Middleware          — IP rate limit (Upstash) → auth check → role route guard
+2. validateBody()      — Zod schema validation → 400 if invalid
+3. applyRateLimit()    — Upstash user-ID counter → 429 if exceeded
+4. getUser()           — Supabase session → 401 if not authenticated
+5. getUserRole()       — user_roles table lookup → 403 if wrong role
+6. DB operation        — Supabase RLS enforces row-level access
+```
+
+All sensitive actions emit append-only audit events. Row-level security (RLS) is enforced on every Supabase table. The platform is designed to support SOC2 controls, Reg A investor limits, and Reg D accredited investor verification.
+
+---
+
+## Roles
+
+Six roles are implemented with scoped access and navigation:
+
+| Role | Access | Navigation |
 |---|---|---|
-| **Phase 1** | Marketing site -- 8 pages, lead capture forms, email routing | Completed |
-| **Phase 2** | Supabase auth + RBAC, all role dashboards, borrower portal, investor portal, admin console, underwriter workspace, servicing dashboard | Completed |
-| **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | Completed |
-| **Phase 4** | Workflow automation (n8n -- engine complete, n8n not yet deployed) + e-signatures (BoldSign -- complete) + OCR (Ocrolus/Argyle -- planned) + compliance hardening (KYC/AML -- planned) | In Progress |
-| **Phase 5** | Tokenization layer (Base/Ethereum L2) -- HyFi vision | Optional / Future |
+| `borrower` | Apply for loans, upload documents, view application status, receive notifications | Dashboard, My Applications, Documents, Notifications |
+| `investor` | View portfolio, fund subscriptions, statements, receive notifications | Dashboard, Portfolio, Statements, Notifications |
+| `admin` | Full CRUD: applications, investors, users, documents, underwriting, tasks, workflows, audit log, invite users | Dashboard, Applications, Investors, Documents, Underwriting, Users, Tasks, Workflows, Audit Log, Invite User |
+| `manager` | Same as admin minus user management and investor delete | Dashboard, Applications, Investors, Documents, Tasks, Audit Log, Invite User |
+| `underwriter` | Underwriting cases assigned to them, record decisions, add conditions, own tasks | Dashboard, Cases, Tasks |
+| `servicing` | Loan management, record payments, manage draws, own tasks | Dashboard, Loans, Tasks |
+
+---
+
+## Roadmap
+
+### Phase 1 — Marketing Site ✅ Complete
+- 8-page marketing site live on Vercel at nexusbridgelending.com
+- Lead capture forms with email routing via Resend
+- Entity-separated content (debt products only)
+
+### Phase 2 — Auth + Portals ✅ Complete
+- Supabase auth (magic link, invite, PKCE flow)
+- All 6 role dashboards: borrower, investor, admin, manager, underwriter, servicing
+- RBAC middleware + route guards
+
+### Phase 3 — Loan Lifecycle + Fund Operations ✅ Complete
+- **Step 1:** Foundation — audit events (partitioned), activity logs, notifications, tasks, pg_partman, state machine, Zod schemas, rate limiters
+- **Step 2:** Document Management — documents table, Supabase Storage, signed upload URLs, admin review queue
+- **Step 3:** Underwriting Engine — underwriting cases, decisions, conditions, risk flags, pure-function rules engine, 7 API routes
+- **Step 4:** Loan Lifecycle — loans, payment schedule, payments, draws, 6 API routes, servicing UI
+- **Step 5:** Fund Operations — funds, subscriptions (FCFS locking), allocations, NAV snapshots, investor portfolio/statements
+
+### Phase 4 — Workflow Automation + E-Signatures 🔄 In Progress
+- **Step 1:** Workflow Automation — `workflow_triggers`, `workflow_executions` tables, `fireWorkflowTrigger` engine, 6 API routes, admin workflows UI, 5 seeded triggers wired to application/document/payment/loan events
+  - Platform engine: ✅ Complete
+  - n8n self-hosted instance: ⚪ Not yet deployed
+- **Step 2:** E-Signatures (BoldSign) — `signature_requests` table, BoldSign REST integration, send/void/resend API routes, webhook handler, auto-transition application to funded on loan doc signing, auto-activate subscription on agreement signing ✅ Complete
+- **Step 3:** OCR / Document Intelligence — Ocrolus + Argyle, `document_extractions` table, auto-populate application fields ⚪ Planned
+- **Step 4:** Compliance Hardening — KYC (Persona), AML (OFAC SDN), Reg A investor limits, accreditation tracking ⚪ Planned
+
+### Phase 5 — Tokenization Layer ⚪ Optional / Future
+- Blockchain protocol layer on Base / Ethereum L2
+- Tokenized investor participation (ERC-20 or ERC-1400)
+- On-chain NAV mirror, distribution logic, verifiable pool balances
+- Smart contract bridge between off-chain lending records and on-chain positions
+- Designed as an additive layer — core lending platform is unaffected
 
 ---
 
@@ -140,38 +259,6 @@ supabase functions serve # Serve Edge Functions locally
 
 ---
 
-## Security Architecture
-
-Every request passes through six enforcement layers in order:
-
-```
-1. Middleware          -- IP rate limit (Upstash) -> auth check -> role route guard
-2. validateBody()     -- Zod schema validation -> 400 if invalid
-3. applyRateLimit()   -- Upstash user-ID counter -> 429 if exceeded
-4. getUser()          -- Supabase session -> 401 if not authenticated
-5. getUserRole()      -- user_roles table lookup -> 403 if wrong role
-6. DB operation       -- Supabase RLS enforces row-level access
-```
-
-All sensitive actions emit audit events. Row-level security (RLS) is enforced on all Supabase tables. The platform supports SOC2 controls, Reg A investor limits, and Reg D accredited investor verification.
-
----
-
-## Roles
-
-Six roles are implemented, each with scoped access:
-
-| Role | Access | Navigation Links |
-|---|---|---|
-| `borrower` | Apply for loans, upload documents, view application status and detail, receive notifications | Dashboard, My Applications, Documents, Notifications |
-| `investor` | View portfolio, fund subscriptions, statements, receive notifications | Dashboard, Portfolio, Statements, Notifications |
-| `admin` | Full CRUD: applications, investors, users, documents, underwriting, tasks, workflows, audit log, invite users | Dashboard, Applications, Investors, Documents, Underwriting, Users, Tasks, Workflows, Audit Log, Invite User |
-| `manager` | Same as admin minus user management and investor delete | Dashboard, Applications, Investors, Documents, Tasks, Audit Log, Invite User |
-| `underwriter` | Underwriting cases assigned to them, record decisions, add conditions, own tasks | Dashboard, Cases, Tasks |
-| `servicing` | Loan management, record payments, manage draws, own tasks | Dashboard, Loans, Tasks |
-
----
-
 ## Key Documentation
 
 | Topic | File |
@@ -193,12 +280,6 @@ Six roles are implemented, each with scoped access:
 | Database infrastructure | `docs/15_Database_Infrastructure.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
 | Entity separation strategy | `docs/Entity_Separation_Strategy.md` |
-
----
-
-## AI Assistant Guidance
-
-This repository includes a `CLAUDE.md` file with comprehensive instructions for Claude Code and other AI assistants. It covers architecture rules, security enforcement order, entity separation constraints, API route patterns, database rules, and implementation phasing. Consult it before making changes to the codebase.
 
 ---
 

@@ -8,8 +8,10 @@ All Supabase SQL queries are organized by phase. Run each statement individually
 
 | File | Covers |
 |---|---|
-| [`SQL_Reference_Phase1_2.md`](./SQL_Reference_Phase1_2.md) | Core schema (profiles, borrowers, applications, properties, loan_requests, investors, user_roles), RLS policies, cascade deletes, user management queries, audit/verification queries |
-| [`SQL_Reference_Phase3.md`](./SQL_Reference_Phase3.md) | Foundation (pg_partman, audit_events, activity_logs, notifications, tasks), Documents, Underwriting Engine, Loan Lifecycle, Fund Operations, Cross-phase verification queries |
+| [`SQL_Ref_Phase1_2.md`](./SQL_Ref_Phase1_2.md) | Core schema (profiles, borrowers, applications, properties, loan_requests, investors, user_roles), RLS policies, cascade deletes, user management queries, audit/verification queries |
+| [`SQL_Ref_Phase3.md`](./SQL_Ref_Phase3.md) | Foundation (pg_partman, audit_events, activity_logs, notifications, tasks), Documents, Underwriting Engine, Loan Lifecycle, Fund Operations, Cross-phase verification queries |
+| [`SQL_Ref_Phase4.md`](./SQL_Ref_Phase4.md) | Workflow Automation (workflow_triggers, workflow_executions), E-Signatures (signature_requests, fund_subscriptions constraint update) |
+| [`SQL_Ref_Phase5.md`](./SQL_Ref_Phase5.md) | Tokenization layer — placeholder schema sketches (not yet implemented) |
 
 ---
 
@@ -23,6 +25,7 @@ All Supabase SQL queries are organized by phase. Run each statement individually
 | Step 4 — Loan Lifecycle | `loans`, `payment_schedule`, `payments`, `draws` | `0012_loans` |
 | Step 5 — Fund Operations | `fund_subscriptions`, `fund_allocations`, `nav_snapshots` | `0013_fund_operations` |
 | Phase 4 Step 1 — Workflow Automation | `workflow_triggers`, `workflow_executions` | `0015_workflow_automation` |
+| Phase 4 Step 2 — E-Signatures | `signature_requests` | `0016_esignatures` |
 
 ---
 

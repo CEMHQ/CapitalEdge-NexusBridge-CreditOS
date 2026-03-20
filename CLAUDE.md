@@ -349,7 +349,7 @@ emitAuditEvent({ ... });
 | Step | Scope | Status |
 |---|---|---|
 | Step 1 | Workflow Automation: workflow_triggers, workflow_executions tables + fireWorkflowTrigger engine + 6 API routes + /dashboard/admin/workflows UI + n8n inbound webhook + 5 seeded triggers wired to application/document/payment/loan events | ✅ Complete |
-| Step 2 | E-Signatures: Dropbox Sign integration, signature_requests table, gate loan closing + subscription on signed docs | ⚪ Planned |
+| Step 2 | E-Signatures: BoldSign integration (Dropbox Sign preserved for future upgrade), signature_requests table, gate loan closing + subscription on signed docs | ✅ Complete |
 | Step 3 | OCR / Document Intelligence: Ocrolus + Argyle, document_extractions table, auto-populate application fields | ⚪ Planned |
 | Step 4 | Compliance Hardening: KYC (Persona), AML (OFAC SDN), Reg A investor limits, accreditation tracking | ⚪ Planned |
 

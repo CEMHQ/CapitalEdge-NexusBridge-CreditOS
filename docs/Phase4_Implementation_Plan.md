@@ -50,7 +50,7 @@ Phase 4 is divided into four steps, executed in order.
 
 ---
 
-### Step 1 -- Workflow Automation (n8n)
+### Step 1 -- Workflow Automation (n8n) ✅ Complete
 
 **Goal**: Automate task creation, case assignment, notifications, and status-driven triggers across the loan lifecycle and investor onboarding. Eliminate the need for admin/manager to manually create tasks and notify staff after every state change.
 
@@ -130,7 +130,7 @@ Phase 4 is divided into four steps, executed in order.
 
 ---
 
-### Step 2 -- E-Signatures
+### Step 2 -- E-Signatures ✅ Complete
 
 **Goal**: Require legally binding digital signatures on loan closing documents and investor subscription agreements before state transitions proceed. Signed documents are stored in Supabase Storage and linked to the `documents` table.
 
@@ -222,7 +222,7 @@ Update `getRequiredDocumentsForApplication('funded')` to also check `signature_r
 
 ---
 
-### Step 3 -- OCR / Document Intelligence
+### Step 3 -- OCR / Document Intelligence ⚪ Planned
 
 **Goal**: Automatically extract structured data from uploaded financial documents (bank statements, pay stubs, tax returns) and pre-populate application fields. A human review step ensures accuracy before data is committed.
 
@@ -306,7 +306,7 @@ Add two new status values beyond the original schema: `reviewed` (human looked a
 
 ---
 
-### Step 4 -- Compliance Hardening
+### Step 4 -- Compliance Hardening ⚪ Planned
 
 **Goal**: Implement enforced compliance workflows for KYC/AML verification, Reg A investor investment limits, Reg D accredited investor verification, OFAC screening, and accreditation expiry monitoring.
 
@@ -447,7 +447,9 @@ Add two new status values beyond the original schema: `reviewed` (human looked a
 
 ## 3. E-Signature Integration
 
-### Recommended service: Dropbox Sign (HelloSign)
+### Active provider: BoldSign (current) — Dropbox Sign (future upgrade path)
+
+**Current implementation**: BoldSign is the active provider. Dropbox Sign integration is preserved in `src/lib/esign/dropbox-sign.ts` for future upgrade.
 
 **Rationale**:
 
@@ -457,14 +459,24 @@ Add two new status values beyond the original schema: `reviewed` (human looked a
 | Embedded signing | Yes | Yes -- best-in-class UX | Yes |
 | Template management | Yes | Yes | Yes |
 | Webhook reliability | Good | Good | Good |
-| Sandbox environment | Free | Free | Free |
+| Sandbox environment | Free | Free | Free (25 docs/month) |
 | Pricing (production) | $25-65/user/month | $20-50/user/month | $12-36/user/month |
 | Compliance (ESIGN, UETA) | Yes | Yes | Yes |
 | Audit trail | Built-in | Built-in | Built-in |
 | API rate limits | 1000 req/hr (production) | 500 req/hr (production) | 200 req/hr |
 | Setup complexity | High | Medium | Low |
 
-**Recommendation**: Dropbox Sign offers the best balance of API ergonomics, embedded signing UX, compliance, and cost. DocuSign is over-engineered for this stage. BoldSign is cheaper but has lower rate limits and a smaller ecosystem. Switch to DocuSign later if enterprise clients require it.
+**Active env vars**:
+```
+BOLDSIGN_API_KEY=
+BOLDSIGN_WEBHOOK_SECRET=
+BOLDSIGN_TEMPLATE_PROMISSORY_NOTE=
+BOLDSIGN_TEMPLATE_DEED_OF_TRUST=
+BOLDSIGN_TEMPLATE_LOAN_AGREEMENT=
+BOLDSIGN_TEMPLATE_SUBSCRIPTION_AGREEMENT=
+```
+
+**Webhook**: registered at `https://capital-edge-nexus-bridge-credit-os.vercel.app/api/webhooks/esign` with secret header `x-boldsign-secret`.
 
 ### How it slots into the loan state machine
 

@@ -33,8 +33,8 @@ function InviteLinkExpired() {
         <div className="text-sm text-amber-700 pt-1">
           <p>
             <span className="font-medium">Email: </span>
-            <a href="mailto:support@nexusbridgelending.com" className="underline hover:text-amber-900">
-              support@nexusbridgelending.com
+            <a href="mailto:cem.projects.hq@gmail.com" className="underline hover:text-amber-900">
+              cem.projects.hq@gmail.com
             </a>
           </p>
         </div>

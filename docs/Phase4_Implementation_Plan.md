@@ -50,7 +50,9 @@ Phase 4 is divided into four steps, executed in order.
 
 ---
 
-### Step 1 -- Workflow Automation (n8n) ✅ Complete
+### Step 1 -- Workflow Automation (n8n) 🔄 Partial
+
+> **Status**: Platform workflow engine complete (workflow_triggers, workflow_executions, fireWorkflowTrigger, 6 API routes, admin UI, 5 seeded triggers). n8n self-hosted instance not yet deployed — outbound webhook integration to n8n pending.
 
 **Goal**: Automate task creation, case assignment, notifications, and status-driven triggers across the loan lifecycle and investor onboarding. Eliminate the need for admin/manager to manually create tasks and notify staff after every state change.
 

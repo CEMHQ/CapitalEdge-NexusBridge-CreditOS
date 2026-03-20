@@ -61,5 +61,7 @@ next-env.d.ts
 
 # ─── Claude / local tooling ───────────────────────
 .claude/
+!.claude/agents/
+!.claude/agents/**
 images/screenshots/
 apps/web-marketing/screenshot.mjs

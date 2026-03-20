@@ -361,6 +361,7 @@ export const createSignatureRequestSchema = z.object({
     'deed_of_trust',
     'loan_agreement',
     'subscription_agreement',
+    'ppm_acknowledgment',
   ]),
   signers: z.array(z.object({
     name:  z.string().trim().min(1).max(120),

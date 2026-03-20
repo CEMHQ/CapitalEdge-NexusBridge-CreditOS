@@ -14,6 +14,7 @@ const TEMPLATE_ENV: Record<string, string> = {
   deed_of_trust:          'BOLDSIGN_TEMPLATE_DEED_OF_TRUST',
   loan_agreement:         'BOLDSIGN_TEMPLATE_LOAN_AGREEMENT',
   subscription_agreement: 'BOLDSIGN_TEMPLATE_SUBSCRIPTION_AGREEMENT',
+  ppm_acknowledgment:     'BOLDSIGN_TEMPLATE_PPM_ACKNOWLEDGMENT',
 }
 
 export async function POST(request: Request) {
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create signature request' }, { status: 500 })
   }
 
-  // Send via Dropbox Sign
+  // Send via BoldSign
   let providerRequestId: string | null = null
   let sendError: string | null = null
 
@@ -90,6 +91,7 @@ export async function POST(request: Request) {
       deed_of_trust:          'Deed of Trust',
       loan_agreement:         'Loan Agreement',
       subscription_agreement: 'Subscription Agreement',
+      ppm_acknowledgment:     'PPM Acknowledgment',
     }
 
     const result = await sendSignatureRequest({

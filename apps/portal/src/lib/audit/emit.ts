@@ -25,6 +25,11 @@ export type AuditEventType =
   | 'workflow_updated'
   | 'workflow_deleted'
   | 'workflow_triggered'
+  | 'signature_sent'
+  | 'signature_completed'
+  | 'signature_declined'
+  | 'signature_voided'
+  | 'signature_resent'
 
 export type AuditEntityType =
   | 'loan'
@@ -42,6 +47,7 @@ export type AuditEntityType =
   | 'distribution'
   | 'workflow_trigger'
   | 'workflow_execution'
+  | 'signature_request'
 
 export interface AuditEventParams {
   actorProfileId: string | null

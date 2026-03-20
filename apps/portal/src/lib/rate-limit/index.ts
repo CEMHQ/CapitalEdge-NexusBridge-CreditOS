@@ -106,3 +106,10 @@ export const n8nWebhookLimiter = new Ratelimit({
   limiter: Ratelimit.slidingWindow(100, '1 m'),
   prefix: 'rl:n8n-webhook',
 })
+
+// Signature requests: 20 per user per hour
+export const signatureLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(20, '1 h'),
+  prefix: 'rl:signature',
+})

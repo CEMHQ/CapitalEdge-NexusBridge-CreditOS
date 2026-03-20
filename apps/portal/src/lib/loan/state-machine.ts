@@ -17,6 +17,7 @@ export type ApplicationStatus =
   | 'under_review'
   | 'conditionally_approved'
   | 'approved'
+  | 'pending_closing'
   | 'declined'
   | 'funded'
   | 'closed'
@@ -27,7 +28,8 @@ const APPLICATION_TRANSITIONS: Record<ApplicationStatus, ApplicationStatus[]> = 
   submitted:              ['under_review', 'declined'],
   under_review:           ['conditionally_approved', 'approved', 'declined'],
   conditionally_approved: ['approved', 'declined', 'under_review'],
-  approved:               ['funded', 'declined'],
+  approved:               ['pending_closing', 'declined'],
+  pending_closing:        ['funded', 'declined'],
   declined:               ['under_review'],   // allow re-opening with new info
   funded:                 ['closed'],
   closed:                 [],
@@ -39,6 +41,7 @@ const APPLICATION_TRANSITION_ROLES: Partial<Record<ApplicationStatus, UserRole[]
   under_review:           ['admin', 'manager', 'underwriter'],
   conditionally_approved: ['admin', 'manager', 'underwriter'],
   approved:               ['admin', 'manager'],
+  pending_closing:        ['admin', 'manager'],
   declined:               ['admin', 'manager', 'underwriter'],
   funded:                 ['admin', 'manager'],
   closed:                 ['admin', 'manager'],
@@ -131,6 +134,7 @@ export function formatApplicationStatus(status: ApplicationStatus): string {
     under_review:           'Under Review',
     conditionally_approved: 'Conditionally Approved',
     approved:               'Approved',
+    pending_closing:        'Pending Closing',
     declined:               'Declined',
     funded:                 'Funded',
     closed:                 'Closed',
@@ -159,6 +163,7 @@ export function applicationStatusColor(status: ApplicationStatus): string {
     case 'under_review':           return 'bg-amber-50 text-amber-700'
     case 'conditionally_approved': return 'bg-purple-50 text-purple-700'
     case 'approved':               return 'bg-green-50 text-green-700'
+    case 'pending_closing':        return 'bg-indigo-50 text-indigo-700'
     case 'declined':               return 'bg-red-50 text-red-700'
     case 'funded':                 return 'bg-emerald-50 text-emerald-700'
     case 'closed':                 return 'bg-gray-100 text-gray-500'

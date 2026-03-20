@@ -6,6 +6,8 @@ import UnderwriterMetricsForm from '@/components/admin/UnderwriterMetricsForm'
 import CreateLoanForm from '@/components/admin/CreateLoanForm'
 import DeleteApplicationButton from '@/components/admin/DeleteApplicationButton'
 import EditApplicationFieldsForm from '@/components/admin/EditApplicationFieldsForm'
+import SendForSignatureButton from '@/components/signatures/SendForSignatureButton'
+import SignatureStatusBadge from '@/components/signatures/SignatureStatusBadge'
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   sfh: 'Single Family Home', multifamily: 'Multifamily (2–4 units)',
@@ -75,6 +77,14 @@ export default async function ApplicationDetailPage({
 
   if (!app) notFound()
 
+  // Fetch existing signature requests for this application
+  const { data: sigRequests } = await supabase
+    .from('signature_requests')
+    .select('id, document_type, status, signers, sent_at, completed_at, declined_at')
+    .eq('entity_type', 'application')
+    .eq('entity_id', id)
+    .order('created_at', { ascending: false })
+
   const borrower = Array.isArray(app.borrowers) ? app.borrowers[0] : app.borrowers
   const profile = borrower && (Array.isArray(borrower.profiles) ? borrower.profiles[0] : borrower.profiles)
   const property = Array.isArray(app.properties) ? app.properties[0] : app.properties
@@ -141,8 +151,63 @@ export default async function ApplicationDetailPage({
         property={property ?? null}
       />
 
-      {/* Create Loan — only show for approved applications */}
-      {app.application_status === 'approved' && (
+      {/* E-Signatures — show when approved or pending_closing */}
+      {['approved', 'pending_closing'].includes(app.application_status) && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Closing Documents</h2>
+            {app.application_status === 'approved' && (
+              <SendForSignatureButton
+                entityType="application"
+                entityId={app.id}
+                availableDocTypes={['promissory_note', 'deed_of_trust', 'loan_agreement']}
+              />
+            )}
+          </div>
+
+          {sigRequests && sigRequests.length > 0 ? (
+            <div className="space-y-3">
+              {sigRequests.map((sr) => {
+                const signerList = (sr.signers ?? []) as Array<{ name: string; email: string; role: string; signed_at: string | null }>
+                return (
+                  <div key={sr.id} className="border border-gray-100 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-900 capitalize">
+                        {sr.document_type.replace(/_/g, ' ')}
+                      </span>
+                      <SignatureStatusBadge status={sr.status} />
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-0.5">
+                      {sr.sent_at && <p>Sent {formatDate(sr.sent_at)}</p>}
+                      {sr.completed_at && <p className="text-green-600">Signed {formatDate(sr.completed_at)}</p>}
+                      {sr.declined_at && <p className="text-red-600">Declined {formatDate(sr.declined_at)}</p>}
+                    </div>
+                    {signerList.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {signerList.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                            <span className={`w-2 h-2 rounded-full ${s.signed_at ? 'bg-green-500' : 'bg-gray-300'}`} />
+                            <span>{s.name}</span>
+                            <span className="text-gray-400">({s.role})</span>
+                            {s.signed_at && <span className="text-green-600 ml-auto">Signed</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">
+              No signature requests yet. Click &ldquo;Send for Signature&rdquo; to send closing documents.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Create Loan — only show for pending_closing or approved (legacy path) */}
+      {['approved', 'pending_closing'].includes(app.application_status) && (
         <CreateLoanForm
           applicationId={app.id}
           requestedAmount={app.requested_amount ?? 0}

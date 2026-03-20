@@ -9,6 +9,7 @@ const STATUSES = [
   { value: 'under_review', label: 'Under Review' },
   { value: 'conditionally_approved', label: 'Conditionally Approved' },
   { value: 'approved', label: 'Approved' },
+  { value: 'pending_closing', label: 'Pending Closing' },
   { value: 'declined', label: 'Declined' },
   { value: 'funded', label: 'Funded' },
   { value: 'closed', label: 'Closed' },
@@ -20,6 +21,7 @@ function statusColor(status: string) {
     case 'under_review': return 'bg-yellow-50 text-yellow-700'
     case 'conditionally_approved': return 'bg-orange-50 text-orange-700'
     case 'approved': return 'bg-green-50 text-green-700'
+    case 'pending_closing': return 'bg-indigo-50 text-indigo-700'
     case 'funded': return 'bg-green-100 text-green-800'
     case 'declined': return 'bg-red-50 text-red-700'
     default: return 'bg-gray-100 text-gray-600'

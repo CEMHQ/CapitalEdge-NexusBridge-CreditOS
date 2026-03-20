@@ -102,6 +102,7 @@ export const updateApplicationStatusSchema = z.object({
     'under_review',
     'conditionally_approved',
     'approved',
+    'pending_closing',
     'declined',
     'funded',
     'closed',
@@ -145,6 +146,7 @@ export const updateApplicationStatusSchemaV2 = z.object({
     'under_review',
     'conditionally_approved',
     'approved',
+    'pending_closing',
     'declined',
     'funded',
     'closed',
@@ -348,3 +350,25 @@ export const patchWorkflowTriggerSchema = z.object({
 })
 
 export type PatchWorkflowTriggerInput = z.infer<typeof patchWorkflowTriggerSchema>
+
+// ─── Phase 4: E-Signatures ────────────────────────────────────────────────────
+
+export const createSignatureRequestSchema = z.object({
+  entity_type:   z.enum(['application', 'subscription']),
+  entity_id:     z.string().uuid(),
+  document_type: z.enum([
+    'promissory_note',
+    'deed_of_trust',
+    'loan_agreement',
+    'subscription_agreement',
+  ]),
+  signers: z.array(z.object({
+    name:  z.string().trim().min(1).max(120),
+    email: z.string().email(),
+    role:  z.string().trim().min(1).max(50),
+    order: z.number().int().min(1).optional(),
+  })).min(1).max(5),
+  message: z.string().trim().max(500).optional(),
+})
+
+export type CreateSignatureRequestInput = z.infer<typeof createSignatureRequestSchema>

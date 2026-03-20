@@ -210,41 +210,30 @@ Six roles are implemented with scoped access and navigation:
 
 ---
 
-## Running Locally
+## Deployments
 
-### Prerequisites
+| App | Environment | URL |
+|---|---|---|
+| Marketing Site | Production | nexusbridgelending.com |
+| Portal | Production | https://capital-edge-nexus-bridge-credit-oo6rynkxo-cemhqs-projects.vercel.app |
+| Portal | Preview | Auto-deployed on every push to `main` via Vercel |
 
-- Node.js 18+
-- npm 9+
-- Supabase CLI (for local backend development)
+Both apps deploy automatically from `main`. Push to deploy.
 
-### Marketing Site (port 3000)
+## Third-Party Integrations
 
-```bash
-cd apps/web-marketing
-cp .env.example .env.local   # fill in values
-npm install
-npm run dev
-```
-
-### Portal (port 3001)
-
-```bash
-cd apps/portal
-cp .env.example .env.local   # fill in values
-npm install
-npm run dev
-```
-
-See `apps/portal/.env.example` for all required environment variables with descriptions.
-
-### Supabase (local)
-
-```bash
-supabase start           # Start local Supabase stack
-supabase db reset        # Reset and re-apply migrations
-supabase functions serve # Serve Edge Functions locally
-```
+| Service | Purpose | Dashboard |
+|---|---|---|
+| Supabase | Database, Auth, Storage, Realtime | supabase.com/dashboard |
+| Vercel | Hosting and CI/CD | vercel.com/cemhqs-projects |
+| Resend | Transactional email | resend.com |
+| Upstash | Redis rate limiting | console.upstash.com |
+| BoldSign | E-signatures | app.boldsign.com |
+| n8n | Workflow automation | Self-hosted (not yet deployed) |
+| Anthropic | Claude AI API | console.anthropic.com |
+| Plaid | Bank verification | dashboard.plaid.com |
+| PostHog | Product analytics | app.posthog.com |
+| Sentry | Error monitoring | sentry.io |
 
 ---
 

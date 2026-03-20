@@ -13,7 +13,7 @@ Run each statement individually in the Supabase SQL Editor.
 ## Table of Contents
 
 1. [Step 1 — Workflow Automation](#step-1--workflow-automation)
-2. [Step 2 — E-Signatures (BoldSign)](#step-2--e-signatures-boldsign)
+2. [Step 2 — E-Signatures (BoldSign / Dropbox Sign)](#step-2--e-signatures-boldsign--dropbox-sign)
 3. [Step 3 — OCR / Document Intelligence (Planned)](#step-3--ocr--document-intelligence-planned)
 4. [Step 4 — Compliance Hardening (Planned)](#step-4--compliance-hardening-planned)
 5. [Cross-Phase Verification Queries](#cross-phase-verification-queries)
@@ -322,7 +322,7 @@ ORDER BY we.executed_at DESC;
 
 ---
 
-## Step 2 — E-Signatures (BoldSign)
+## Step 2 — E-Signatures (BoldSign / Dropbox Sign)
 
 > **Related docs:** `docs/implementation plan/Phase4_Implementation_Plan.md`
 > Migration: `0016_esignatures`

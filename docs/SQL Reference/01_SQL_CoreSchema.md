@@ -8,6 +8,8 @@ All CREATE TABLE statements, indexes, and foreign key constraints for the core p
 Run each statement individually in the Supabase SQL Editor.
 
 > Auth functions, RLS policies, and user management queries are in `02_SQL_Phase2_AuthRoles.md`.
+> **Note on cascade deletes:** Migrations `0001` and `0007` define FKs without `ON DELETE CASCADE`.
+> The cascade constraints are added retroactively in `0008_cascade_deletes`. Section 4 of this file shows those `ALTER TABLE` statements. Run `0001`/`0007` first, then `0008`.
 
 ---
 

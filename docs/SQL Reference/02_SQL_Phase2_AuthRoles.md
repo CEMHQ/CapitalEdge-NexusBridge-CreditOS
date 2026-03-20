@@ -2,7 +2,7 @@
 
 **Phase:** 2 — Auth + Portals
 **Related docs:** `docs/02_System_Architecture.md`, `docs/05_Entity_Separation_Strategy.md`
-**Migrations:** `0005_user_roles`, `0006_auth_callbacks`
+**Migrations:** `0005_user_roles`, `0006_tighten_applications_update_own`
 
 Auth functions, RLS policies, and user management queries.
 Run each statement individually in the Supabase SQL Editor.

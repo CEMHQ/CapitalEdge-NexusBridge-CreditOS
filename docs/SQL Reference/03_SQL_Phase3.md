@@ -1623,9 +1623,9 @@ SELECT
   event_type,
   entity_type,
   entity_id,
-  actor_role,
+  actor_profile_id,
   created_at,
-  payload
+  event_payload
 FROM audit_events
 ORDER BY created_at DESC
 LIMIT 50;

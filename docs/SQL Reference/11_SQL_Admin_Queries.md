@@ -1,7 +1,17 @@
-# Delete User Query
+# NexusBridge CreditOS — SQL Reference: Admin & Operational Queries
+
+**Phase:** Operational (all phases)
+**Related docs:** `docs/01_Database_Schema.md`, `docs/15_Data_Security_Audit_Framework.md`
+
+Operational SQL queries for admin use — user management, audit verification, and database health checks.
+Run each statement individually in the Supabase SQL Editor.
+
+---
+
+## Delete User (Cascade)
 
 Run each statement **one at a time** in the Supabase SQL Editor.
-Replace the UUID if deleting a different user.
+Replace the UUID with the actual user ID to delete.
 
 **User:** vepap21@gmail.com
 **ID:** `62a82767-1aa4-4483-bdcf-15d359dbca96`

@@ -1,5 +1,9 @@
 # NexusBridge CreditOS — SQL Reference: Phase 5
 
+**Phase:** 5 — Tokenization Layer (Optional / Not yet started)
+**Related docs:** `docs/17_DeFi_Tokenization_RWA_Architecture.md`
+**Migration:** `0019_tokenization` (planned)
+
 SQL migration DDL and verification queries for Phase 5 — the HyFi tokenization layer.
 
 > For prior phases, see `SQL_Reference_Phase1_2.md`, `SQL_Reference_Phase3.md`, `SQL_Reference_Phase4.md`.

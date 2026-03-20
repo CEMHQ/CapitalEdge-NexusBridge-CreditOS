@@ -276,12 +276,18 @@ Both apps deploy automatically from `main`. Push to deploy.
 
 | Topic | File |
 |---|---|
-| SQL reference index | `docs/SQL Reference/SQL_Reference.md` |
-| SQL reference — Phase 1 and 2 | `docs/SQL Reference/SQL_Ref_Phase1_2.md` |
-| SQL reference — Phase 3 | `docs/SQL Reference/SQL_Ref_Phase3.md` |
-| SQL reference — Phase 4 | `docs/SQL Reference/SQL_Ref_Phase4.md` |
-| SQL reference — Phase 5 | `docs/SQL Reference/SQL_Ref_Phase5.md` |
-| Migration 0015 | `docs/SQL Reference/SQL_Migration_0015.md` |
+| SQL reference index | `docs/SQL Reference/00_SQL_Index.md` |
+| SQL reference — Core Schema (DDL) | `docs/SQL Reference/01_SQL_CoreSchema.md` |
+| SQL reference — Phase 2 (Auth & Roles) | `docs/SQL Reference/02_SQL_Phase2_AuthRoles.md` |
+| SQL reference — Phase 3, Step 1 (Foundation) | `docs/SQL Reference/03_SQL_Phase3-Step1_AuditFoundation.md` |
+| SQL reference — Phase 3, Step 2 (Documents) | `docs/SQL Reference/04_SQL_Phase3-Step2_Documents.md` |
+| SQL reference — Phase 3, Step 3 (Underwriting) | `docs/SQL Reference/05_SQL_Phase3-Step3_Underwriting.md` |
+| SQL reference — Phase 3, Step 4 (Loan Lifecycle) | `docs/SQL Reference/06_SQL_Phase3-Step4_LoanLifecycle.md` |
+| SQL reference — Phase 3, Step 5 (Fund Operations) | `docs/SQL Reference/07_SQL_Phase3-Step5_FundOperations.md` |
+| SQL reference — Phase 4, Step 1 (Workflow) | `docs/SQL Reference/08_SQL_Phase4-Step1_Workflow.md` |
+| SQL reference — Phase 4, Step 2 (E-Signatures) | `docs/SQL Reference/09_SQL_Phase4-Step2_ESignatures.md` |
+| SQL reference — Phase 5 (Tokenization) | `docs/SQL Reference/10_SQL_Phase5_Tokenization.md` |
+| SQL reference — Admin & Operational Queries | `docs/SQL Reference/11_SQL_Admin_Queries.md` |
 
 ### Legal
 

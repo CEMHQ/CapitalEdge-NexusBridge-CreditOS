@@ -6,14 +6,14 @@ import { signatureLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
 import { createSignatureRequestSchema } from '@/lib/validation/schemas'
-import { sendSignatureRequest } from '@/lib/esign/dropbox-sign'
+import { sendSignatureRequest } from '@/lib/esign/boldsign'
 
 // Template ID env var names per document type
 const TEMPLATE_ENV: Record<string, string> = {
-  promissory_note:        'DROPBOX_SIGN_TEMPLATE_PROMISSORY_NOTE',
-  deed_of_trust:          'DROPBOX_SIGN_TEMPLATE_DEED_OF_TRUST',
-  loan_agreement:         'DROPBOX_SIGN_TEMPLATE_LOAN_AGREEMENT',
-  subscription_agreement: 'DROPBOX_SIGN_TEMPLATE_SUBSCRIPTION_AGREEMENT',
+  promissory_note:        'BOLDSIGN_TEMPLATE_PROMISSORY_NOTE',
+  deed_of_trust:          'BOLDSIGN_TEMPLATE_DEED_OF_TRUST',
+  loan_agreement:         'BOLDSIGN_TEMPLATE_LOAN_AGREEMENT',
+  subscription_agreement: 'BOLDSIGN_TEMPLATE_SUBSCRIPTION_AGREEMENT',
 }
 
 export async function POST(request: Request) {
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       entity_type,
       entity_id,
       document_type,
-      provider:     'dropbox_sign',
+      provider:     'boldsign',
       template_id:  templateId ?? null,
       status:       'draft',
       signers:      signers,

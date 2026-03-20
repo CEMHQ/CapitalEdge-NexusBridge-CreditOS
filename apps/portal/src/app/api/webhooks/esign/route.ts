@@ -2,74 +2,69 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { emitAuditEvent } from '@/lib/audit/emit'
 import { emitNotification } from '@/lib/notifications/emit'
-import { verifyWebhookSignature } from '@/lib/esign/dropbox-sign'
 import { fireWorkflowTrigger } from '@/lib/workflows/engine'
 
-// Dropbox Sign webhook event types we care about
-type DropboxSignEventType =
-  | 'signature_request_signed'
-  | 'signature_request_all_signed'
-  | 'signature_request_declined'
-  | 'signature_request_expired'
-  | 'signature_request_viewed'
+// BoldSign webhook event types we care about
+type BoldSignEventType =
+  | 'document.Completed'
+  | 'document.Declined'
+  | 'document.Expired'
+  | 'document.Viewed'
+  | 'document.Sent'
 
-interface DropboxSignWebhookPayload {
+interface BoldSignWebhookPayload {
   event: {
-    event_type:    DropboxSignEventType
-    event_time:    string
-    event_hash:    string
-    event_metadata: {
-      reported_for_account_id: string
-    }
+    eventType: BoldSignEventType
+    eventTime: string
   }
-  signature_request: {
-    signature_request_id: string
-    is_complete:          boolean
-    is_declined:          boolean
-    has_error:            boolean
-    title:                string
-    signatures: Array<{
-      signature_id:          string
-      signer_email_address:  string
-      signer_name:           string
-      order:                 number | null
-      status_code:           string
-      signed_at:             number | null
+  data: {
+    documentId:     string
+    documentStatus: string
+    signerDetails?: Array<{
+      signerEmail:  string
+      signerName:   string
+      signerRole:   string
+      signedOn:     string | null
+      status:       string
     }>
+    declineReason?: string
   }
 }
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
 
-  // Verify HMAC signature
-  const apiKey = process.env.DROPBOX_SIGN_API_KEY
-  if (!apiKey) {
-    console.error('[esign-webhook] DROPBOX_SIGN_API_KEY not configured')
+  // Verify secret header set in BoldSign webhook settings
+  const webhookSecret = process.env.BOLDSIGN_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    console.error('[esign-webhook] BOLDSIGN_WEBHOOK_SECRET not configured')
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
   }
 
-  const signature = request.headers.get('x-hellosign-signature')
-  if (!verifyWebhookSignature(rawBody, signature, apiKey)) {
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  // Log all headers to identify what BoldSign actually sends
+  const allHeaders: Record<string, string> = {}
+  request.headers.forEach((value, key) => { allHeaders[key] = value })
+  console.log('[esign-webhook] all headers:', JSON.stringify(allHeaders))
+
+  const incomingSecret = request.headers.get('x-boldsign-secret')
+  console.log('[esign-webhook] incoming secret:', JSON.stringify(incomingSecret))
+  console.log('[esign-webhook] expected secret:', JSON.stringify(webhookSecret))
+  if (incomingSecret !== webhookSecret) {
+    return NextResponse.json({ error: 'Invalid secret' }, { status: 401 })
   }
 
-  // Dropbox Sign requires responding with "Hello API Event Received"
-  // Parse after we know signature is valid
-  let payload: DropboxSignWebhookPayload
+  let payload: BoldSignWebhookPayload
   try {
-    const parsed = JSON.parse(rawBody)
-    // Dropbox Sign wraps event in a JSON string for some endpoints
-    payload = typeof parsed === 'string' ? JSON.parse(parsed) : parsed
+    payload = JSON.parse(rawBody)
   } catch {
-    return new Response('Hello API Event Received', { status: 200 })
+    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
-  const eventType    = payload.event?.event_type
-  const providerReqId = payload.signature_request?.signature_request_id
+  const eventType      = payload.event?.eventType
+  const providerReqId  = payload.data?.documentId
 
   if (!eventType || !providerReqId) {
-    return new Response('Hello API Event Received', { status: 200 })
+    return NextResponse.json({ ok: true })
   }
 
   const adminClient = createAdminClient()
@@ -83,28 +78,28 @@ export async function POST(request: Request) {
 
   // Unknown request — acknowledge and ignore
   if (!sigReq) {
-    return new Response('Hello API Event Received', { status: 200 })
+    return NextResponse.json({ ok: true })
   }
 
   const now = new Date().toISOString()
 
   // ── Handle each event type ──────────────────────────────────────────────────
 
-  if (eventType === 'signature_request_viewed') {
+  if (eventType === 'document.Viewed') {
     await adminClient
       .from('signature_requests')
       .update({ status: 'viewed' })
       .eq('id', sigReq.id)
-      .eq('status', 'sent') // only update if still sent
+      .eq('status', 'sent')
   }
 
-  if (eventType === 'signature_request_all_signed') {
-    // Update signers with signed_at timestamps
+  if (eventType === 'document.Completed') {
+    // Update signers with signed_on timestamps from BoldSign
     const updatedSigners = (sigReq.signers as Array<Record<string, unknown>>).map((s) => {
-      const match = payload.signature_request.signatures.find(
-        (ps) => ps.signer_email_address === s.email
+      const match = payload.data.signerDetails?.find(
+        (sd) => sd.signerEmail === s.email
       )
-      return { ...s, signed_at: match?.signed_at ? new Date(match.signed_at * 1000).toISOString() : null }
+      return { ...s, signed_at: match?.signedOn ?? null }
     })
 
     await adminClient
@@ -125,8 +120,10 @@ export async function POST(request: Request) {
     })
 
     // Auto-transition application from pending_closing to funded when loan docs signed
-    if (sigReq.entity_type === 'application' &&
-      ['promissory_note', 'deed_of_trust', 'loan_agreement'].includes(sigReq.document_type)) {
+    if (
+      sigReq.entity_type === 'application' &&
+      ['promissory_note', 'deed_of_trust', 'loan_agreement'].includes(sigReq.document_type)
+    ) {
       await adminClient
         .from('applications')
         .update({ application_status: 'funded', updated_at: now })
@@ -155,16 +152,13 @@ export async function POST(request: Request) {
     void notifySignatureComplete(sigReq.entity_type, sigReq.entity_id, adminClient)
   }
 
-  if (eventType === 'signature_request_declined') {
-    const decliner = payload.signature_request.signatures.find(
-      (s) => s.status_code === 'declined'
-    )
+  if (eventType === 'document.Declined') {
     await adminClient
       .from('signature_requests')
       .update({
         status:         'declined',
         declined_at:    now,
-        decline_reason: decliner ? `Declined by ${decliner.signer_name} (${decliner.signer_email_address})` : null,
+        decline_reason: payload.data.declineReason ?? null,
       })
       .eq('id', sigReq.id)
 
@@ -176,14 +170,14 @@ export async function POST(request: Request) {
     })
   }
 
-  if (eventType === 'signature_request_expired') {
+  if (eventType === 'document.Expired') {
     await adminClient
       .from('signature_requests')
       .update({ status: 'expired' })
       .eq('id', sigReq.id)
   }
 
-  return new Response('Hello API Event Received', { status: 200 })
+  return NextResponse.json({ ok: true })
 }
 
 // ─── Notify borrower / investor that signing is complete ─────────────────────

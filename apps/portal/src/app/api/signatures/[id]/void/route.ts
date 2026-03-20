@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserRole } from '@/lib/auth/roles'
 import { emitAuditEvent } from '@/lib/audit/emit'
-import { voidSignatureRequest } from '@/lib/esign/dropbox-sign'
+import { voidSignatureRequest } from '@/lib/esign/boldsign'
 
 export async function POST(
   _request: Request,

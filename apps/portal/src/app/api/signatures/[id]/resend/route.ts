@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserRole } from '@/lib/auth/roles'
 import { emitAuditEvent } from '@/lib/audit/emit'
-import { resendSignatureRequest } from '@/lib/esign/dropbox-sign'
+import { resendSignatureRequest } from '@/lib/esign/boldsign'
 import { z } from 'zod'
 
 const resendSchema = z.object({

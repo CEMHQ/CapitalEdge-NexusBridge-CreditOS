@@ -21,28 +21,28 @@ Design docs live in `/docs/`. Before implementing any feature, read the relevant
 | Workflows & user journeys | `docs/03_Platform_Workflows.md` |
 | Implementation phasing & dev guide | `docs/04_Developer_Guide.md` |
 | Loan state machine | `docs/05_Loan_State_Machine.md` |
-| Capital waterfall logic | `docs/06_Capital_Waterfall_Logic.md` |
 | Underwriting rules engine | `docs/07_Underwriting_Rules_Engine.md` |
 | Servicing & ledger model | `docs/08_Servicing_Ledger_Model.md` |
 | SOC2 implementation | `docs/09_SOC2_Implementation_Protocol.md` |
 | Document management | `docs/10_Document_Management.md` |
 | Data security & audit framework | `docs/11_Data_Security_Audit_Framework.md` |
-| Institutional ledger architecture | `docs/12_Institutional_Ledger_Architecture.md` |
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
-| Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
+| Fund accounting, NAV, ledger & waterfall | `docs/14_Fund_Accounting_NAV_Engine_Architecture.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
 | **Database infrastructure & config** | **`docs/15_Database_Infrastructure.md`** |
-| **SQL reference index** | **`docs/SQL_Reference.md`** |
-| **SQL reference — Phase 1 & 2** | **`docs/SQL_Ref_Phase1_2.md`** |
-| **SQL reference — Phase 3** | **`docs/SQL_Ref_Phase3.md`** |
-| **SQL reference — Phase 4** | **`docs/SQL_Ref_Phase4.md`** |
-| **SQL reference — Phase 5** | **`docs/SQL_Ref_Phase5.md`** |
+| **Investor portal, Reg A / Reg D UX & compliance** | **`docs/15_Investor_Portal_RegA_UX_Flow.md`** |
+| **DeFi tokenization / RWA architecture** | **`docs/16_DeFi_Tokenization_RWA_Architecture.md`** |
+| **SQL reference index** | **`docs/SQL Reference/SQL_Reference.md`** |
+| **SQL reference — Phase 1 & 2** | **`docs/SQL Reference/SQL_Ref_Phase1_2.md`** |
+| **SQL reference — Phase 3** | **`docs/SQL Reference/SQL_Ref_Phase3.md`** |
+| **SQL reference — Phase 4** | **`docs/SQL Reference/SQL_Ref_Phase4.md`** |
+| **SQL reference — Phase 5** | **`docs/SQL Reference/SQL_Ref_Phase5.md`** |
 | **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
-| **Phase 1 implementation plan** | **`docs/Phase1_Implementation_Plan.md`** |
-| **Phase 2 implementation plan** | **`docs/Phase2_Implementation_Plan.md`** |
-| **Phase 3 implementation plan** | **`docs/Phase3_Implementation_Plan.md`** |
-| **Phase 4 implementation plan** | **`docs/Phase4_Implementation_Plan.md`** |
-| **Phase 5 implementation plan** | **`docs/Phase5_Implementation_Plan.md`** |
+| **Phase 1 implementation plan** | **`docs/implementation plan/Phase1_Implementation_Plan.md`** |
+| **Phase 2 implementation plan** | **`docs/implementation plan/Phase2_Implementation_Plan.md`** |
+| **Phase 3 implementation plan** | **`docs/implementation plan/Phase3_Implementation_Plan.md`** |
+| **Phase 4 implementation plan** | **`docs/implementation plan/Phase4_Implementation_Plan.md`** |
+| **Phase 5 implementation plan** | **`docs/implementation plan/Phase5_Implementation_Plan.md`** |
 
 UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md` (application portals).
 

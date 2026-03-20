@@ -274,3 +274,30 @@ The investor portal depends on:
 ## Summary
 
 The investor portal must be more than a dashboard. It should function as a compliant digital subscription and reporting environment that supports both private and retail capital formation while remaining resilient under asynchronous workflow conditions.
+
+---
+
+## Reg A / Reg D Compliance Requirements
+
+### Reg D (506(b) and 506(c))
+
+- Accredited investor verification required for 506(c) — third-party confirmation mandatory
+- Subscription agreement tracking — linked to BoldSign signature requests
+- Capital call records — tied to fund subscription and funding events
+- Maximum 99 beneficial owners for Section 3(c)(1) Investment Company Act exclusion
+
+### Reg A Tier 2
+
+- Investor investment limits enforced — non-accredited investors capped at 10% of the greater of annual income or net worth per year across all Reg A offerings
+- Offering circular (Form 1-A) must be distributed and acknowledged before subscription
+- SEC reporting readiness — annual Form 1-K, semi-annual Form 1-SA, current events Form 1-U must be surfaced in the investor portal
+- Jurisdiction screening — residency and eligibility must be validated before allowing investment
+
+### Compliance Tables
+
+| Table | Purpose |
+|---|---|
+| `offerings` | Legal offering records — regulation type, status, offering circular link |
+| `offering_documents` | Documents tied to each offering (Form 1-A, PPM, amendments) |
+| `investor_limits` | Per-investor investment limit records for Reg A enforcement |
+| `accreditation_records` | Accreditation verification status and evidence for Reg D 506(c) |

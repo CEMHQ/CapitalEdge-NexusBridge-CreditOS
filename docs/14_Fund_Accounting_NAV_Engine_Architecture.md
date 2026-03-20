@@ -241,3 +241,67 @@ Investor Reporting Layer
 ```
 
 This keeps investor reporting consistent with actual platform economics.
+
+---
+
+## Double-Entry Ledger
+
+All lending, servicing, and investor transactions must be recorded using double-entry accounting.
+
+### Core Tables
+
+- `ledger_accounts` — chart of accounts for the platform
+- `ledger_transactions` — transaction headers (date, description, reference)
+- `ledger_entries` — individual debit/credit lines tied to a transaction
+
+### Principles
+
+- All entries are immutable — corrections use reversing entries, never direct edits
+- ACID-compliant database guarantees
+- Automated reconciliation between ledger totals and fund reporting
+
+### Example Entries
+
+**Borrower payment received**
+
+```
+Debit   Cash Account
+Credit  Loan Receivable
+```
+
+**Investor distribution**
+
+```
+Debit   Fund Income
+Credit  Investor Payable
+```
+
+---
+
+## Capital Waterfall — Distribution Sequence
+
+When a borrower payment is received, funds are distributed in the following order:
+
+1. Servicing fees
+2. Platform management fees
+3. Investor interest payments
+4. Investor principal return
+5. Excess profit (if applicable)
+
+### Allocation Formula
+
+```
+Investor Payment = (Investor Allocation / Total Loan Allocation) × Payment Amount
+```
+
+Example — $50,000 payment on a $1,000,000 loan:
+
+- Investor A ($200,000 allocation): (200,000 / 1,000,000) × 50,000 = **$10,000**
+- Investor B ($300,000 allocation): (300,000 / 1,000,000) × 50,000 = **$15,000**
+
+### Operational Requirements
+
+- Waterfall calculations must be deterministic and auditable
+- Distribution records must be stored in the servicing ledger
+- All calculations must be reproducible from transaction history
+- Waterfall rules are configurable per fund — not hardcoded globally

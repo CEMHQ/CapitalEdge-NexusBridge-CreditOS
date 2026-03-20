@@ -222,34 +222,21 @@ Six roles are implemented with scoped access and navigation:
 
 ```bash
 cd apps/web-marketing
+cp .env.example .env.local   # fill in values
 npm install
 npm run dev
-```
-
-Requires `apps/web-marketing/.env.local`:
-```
-RESEND_API_KEY=your_key_here
 ```
 
 ### Portal (port 3001)
 
 ```bash
 cd apps/portal
+cp .env.example .env.local   # fill in values
 npm install
 npm run dev
 ```
 
-Requires `apps/portal/.env.local` with Supabase and Upstash credentials, plus:
-```
-N8N_WEBHOOK_SECRET=your_shared_hmac_secret_here
-BOLDSIGN_API_KEY=your_boldsign_api_key_here
-BOLDSIGN_WEBHOOK_SECRET=your_boldsign_webhook_secret_here
-BOLDSIGN_TEMPLATE_PROMISSORY_NOTE=your_template_id_here
-BOLDSIGN_TEMPLATE_DEED_OF_TRUST=your_template_id_here
-BOLDSIGN_TEMPLATE_LOAN_AGREEMENT=your_template_id_here
-BOLDSIGN_TEMPLATE_SUBSCRIPTION_AGREEMENT=your_template_id_here
-ANTHROPIC_API_KEY=sk-ant-...
-```
+See `apps/portal/.env.example` for all required environment variables with descriptions.
 
 ### Supabase (local)
 
@@ -272,19 +259,16 @@ supabase functions serve # Serve Edge Functions locally
 | Workflows and user journeys | `docs/03_Platform_Workflows.md` |
 | Developer guide | `docs/04_Developer_Guide.md` |
 | Loan state machine | `docs/05_Loan_State_Machine.md` |
-| Capital waterfall logic | `docs/06_Capital_Waterfall_Logic.md` |
 | Underwriting rules engine | `docs/07_Underwriting_Rules_Engine.md` |
 | Servicing and ledger model | `docs/08_Servicing_Ledger_Model.md` |
 | SOC2 implementation | `docs/09_SOC2_Implementation_Protocol.md` |
 | Document management | `docs/10_Document_Management.md` |
 | Data security and audit | `docs/11_Data_Security_Audit_Framework.md` |
-| Institutional ledger | `docs/12_Institutional_Ledger_Architecture.md` |
 | Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
-| Reg A / Reg D compliance | `docs/14_RegA_RegD_Compliance_System.md` |
-| Fund accounting and NAV engine | `docs/14_Fund_Accounting_NAV_Engine_Architecture.md` |
+| Fund accounting, NAV, ledger, and waterfall | `docs/14_Fund_Accounting_NAV_Engine_Architecture.md` |
 | Database infrastructure | `docs/15_Database_Infrastructure.md` |
-| Investor portal and Reg A UX | `docs/15_Investor_Portal_RegA_UX_Flow.md` |
-| DeFi tokenization / RWA | `docs/16_DeFi_Tokenization_RWA_Architecture.md` |
+| Investor portal, Reg A / Reg D UX and compliance | `docs/15_Investor_Portal_RegA_UX_Flow.md` |
+| DeFi tokenization / RWA architecture | `docs/16_DeFi_Tokenization_RWA_Architecture.md` |
 | Database schema (canonical) | `docs/Database_Schema.md` |
 | Entity separation strategy | `docs/Entity_Separation_Strategy.md` |
 

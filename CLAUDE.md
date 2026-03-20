@@ -16,28 +16,28 @@ Design docs live in `/docs/`. Before implementing any feature, read the relevant
 
 | Topic | Doc |
 |---|---|
-| Platform vision & goals | `docs/01_Platform_Overview.md` |
+| Database schema (canonical) | `docs/01_Database_Schema.md` |
 | Architecture & tech stack | `docs/02_System_Architecture.md` |
-| Workflows & user journeys | `docs/03_Platform_Workflows.md` |
+| Platform vision & goals | `docs/03_Platform_Overview.md` |
 | Implementation phasing & dev guide | `docs/04_Developer_Guide.md` |
-| Loan state machine | `docs/05_Loan_State_Machine.md` |
-| Underwriting rules engine | `docs/07_Underwriting_Rules_Engine.md` |
-| Servicing & ledger model | `docs/08_Servicing_Ledger_Model.md` |
-| SOC2 implementation | `docs/09_SOC2_Implementation_Protocol.md` |
-| Document management | `docs/10_Document_Management.md` |
-| Data security & audit framework | `docs/11_Data_Security_Audit_Framework.md` |
-| Event-driven workflow engine | `docs/13_Event_Driven_Workflow_Engine.md` |
-| Fund accounting, NAV, ledger & waterfall | `docs/14_Fund_Accounting_NAV_Engine_Architecture.md` |
-| Database schema (canonical) | `docs/Database_Schema.md` |
-| **Database infrastructure & config** | **`docs/15_Database_Infrastructure.md`** |
-| **Investor portal, Reg A / Reg D UX & compliance** | **`docs/15_Investor_Portal_RegA_UX_Flow.md`** |
-| **DeFi tokenization / RWA architecture** | **`docs/16_DeFi_Tokenization_RWA_Architecture.md`** |
+| Entity separation (debt vs. equity) | `docs/05_Entity_Separation_Strategy.md` |
+| Loan state machine | `docs/06_Loan_State_Machine.md` |
+| Workflows & user journeys | `docs/07_Platform_Workflows.md` |
+| Underwriting rules engine | `docs/08_Underwriting_Rules_Engine.md` |
+| Fund accounting, NAV, ledger & waterfall | `docs/09_Fund_Accounting_NAV_Engine.md` |
+| Servicing & ledger model | `docs/10_Servicing_Ledger_Model.md` |
+| Event-driven workflow engine | `docs/11_Event_Driven_Workflow_Engine.md` |
+| Investor portal, Reg A / Reg D UX & compliance | `docs/12_Investor_Portal_RegA_UX_Flow.md` |
+| Document management | `docs/13_Document_Management.md` |
+| Database infrastructure & config | `docs/14_Database_Infrastructure.md` |
+| Data security & audit framework | `docs/15_Data_Security_Audit_Framework.md` |
+| SOC2 implementation | `docs/16_SOC2_Implementation_Protocol.md` |
+| DeFi tokenization / RWA architecture | `docs/17_DeFi_Tokenization_RWA_Architecture.md` |
 | **SQL reference index** | **`docs/SQL Reference/SQL_Reference.md`** |
 | **SQL reference — Phase 1 & 2** | **`docs/SQL Reference/SQL_Ref_Phase1_2.md`** |
 | **SQL reference — Phase 3** | **`docs/SQL Reference/SQL_Ref_Phase3.md`** |
 | **SQL reference — Phase 4** | **`docs/SQL Reference/SQL_Ref_Phase4.md`** |
 | **SQL reference — Phase 5** | **`docs/SQL Reference/SQL_Ref_Phase5.md`** |
-| **Entity separation (debt vs. equity)** | **`docs/Entity_Separation_Strategy.md`** |
 | **Phase 1 implementation plan** | **`docs/implementation plan/Phase1_Implementation_Plan.md`** |
 | **Phase 2 implementation plan** | **`docs/implementation plan/Phase2_Implementation_Plan.md`** |
 | **Phase 3 implementation plan** | **`docs/implementation plan/Phase3_Implementation_Plan.md`** |

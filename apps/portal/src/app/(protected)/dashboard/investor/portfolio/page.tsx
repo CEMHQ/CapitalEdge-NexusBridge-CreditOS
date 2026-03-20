@@ -164,7 +164,7 @@ export default async function InvestorPortfolioPage() {
                         )}
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${loanStatusBadge(loan?.loan_status)}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${loanStatusBadge(loan?.loan_status ?? undefined)}`}>
                           {loan?.loan_status?.replace(/_/g, ' ') ?? '—'}
                         </span>
                       </td>

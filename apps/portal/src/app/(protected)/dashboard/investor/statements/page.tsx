@@ -35,7 +35,8 @@ export default async function InvestorStatementsPage() {
 
   // Get all allocations across all subscriptions
   const subIds = subscriptions?.map(s => s.id) ?? []
-  let allocations: { id: string; allocation_amount: number | string; allocation_date: string; allocation_status: string; fund_subscriptions: { commitment_amount: number | string } | null; loans: { loan_number: string; loan_status: string; interest_rate: number | string | null; maturity_date: string | null; total_paid: number | string | null } | null }[] = []
+  type AllocRow = { id: string; allocation_amount: number | string; allocation_date: string; allocation_status: string; fund_subscriptions: { commitment_amount: number | string } | null; loans: { loan_number: string; loan_status: string; interest_rate: number | string | null; maturity_date: string | null; total_paid: number | string | null } | null }
+  let allocations: AllocRow[] = []
   if (subIds.length > 0) {
     const { data } = await supabase
       .from('fund_allocations')
@@ -46,7 +47,7 @@ export default async function InvestorStatementsPage() {
       `)
       .in('subscription_id', subIds)
       .order('allocation_date', { ascending: false })
-    allocations = data ?? []
+    allocations = (data ?? []) as unknown as AllocRow[]
   }
 
   // Get NAV history (investor-visible)

@@ -8,6 +8,7 @@ import { updateLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
 import { emitNotification } from '@/lib/notifications/emit'
+import { fireWorkflowTrigger } from '@/lib/workflows/engine'
 import { canTransitionApplication, canRoleTransitionApplication } from '@/lib/loan/state-machine'
 import { sendApplicationStatusEmail } from '@/lib/email'
 
@@ -173,6 +174,15 @@ export async function PATCH(
       }
     })()
   }
+
+  // Fire workflow triggers (fire-and-forget)
+  void fireWorkflowTrigger('application_status_changed', {
+    entity_type: 'application',
+    entity_id:   id,
+    old_status:  current.application_status,
+    new_status:  application_status,
+    actor_id:    user.id,
+  })
 
   return NextResponse.json({ success: true })
 }

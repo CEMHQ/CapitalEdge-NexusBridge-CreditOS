@@ -225,6 +225,20 @@ Each section is organized by role or surface area. Start with Auth, then work th
 - [ ] **Delete** — confirm prompt; task removed from list
 - [ ] Invalid UUID in owner ID field shows validation error
 
+### Workflows (`/dashboard/admin/workflows`)
+
+- [ ] Page loads with 5 seeded triggers (all inactive)
+- [ ] **New Workflow** button — form expands; select event type; conditions hint auto-populates
+- [ ] Create workflow with valid JSON conditions and actions → appears in list as inactive
+- [ ] Create workflow with activate immediately checked → appears as active
+- [ ] **Toggle** switch enables/disables a workflow (no page reload, state updates in place)
+- [ ] **Delete** button — confirm prompt; trigger removed from list
+- [ ] Execution count column shows `—` until first event fires
+- [ ] Manager can view workflows but toggle/delete buttons are absent
+- [ ] Activate "Auto-assign underwriting on review" trigger; move an application to `under_review`; verify a task appears in the Tasks page
+- [ ] Activate "Notify team on document upload" trigger; upload a document; verify a task appears
+- [ ] Activate "Delinquency detection alert"; transition a loan to `delinquent`; verify urgent task appears
+
 ### Fund (`/dashboard/admin/fund`)
 
 - [ ] Fund overview loads without error
@@ -366,6 +380,18 @@ These are intentionally not built — do not file as bugs:
 - No OCR / automated document parsing (Phase 4)
 - No email notifications for task assignments
 - Notifications only fire for document review and status changes — not for task assignments, condition additions, or underwriting decisions yet
+
+---
+
+## 11. Phase 4 — Workflow Automation
+
+### n8n Webhook (`POST /api/webhooks/n8n`)
+
+- [ ] Request without `X-N8N-Signature` header returns 401
+- [ ] Request with invalid HMAC signature returns 401
+- [ ] Valid `create_task` action with correct signature creates a task
+- [ ] Valid `send_notification` action creates a notification for the recipient
+- [ ] Invalid action payload returns 400 with details
 
 ---
 

@@ -297,3 +297,54 @@ export const recordNavSchema = z.object({
 })
 
 export type RecordNavInput = z.infer<typeof recordNavSchema>
+
+// ─── Phase 4: Workflow automation ─────────────────────────────────────────────
+
+const workflowActionSchema = z.object({
+  type: z.enum(['create_task', 'send_notification', 'assign_case']),
+  // create_task
+  title:                    z.string().trim().max(200).optional(),
+  description:              z.string().trim().max(1000).optional(),
+  task_owner_type:          z.string().trim().optional(),
+  task_owner_type_from:     z.string().trim().optional(),
+  task_owner_id_from:       z.string().trim().optional(),
+  priority:                 z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  due_days:                 z.number().int().min(1).max(365).optional(),
+  assigned_to_from:         z.string().trim().optional(),
+  // send_notification
+  recipient_id_from:        z.string().trim().optional(),
+  message_template:         z.string().trim().max(500).optional(),
+  link_url:                 z.string().trim().max(500).optional(),
+  // assign_case
+  case_id_from:             z.string().trim().optional(),
+  assignee_from:            z.string().trim().optional(),
+})
+
+export const createWorkflowTriggerSchema = z.object({
+  name:        z.string().trim().min(2).max(200),
+  description: z.string().trim().max(500).optional(),
+  event_type:  z.enum([
+    'application_status_changed',
+    'document_uploaded',
+    'document_reviewed',
+    'payment_received',
+    'loan_status_changed',
+    'condition_updated',
+    'subscription_status_changed',
+  ]),
+  conditions:  z.record(z.string(), z.unknown()).default({}),
+  actions:     z.array(workflowActionSchema).min(1).max(10),
+  is_active:   z.boolean().default(true),
+})
+
+export type CreateWorkflowTriggerInput = z.infer<typeof createWorkflowTriggerSchema>
+
+export const patchWorkflowTriggerSchema = z.object({
+  name:        z.string().trim().min(2).max(200).optional(),
+  description: z.string().trim().max(500).optional(),
+  conditions:  z.record(z.string(), z.unknown()).optional(),
+  actions:     z.array(workflowActionSchema).min(1).max(10).optional(),
+  is_active:   z.boolean().optional(),
+})
+
+export type PatchWorkflowTriggerInput = z.infer<typeof patchWorkflowTriggerSchema>

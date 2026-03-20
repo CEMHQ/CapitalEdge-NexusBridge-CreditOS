@@ -21,6 +21,10 @@ export type AuditEventType =
   | 'user_updated'
   | 'investor_updated'
   | 'investor_deleted'
+  | 'workflow_created'
+  | 'workflow_updated'
+  | 'workflow_deleted'
+  | 'workflow_triggered'
 
 export type AuditEntityType =
   | 'loan'
@@ -36,6 +40,8 @@ export type AuditEntityType =
   | 'draw'
   | 'condition'
   | 'distribution'
+  | 'workflow_trigger'
+  | 'workflow_execution'
 
 export interface AuditEventParams {
   actorProfileId: string | null

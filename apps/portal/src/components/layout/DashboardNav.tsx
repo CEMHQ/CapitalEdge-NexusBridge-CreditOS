@@ -63,6 +63,7 @@ function NavLinks({ role }: { role: UserRole }) {
       { label: 'Underwriting', href: '/dashboard/underwriter' },
       { label: 'Users', href: '/dashboard/admin/users' },
       { label: 'Tasks', href: '/dashboard/admin/tasks' },
+      { label: 'Workflows', href: '/dashboard/admin/workflows' },
       { label: 'Audit Log', href: '/dashboard/admin/audit' },
       { label: 'Invite User', href: '/dashboard/admin/invite' },
     ],

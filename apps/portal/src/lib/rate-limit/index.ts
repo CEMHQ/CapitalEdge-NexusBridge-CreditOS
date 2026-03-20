@@ -90,3 +90,19 @@ export const deleteUserLimiter = new Ratelimit({
   limiter: Ratelimit.fixedWindow(10, '1 h'),
   prefix: 'rl:delete-user',
 })
+
+// ─── Phase 4 limiters ─────────────────────────────────────────────────────────
+
+// Workflow CRUD: 30 per admin per hour
+export const workflowLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(30, '1 h'),
+  prefix: 'rl:workflow',
+})
+
+// n8n inbound webhook: 100 per minute (API key-based)
+export const n8nWebhookLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(100, '1 m'),
+  prefix: 'rl:n8n-webhook',
+})

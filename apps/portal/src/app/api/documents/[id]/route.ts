@@ -6,6 +6,7 @@ import { validateBody } from '@/lib/validation/validate'
 import { reviewDocumentSchema } from '@/lib/validation/schemas'
 import { emitAuditEvent } from '@/lib/audit/emit'
 import { emitNotification } from '@/lib/notifications/emit'
+import { fireWorkflowTrigger } from '@/lib/workflows/engine'
 import { sendDocumentReviewEmail } from '@/lib/email'
 
 const BUCKET_MAP: Record<string, string> = {
@@ -169,6 +170,13 @@ export async function PATCH(
       newValue: { action: 'upload_confirmed' },
     })
 
+    void fireWorkflowTrigger('document_uploaded', {
+      entity_type: 'document',
+      entity_id:   id,
+      owner_type:  doc.owner_type,
+      actor_id:    user.id,
+    })
+
     return NextResponse.json({ success: true })
   }
 
@@ -248,6 +256,14 @@ export async function PATCH(
       linkUrl:            '/dashboard/borrower/documents',
     })
   }
+
+  void fireWorkflowTrigger('document_reviewed', {
+    entity_type:      'document',
+    entity_id:        id,
+    review_status,
+    uploader_id:      existing.uploaded_by,
+    actor_id:         user.id,
+  })
 
   return NextResponse.json({ success: true })
 }

@@ -113,7 +113,10 @@ npm run build     # Production build
 npm run lint      # ESLint
 ```
 
-Requires `apps/portal/.env.local` with Supabase and Upstash credentials.
+Requires `apps/portal/.env.local` with Supabase, Upstash credentials, and Phase 4 integrations:
+```
+N8N_WEBHOOK_SECRET=your_shared_hmac_secret_here
+```
 
 ### Supabase local development
 ```bash
@@ -190,7 +193,7 @@ Two server-side routes handle all post-auth redirects. Never expose raw JWTs in 
 |---|---|---|
 | `borrower` | Apply for loans, upload documents, view application status and detail, receive notifications | Dashboard, My Applications, Documents, Notifications |
 | `investor` | View portfolio, fund subscriptions, statements, receive notifications | Dashboard, Portfolio, Statements, Notifications |
-| `admin` | Full CRUD: applications, investors, users, documents, underwriting, tasks, audit log, invite users | Dashboard, Applications, Investors, Documents, Underwriting, Tasks, Audit Log, Invite User |
+| `admin` | Full CRUD: applications, investors, users, documents, underwriting, tasks, workflows, audit log, invite users | Dashboard, Applications, Investors, Documents, Underwriting, Users, Tasks, Workflows, Audit Log, Invite User |
 | `manager` | Same as admin minus user management and investor delete | Dashboard, Applications, Investors, Documents, Tasks, Audit Log, Invite User |
 | `underwriter` | Underwriting cases assigned to them, record decisions, add conditions, own tasks | Dashboard, Cases, Tasks |
 | `servicing` | Loan management, record payments, manage draws, own tasks | Dashboard, Loans, Tasks |
@@ -256,6 +259,7 @@ Events drive: notifications, accounting updates, audit records, workflow transit
 | Step 3 (Underwriting) | `underwriting_cases`, `underwriting_decisions`, `conditions`, `risk_flags` |
 | Step 4 (Loan Lifecycle) | `loans`, `payment_schedule`, `payments`, `draws` |
 | Step 5 (Fund Operations) | `funds`, `fund_subscriptions`, `fund_allocations`, `nav_snapshots` |
+| Phase 4 Step 1 (Workflows) | `workflow_triggers`, `workflow_executions` |
 
 ---
 
@@ -327,7 +331,7 @@ emitAuditEvent({ ... });
 | **Phase 1** | Marketing site -- all 8 pages live, lead capture forms, email routing | ✅ Complete |
 | **Phase 2** | Supabase auth + RBAC, all role dashboards, borrower portal, investor portal, admin console, underwriter workspace, servicing dashboard | ✅ Complete |
 | **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | ✅ Complete |
-| **Phase 4** | Workflow automation (n8n) + e-signatures + OCR (Ocrolus/Argyle) + compliance hardening (KYC/AML, Reg A/D enforcement) | ⚪ Planned |
+| **Phase 4** | Workflow automation (n8n) + e-signatures + OCR (Ocrolus/Argyle) + compliance hardening (KYC/AML, Reg A/D enforcement) | 🔄 In Progress |
 | **Phase 5** | Tokenization layer (Base/Ethereum L2) -- HyFi vision | ⚪ Optional |
 
 ### Phase 3 Progress:
@@ -339,6 +343,15 @@ emitAuditEvent({ ... });
 | Step 3 | Underwriting Engine: underwriting_cases, decisions, conditions, risk_flags + pure-function rules engine + 7 API routes + underwriter UI | ✅ Complete |
 | Step 4 | Loan Lifecycle: loans, payment_schedule, payments, draws tables + 6 API routes + servicing UI + loan detail + record payment + admin create-loan | ✅ Complete |
 | Step 5 | Fund Operations: funds, fund_subscriptions, fund_allocations, nav_snapshots + FCFS locking + investor portfolio/statements + admin fund dashboard | ✅ Complete |
+
+### Phase 4 Progress:
+
+| Step | Scope | Status |
+|---|---|---|
+| Step 1 | Workflow Automation: workflow_triggers, workflow_executions tables + fireWorkflowTrigger engine + 6 API routes + /dashboard/admin/workflows UI + n8n inbound webhook + 5 seeded triggers wired to application/document/payment/loan events | ✅ Complete |
+| Step 2 | E-Signatures: Dropbox Sign integration, signature_requests table, gate loan closing + subscription on signed docs | ⚪ Planned |
+| Step 3 | OCR / Document Intelligence: Ocrolus + Argyle, document_extractions table, auto-populate application fields | ⚪ Planned |
+| Step 4 | Compliance Hardening: KYC (Persona), AML (OFAC SDN), Reg A investor limits, accreditation tracking | ⚪ Planned |
 
 ### Post-Phase 3 Improvements (all complete):
 

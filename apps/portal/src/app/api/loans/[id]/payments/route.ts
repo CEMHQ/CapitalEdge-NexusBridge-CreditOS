@@ -6,6 +6,7 @@ import { recordPaymentSchema } from '@/lib/validation/schemas'
 import { recordPaymentLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
+import { fireWorkflowTrigger } from '@/lib/workflows/engine'
 
 export async function GET(
   _request: Request,
@@ -120,6 +121,15 @@ export async function POST(
       principal_applied: data.principal_applied,
       actor_role:        role,
     },
+  })
+
+  // Fire workflow triggers (fire-and-forget)
+  void fireWorkflowTrigger('payment_received', {
+    entity_type:    'loan',
+    entity_id:      id,
+    payment_id:     payment.id,
+    payment_amount: data.payment_amount,
+    actor_id:       user.id,
   })
 
   return NextResponse.json({ success: true, payment_id: payment.id }, { status: 201 })

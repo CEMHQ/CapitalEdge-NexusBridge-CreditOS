@@ -48,6 +48,12 @@ UI/UX rules are in `CLAUDE_Web_Design.md` (marketing site) and `CLAUDE_App_UI.md
 
 ---
 
+## Markdown Conventions
+
+- **No backslash-escaped whitespace** — do not use `\` before a space, tab, or at the end of a line as a line break. Use a blank line for paragraph breaks instead. A pre-commit hook blocks any `.md` file that contains this pattern.
+
+---
+
 ## Entity Separation -- Critical Rule
 
 Two brands. Two licenses. Two regulatory lanes. **Never cross them.**

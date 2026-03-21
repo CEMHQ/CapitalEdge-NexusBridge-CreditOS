@@ -113,3 +113,10 @@ export const signatureLimiter = new Ratelimit({
   limiter: Ratelimit.fixedWindow(20, '1 h'),
   prefix: 'rl:signature',
 })
+
+// Compliance routes: 10 per user per hour
+export const complianceLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(10, '1 h'),
+  prefix: 'rl:compliance',
+})

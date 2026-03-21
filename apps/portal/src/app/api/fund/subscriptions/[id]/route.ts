@@ -32,11 +32,19 @@ export async function PATCH(
 
   const { data: current } = await supabase
     .from('fund_subscriptions')
-    .select('id, subscription_status, reservation_status, investor_id, fund_id, commitment_amount')
+    .select('id, subscription_status, reservation_status, investor_id, fund_id, commitment_amount, ppm_acknowledged_at')
     .eq('id', id)
     .single()
 
   if (!current) return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
+
+  // 506(c) hard gate: PPM must be acknowledged before subscription can be approved
+  if (subscription_status === 'approved' && !current.ppm_acknowledged_at) {
+    return NextResponse.json(
+      { error: 'Cannot approve subscription: investor has not signed the PPM acknowledgment. Send the ppm_acknowledgment signature request first.' },
+      { status: 422 }
+    )
+  }
 
   const updates: Record<string, unknown> = {
     subscription_status,

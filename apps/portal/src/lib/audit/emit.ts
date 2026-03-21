@@ -30,6 +30,10 @@ export type AuditEventType =
   | 'signature_declined'
   | 'signature_voided'
   | 'signature_resent'
+  | 'accreditation_submitted'
+  | 'accreditation_verified'
+  | 'accreditation_updated'
+  | 'ppm_acknowledged'
 
 export type AuditEntityType =
   | 'loan'

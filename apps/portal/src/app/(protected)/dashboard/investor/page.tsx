@@ -112,12 +112,37 @@ export default async function InvestorDashboard() {
       </div>
 
       {/* Accreditation notice */}
-      {investor?.accreditation_status === 'pending' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-          <p className="text-sm font-medium text-amber-800">Accreditation verification pending</p>
-          <p className="text-sm text-amber-700 mt-0.5">
-            Your accredited investor status is under review. The NexusBridge team will contact you at {user?.email} to complete verification.
-          </p>
+      {investor?.accreditation_status === 'pending' && investor.onboarding_status === 'pending' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-amber-800">Accreditation required to invest</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              Complete your accreditation verification to subscribe to NexusBridge Capital LP.
+              This is required under SEC Rule 506(c).
+            </p>
+          </div>
+          <a
+            href="/dashboard/investor/onboarding"
+            className="shrink-0 text-xs font-medium bg-amber-700 text-white px-3 py-1.5 rounded-lg hover:bg-amber-800 transition-colors"
+          >
+            Start →
+          </a>
+        </div>
+      )}
+      {investor?.accreditation_status === 'pending' && investor.onboarding_status === 'in_progress' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-blue-800">Accreditation under review</p>
+            <p className="text-sm text-blue-700 mt-0.5">
+              Your accreditation request is being reviewed. We will notify you at {user?.email} once a decision is made.
+            </p>
+          </div>
+          <a
+            href="/dashboard/investor/compliance"
+            className="shrink-0 text-xs font-medium bg-blue-700 text-white px-3 py-1.5 rounded-lg hover:bg-blue-800 transition-colors"
+          >
+            View Status →
+          </a>
         </div>
       )}
 

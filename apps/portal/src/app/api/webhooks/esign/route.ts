@@ -141,6 +141,22 @@ export async function POST(request: Request) {
         .eq('subscription_status', 'pending_signature')
     }
 
+    // Populate ppm_acknowledged_at when PPM acknowledgment is signed
+    if (sigReq.entity_type === 'subscription' && sigReq.document_type === 'ppm_acknowledgment') {
+      await adminClient
+        .from('fund_subscriptions')
+        .update({ ppm_acknowledged_at: now, updated_at: now })
+        .eq('id', sigReq.entity_id)
+
+      void emitAuditEvent({
+        actorProfileId: null,
+        eventType:      'ppm_acknowledged',
+        entityType:     'subscription',
+        entityId:       sigReq.entity_id,
+        newValue:       { ppm_acknowledged_at: now },
+      })
+    }
+
     // Notify the entity owner
     void notifySignatureComplete(sigReq.entity_type, sigReq.entity_id, adminClient)
   }

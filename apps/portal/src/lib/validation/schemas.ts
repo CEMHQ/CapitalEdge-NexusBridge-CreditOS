@@ -373,3 +373,29 @@ export const createSignatureRequestSchema = z.object({
 })
 
 export type CreateSignatureRequestInput = z.infer<typeof createSignatureRequestSchema>
+
+// ─── POST /api/compliance/accreditation ───────────────────────────────────────
+
+export const submitAccreditationSchema = z.object({
+  verification_method: z.enum([
+    'income', 'net_worth', 'professional_certification',
+    'entity_assets', 'third_party_letter', 'manual',
+  ]),
+  evidence_document_id: z.string().uuid().optional(),
+  notes: z.string().max(1000).optional(),
+})
+
+// ─── PATCH /api/compliance/accreditation/[id] ─────────────────────────────────
+
+export const reviewAccreditationSchema = z.object({
+  status: z.enum(['under_review', 'verified', 'rejected']),
+  reviewer_notes: z.string().max(1000).optional(),
+  expires_at: z.string().datetime().optional(),  // ISO 8601; auto-calculated if omitted
+})
+
+// ─── PATCH /api/investor/profile ──────────────────────────────────────────────
+
+export const updateInvestorProfileSchema = z.object({
+  investor_type: z.enum(['individual', 'joint', 'entity', 'ira']).optional(),
+  onboarding_status: z.enum(['pending', 'in_progress', 'complete']).optional(),
+})

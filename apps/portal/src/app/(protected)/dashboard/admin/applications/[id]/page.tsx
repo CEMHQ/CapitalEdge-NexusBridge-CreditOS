@@ -30,9 +30,9 @@ const EXIT_STRATEGY_LABELS: Record<string, string> = {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between py-2.5 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value || '—'}</span>
+    <div className="flex flex-col sm:flex-row sm:justify-between py-2.5 border-b border-gray-100 last:border-0 gap-0.5 sm:gap-4">
+      <span className="text-sm text-gray-500 shrink-0">{label}</span>
+      <span className="text-sm font-medium text-gray-900 sm:text-right">{value || '—'}</span>
     </div>
   )
 }
@@ -94,15 +94,15 @@ export default async function ApplicationDetailPage({
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="min-w-0">
           <Link href="/dashboard/admin/applications" className="text-sm text-gray-400 hover:text-gray-600">
             ← All Applications
           </Link>
-          <h1 className="text-2xl font-semibold text-gray-900 mt-1">#{app.application_number}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">#{app.application_number}</h1>
           <p className="text-sm text-gray-500 mt-0.5">Submitted {formatDate(app.submitted_at)}</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 flex-wrap">
           <ApplicationStatusForm applicationId={app.id} currentStatus={app.application_status} />
           <DeleteApplicationButton applicationId={app.id} />
         </div>
@@ -155,7 +155,7 @@ export default async function ApplicationDetailPage({
       {/* E-Signatures — show when approved or pending_closing */}
       {['approved', 'pending_closing'].includes(app.application_status) && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Closing Documents</h2>
             {app.application_status === 'approved' && (
               <SendForSignatureButton

@@ -87,7 +87,7 @@ export default async function AdminDocumentsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Document Review</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Document Review</h1>
         <p className="text-sm text-gray-500 mt-1">
           {pending.length} pending · {inReview.length} in review
         </p>
@@ -129,24 +129,83 @@ function DocumentTable({
         {title}
         <span className="ml-2 text-sm font-normal text-gray-400">{documents.length}</span>
       </h2>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+
+      {/* ── Mobile: card list ───────────────────────────────────────── */}
+      <div className="sm:hidden space-y-3">
+        {documents.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-6">No documents.</p>
+        )}
+        {documents.map((doc) => {
+          const uploader = Array.isArray(doc.profiles) ? doc.profiles[0] : doc.profiles
+          const owner = doc.owner as { label: string; link: string | null }
+          return (
+            <div key={doc.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+              {/* File name + badge */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{doc.file_name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{formatFileSize(doc.file_size_bytes)}</p>
+                </div>
+                <ReviewBadge status={doc.review_status} />
+              </div>
+
+              {/* Meta row */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <span className="text-gray-500">Uploaded by</span>
+                <span className="text-gray-700 truncate">{uploader?.full_name ?? '—'}</span>
+
+                <span className="text-gray-500">Associated</span>
+                <span className="text-gray-700">
+                  {owner.link ? (
+                    <Link href={owner.link} className="font-medium text-gray-900 hover:underline">
+                      {owner.label}
+                    </Link>
+                  ) : (
+                    <span className="capitalize">{owner.label}</span>
+                  )}
+                </span>
+
+                <span className="text-gray-500">Type</span>
+                <span className="text-gray-700 capitalize">{doc.document_type.replace(/_/g, ' ')}</span>
+
+                <span className="text-gray-500">Date</span>
+                <span className="text-gray-700">{formatDate(doc.created_at)}</span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+                <Link
+                  href={`/dashboard/admin/documents/${doc.id}`}
+                  className="text-sm font-medium text-gray-900 hover:underline"
+                >
+                  Review →
+                </Link>
+                <DeleteDocumentRowButton documentId={doc.id} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Desktop: table ──────────────────────────────────────────── */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-200">
           <thead>
             <tr className="bg-gray-50">
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded By</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Associated With</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-              <th className="px-6 py-3" />
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Document</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Uploaded By</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Associated With</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Uploaded</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Action</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {documents.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400">
                   No documents.
                 </td>
               </tr>
@@ -156,15 +215,15 @@ function DocumentTable({
               const owner = doc.owner as { label: string; link: string | null }
               return (
                 <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-medium text-gray-900">{doc.file_name}</p>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-gray-900 max-w-[180px] truncate">{doc.file_name}</p>
                     <p className="text-xs text-gray-400">{formatFileSize(doc.file_size_bytes)}</p>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-gray-900">{uploader?.full_name ?? '—'}</p>
-                    <p className="text-xs text-gray-400">{uploader?.email ?? '—'}</p>
+                  <td className="px-4 py-3">
+                    <p className="text-sm text-gray-900 whitespace-nowrap">{uploader?.full_name ?? '—'}</p>
+                    <p className="text-xs text-gray-400 whitespace-nowrap">{uploader?.email ?? '—'}</p>
                   </td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
                     {owner.link ? (
                       <Link href={owner.link} className="font-medium text-gray-900 hover:underline">
                         {owner.label}
@@ -173,16 +232,16 @@ function DocumentTable({
                       <span className="text-gray-600 capitalize">{owner.label}</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 capitalize">
+                  <td className="px-4 py-3 text-sm text-gray-600 capitalize whitespace-nowrap">
                     {doc.document_type.replace(/_/g, ' ')}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <ReviewBadge status={doc.review_status} />
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
                     {formatDate(doc.created_at)}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <Link
                       href={`/dashboard/admin/documents/${doc.id}`}
                       className="text-sm text-gray-900 font-medium hover:underline"
@@ -190,7 +249,7 @@ function DocumentTable({
                       Review
                     </Link>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <DeleteDocumentRowButton documentId={doc.id} />
                   </td>
                 </tr>

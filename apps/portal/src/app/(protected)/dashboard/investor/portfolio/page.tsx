@@ -113,12 +113,12 @@ export default async function InvestorPortfolioPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Portfolio</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Portfolio</h1>
         <p className="text-sm text-gray-500 mt-1">NexusBridge Capital LP · {subscriptionBadgeLabel(subscription.subscription_status)}</p>
       </div>
 
       {/* Capital summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Total Committed"   value={formatCurrency(totalCommitted)} />
         <MetricCard title="Capital Deployed"  value={formatCurrency(totalDeployed)} />
         <MetricCard title="Undeployed"        value={formatCurrency(totalCommitted - totalDeployed)} />
@@ -191,16 +191,16 @@ export default async function InvestorPortfolioPage() {
             <p className="text-xs text-gray-400 mt-1">Capital will be allocated to loans as the portfolio deploys.</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Loan</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Property</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Status</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Allocated</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Rate</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Matures</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Loan</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Property</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Allocated</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Rate</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Matures</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -209,25 +209,25 @@ export default async function InvestorPortfolioPage() {
                   const prop = loan?.applications?.properties
                   return (
                     <tr key={alloc.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3 font-medium text-gray-900">{loan?.loan_number ?? '—'}</td>
-                      <td className="px-5 py-3 text-gray-600">
+                      <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{loan?.loan_number ?? '—'}</td>
+                      <td className="px-4 py-3 text-gray-600">
                         {prop ? `${prop.city}, ${prop.state}` : '—'}
                         {prop?.property_type && (
                           <span className="ml-1 text-xs text-gray-400">· {prop.property_type.replace(/_/g, ' ')}</span>
                         )}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${loanStatusBadge(loan?.loan_status ?? undefined)}`}>
                           {loan?.loan_status?.replace(/_/g, ' ') ?? '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-gray-900">
+                      <td className="px-4 py-3 text-right font-medium text-gray-900 whitespace-nowrap">
                         {formatCurrency(Number(alloc.allocation_amount))}
                       </td>
-                      <td className="px-5 py-3 text-right text-gray-600">
+                      <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                         {loan?.interest_rate ? `${(Number(loan.interest_rate) * 100).toFixed(1)}%` : '—'}
                       </td>
-                      <td className="px-5 py-3 text-right text-gray-600">
+                      <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                         {loan?.maturity_date ? formatDate(loan.maturity_date) : '—'}
                       </td>
                     </tr>
@@ -243,27 +243,27 @@ export default async function InvestorPortfolioPage() {
       {navHistory && navHistory.length > 0 && (
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-3">NAV History</h2>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Date</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Total NAV</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">NAV/Unit</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Deployed</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Loans</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Investors</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Date</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Total NAV</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">NAV/Unit</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Deployed</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Loans</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Investors</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {navHistory.map((snap) => (
                   <tr key={snap.snapshot_date} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 text-gray-900">{formatDate(snap.snapshot_date)}</td>
-                    <td className="px-5 py-3 text-right font-medium text-gray-900">{formatCurrency(Number(snap.total_nav))}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">${Number(snap.nav_per_unit).toFixed(4)}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{formatCurrency(Number(snap.total_deployed))}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{snap.loan_count}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{snap.investor_count}</td>
+                    <td className="px-4 py-3 text-gray-900 whitespace-nowrap">{formatDate(snap.snapshot_date)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900 whitespace-nowrap">{formatCurrency(Number(snap.total_nav))}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">${Number(snap.nav_per_unit).toFixed(4)}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">{formatCurrency(Number(snap.total_deployed))}</td>
+                    <td className="px-4 py-3 text-right text-gray-600">{snap.loan_count}</td>
+                    <td className="px-4 py-3 text-right text-gray-600">{snap.investor_count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -317,9 +317,9 @@ function MetricCard({ title, value }: { title: string; value: string }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between px-5 py-3">
+    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 px-5 py-3">
       <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value}</span>
+      <span className="text-sm font-medium text-gray-900 sm:text-right">{value}</span>
     </div>
   )
 }

@@ -83,12 +83,12 @@ export default function InvestorOnboardingPage() {
     <div className="max-w-2xl space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Investor Onboarding</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Investor Onboarding</h1>
         <p className="text-sm text-gray-500 mt-1">Complete all steps to unlock access to NexusBridge Capital LP</p>
       </div>
 
       {/* Progress */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {([1, 2, 3] as Step[]).map((s) => (
           <div key={s} className="flex items-center gap-2">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
@@ -96,10 +96,10 @@ export default function InvestorOnboardingPage() {
             }`}>
               {step > s ? '✓' : s}
             </div>
-            {s < 3 && <div className={`h-px w-12 ${step > s ? 'bg-green-400' : 'bg-gray-200'}`} />}
+            {s < 3 && <div className={`h-px w-8 sm:w-12 ${step > s ? 'bg-green-400' : 'bg-gray-200'}`} />}
           </div>
         ))}
-        <span className="ml-3 text-sm text-gray-500">
+        <span className="ml-1 sm:ml-3 text-sm text-gray-500">
           {step === 1 ? 'Investor Profile' : step === 2 ? 'Accreditation Disclosure' : 'Verification Method'}
         </span>
       </div>
@@ -141,7 +141,7 @@ export default function InvestorOnboardingPage() {
           <div className="flex justify-end pt-2">
             <button
               onClick={() => setStep(2)}
-              className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              className="w-full sm:w-auto px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
             >
               Continue
             </button>
@@ -184,12 +184,12 @@ export default function InvestorOnboardingPage() {
             </span>
           </label>
 
-          <div className="flex justify-between pt-2">
-            <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-700">Back</button>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-2">
+            <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-700 text-left">Back</button>
             <button
               disabled={!selfDeclared}
               onClick={() => setStep(3)}
-              className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+              className="w-full sm:w-auto px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
             >
               Continue
             </button>
@@ -249,12 +249,12 @@ export default function InvestorOnboardingPage() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex justify-between pt-2">
-            <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-gray-700">Back</button>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-2">
+            <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-gray-700 text-left">Back</button>
             <button
               disabled={saving}
               onClick={handleSubmit}
-              className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="w-full sm:w-auto px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
             >
               {saving ? 'Submitting...' : 'Submit Accreditation Request'}
             </button>

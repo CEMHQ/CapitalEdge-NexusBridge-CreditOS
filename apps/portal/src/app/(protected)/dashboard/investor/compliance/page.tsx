@@ -89,15 +89,15 @@ export default async function InvestorCompliancePage() {
     <div className="space-y-8 max-w-3xl">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Compliance Status</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Compliance Status</h1>
           <p className="text-sm text-gray-500 mt-1">Your 506(c) accreditation and subscription compliance record</p>
         </div>
         {!isAccredited && investor.onboarding_status !== 'in_progress' && (
           <Link
             href="/dashboard/investor/onboarding"
-            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors text-center"
           >
             Start Verification
           </Link>
@@ -200,29 +200,29 @@ export default async function InvestorCompliancePage() {
       {accreditationRecords && accreditationRecords.length > 0 && (
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-3">Accreditation History</h2>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Method</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Status</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Submitted</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Verified</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Expires</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Method</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Submitted</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Verified</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Expires</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {accreditationRecords.map((rec) => (
                   <tr key={rec.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 font-medium text-gray-900 capitalize">{rec.verification_method.replace(/_/g, ' ')}</td>
-                    <td className="px-5 py-3">
+                    <td className="px-4 py-3 font-medium text-gray-900 capitalize whitespace-nowrap">{rec.verification_method.replace(/_/g, ' ')}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${accreditationStatusBadge(rec.status)}`}>
                         {rec.status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right text-gray-600">{formatDate(rec.created_at)}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{rec.verified_at ? formatDate(rec.verified_at) : '—'}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{rec.expires_at ? formatDate(rec.expires_at) : '—'}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">{formatDate(rec.created_at)}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">{rec.verified_at ? formatDate(rec.verified_at) : '—'}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">{rec.expires_at ? formatDate(rec.expires_at) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -262,7 +262,7 @@ export default async function InvestorCompliancePage() {
                 <span>Used: <strong className="text-gray-900">${regAUsed.toLocaleString()}</strong></span>
                 <span>Limit: <strong className="text-gray-900">${regALimit.toLocaleString()}</strong></span>
               </div>
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
                     regAUsed / regALimit >= 0.9 ? 'bg-red-500' :
@@ -272,7 +272,7 @@ export default async function InvestorCompliancePage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4 pt-1">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-1">
               <div className="text-center">
                 <p className="text-xs text-gray-500">Annual limit</p>
                 <p className="text-sm font-semibold text-gray-900 mt-0.5">${regALimit.toLocaleString()}</p>
@@ -340,16 +340,16 @@ function ChecklistItem({
   }[status]
 
   return (
-    <div className="flex items-center justify-between px-5 py-4">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4">
       <div className="flex items-start gap-3">
-        <span className={`mt-0.5 text-lg font-bold leading-none ${icon.color}`}>{icon.symbol}</span>
+        <span className={`mt-0.5 text-lg font-bold leading-none shrink-0 ${icon.color}`}>{icon.symbol}</span>
         <div>
           <p className={`text-sm font-medium ${status === 'not_applicable' ? 'text-gray-400' : 'text-gray-900'}`}>{label}</p>
           <p className="text-xs text-gray-500 mt-0.5">{detail}</p>
         </div>
       </div>
       {actionNode ?? (action && (
-        <a href={action.href} className="text-xs text-indigo-600 font-medium hover:text-indigo-800 shrink-0 ml-4">
+        <a href={action.href} className="text-xs text-indigo-600 font-medium hover:text-indigo-800 shrink-0 sm:ml-4">
           {action.label} →
         </a>
       ))}
@@ -359,9 +359,9 @@ function ChecklistItem({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between px-5 py-3">
+    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 px-5 py-3">
       <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900 capitalize">{value}</span>
+      <span className="text-sm font-medium text-gray-900 capitalize sm:text-right">{value}</span>
     </div>
   )
 }

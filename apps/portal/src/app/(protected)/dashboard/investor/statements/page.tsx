@@ -64,7 +64,7 @@ export default async function InvestorStatementsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Statements</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Statements</h1>
         <p className="text-sm text-gray-500 mt-1">Subscription history, allocation records, and NAV snapshots</p>
       </div>
 
@@ -79,39 +79,39 @@ export default async function InvestorStatementsPage() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Fund</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Status</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Committed</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Funded</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Queue</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Date</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Fund</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Committed</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Funded</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Queue</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {subscriptions.map((sub) => (
                   <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 font-medium text-gray-900">
+                    <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
                       {(sub.funds as unknown as { fund_name: string } | null)?.fund_name ?? 'NexusBridge Capital LP'}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${subStatusBadge(sub.subscription_status)}`}>
                         {sub.subscription_status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right font-medium text-gray-900">
+                    <td className="px-4 py-3 text-right font-medium text-gray-900 whitespace-nowrap">
                       {formatCurrency(Number(sub.commitment_amount))}
                     </td>
-                    <td className="px-5 py-3 text-right text-gray-600">
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                       {formatCurrency(Number(sub.funded_amount))}
                     </td>
-                    <td className="px-5 py-3 text-right text-gray-600">
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                       {sub.fcfs_position ? `#${sub.fcfs_position}` : '—'}
                     </td>
-                    <td className="px-5 py-3 text-right text-gray-600">
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                       {formatDate(sub.created_at)}
                     </td>
                   </tr>
@@ -126,17 +126,17 @@ export default async function InvestorStatementsPage() {
       {allocations.length > 0 && (
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-3">Allocation Records</h2>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Loan</th>
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Loan Status</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Allocated</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Rate</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Total Paid</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Matures</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Date</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Loan</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Loan Status</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Allocated</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Rate</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Total Paid</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Matures</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -144,25 +144,25 @@ export default async function InvestorStatementsPage() {
                   const loan = alloc.loans
                   return (
                     <tr key={alloc.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3 font-medium text-gray-900">{loan?.loan_number ?? '—'}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{loan?.loan_number ?? '—'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${loanStatusBadge(loan?.loan_status)}`}>
                           {loan?.loan_status?.replace(/_/g, ' ') ?? '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-gray-900">
+                      <td className="px-4 py-3 text-right font-medium text-gray-900 whitespace-nowrap">
                         {formatCurrency(Number(alloc.allocation_amount))}
                       </td>
-                      <td className="px-5 py-3 text-right text-gray-600">
+                      <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                         {loan?.interest_rate ? `${(Number(loan.interest_rate) * 100).toFixed(1)}%` : '—'}
                       </td>
-                      <td className="px-5 py-3 text-right text-gray-600">
+                      <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                         {loan?.total_paid != null ? formatCurrency(Number(loan.total_paid)) : '—'}
                       </td>
-                      <td className="px-5 py-3 text-right text-gray-600">
+                      <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                         {loan?.maturity_date ? formatDate(loan.maturity_date) : '—'}
                       </td>
-                      <td className="px-5 py-3 text-right text-gray-600">
+                      <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">
                         {formatDate(alloc.allocation_date)}
                       </td>
                     </tr>
@@ -202,27 +202,27 @@ export default async function InvestorStatementsPage() {
       {navHistory && navHistory.length > 0 && (
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-3">Fund NAV History</h2>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left text-xs font-medium text-gray-500 px-5 py-3">Date</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Total NAV</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">NAV/Unit</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Distributed</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Loans</th>
-                  <th className="text-right text-xs font-medium text-gray-500 px-5 py-3">Investors</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Date</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Total NAV</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">NAV/Unit</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Distributed</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Loans</th>
+                  <th className="text-right text-xs font-medium text-gray-500 px-4 py-3 whitespace-nowrap">Investors</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {navHistory.map((snap) => (
                   <tr key={snap.snapshot_date} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 text-gray-900">{formatDate(snap.snapshot_date)}</td>
-                    <td className="px-5 py-3 text-right font-medium text-gray-900">{formatCurrency(Number(snap.total_nav))}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">${Number(snap.nav_per_unit).toFixed(4)}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{formatCurrency(Number(snap.total_distributed))}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{snap.loan_count}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{snap.investor_count}</td>
+                    <td className="px-4 py-3 text-gray-900 whitespace-nowrap">{formatDate(snap.snapshot_date)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900 whitespace-nowrap">{formatCurrency(Number(snap.total_nav))}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">${Number(snap.nav_per_unit).toFixed(4)}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 whitespace-nowrap">{formatCurrency(Number(snap.total_distributed))}</td>
+                    <td className="px-4 py-3 text-right text-gray-600">{snap.loan_count}</td>
+                    <td className="px-4 py-3 text-right text-gray-600">{snap.investor_count}</td>
                   </tr>
                 ))}
               </tbody>

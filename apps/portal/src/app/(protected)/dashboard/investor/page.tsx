@@ -107,13 +107,13 @@ export default async function InvestorDashboard() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Investor Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Investor Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">Welcome back, {displayName}</p>
       </div>
 
       {/* Accreditation notice */}
       {investor?.accreditation_status === 'pending' && investor.onboarding_status === 'pending' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start justify-between gap-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-amber-800">Accreditation required to invest</p>
             <p className="text-sm text-amber-700 mt-0.5">
@@ -123,14 +123,14 @@ export default async function InvestorDashboard() {
           </div>
           <a
             href="/dashboard/investor/onboarding"
-            className="shrink-0 text-xs font-medium bg-amber-700 text-white px-3 py-1.5 rounded-lg hover:bg-amber-800 transition-colors"
+            className="w-full sm:w-auto shrink-0 text-xs font-medium bg-amber-700 text-white px-3 py-1.5 rounded-lg hover:bg-amber-800 transition-colors text-center"
           >
             Start →
           </a>
         </div>
       )}
       {investor?.accreditation_status === 'pending' && investor.onboarding_status === 'in_progress' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start justify-between gap-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-blue-800">Accreditation under review</p>
             <p className="text-sm text-blue-700 mt-0.5">
@@ -139,7 +139,7 @@ export default async function InvestorDashboard() {
           </div>
           <a
             href="/dashboard/investor/compliance"
-            className="shrink-0 text-xs font-medium bg-blue-700 text-white px-3 py-1.5 rounded-lg hover:bg-blue-800 transition-colors"
+            className="w-full sm:w-auto shrink-0 text-xs font-medium bg-blue-700 text-white px-3 py-1.5 rounded-lg hover:bg-blue-800 transition-colors text-center"
           >
             View Status →
           </a>
@@ -149,7 +149,7 @@ export default async function InvestorDashboard() {
       {/* Account summary */}
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-3">Account Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatusCard
             title="Accreditation Status"
             value={formatStatus(investor?.accreditation_status ?? 'pending')}
@@ -172,7 +172,7 @@ export default async function InvestorDashboard() {
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-3">NexusBridge Capital LP</h2>
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div>
               <p className="text-sm font-medium text-gray-900">Private Credit Fund</p>
               <p className="text-xs text-gray-500 mt-0.5">Reg D / Rule 506(c) · Accredited investors only</p>
@@ -220,7 +220,7 @@ export default async function InvestorDashboard() {
       {/* Capital account */}
       <div>
         <h2 className="text-base font-semibold text-gray-900 mb-3">Capital Account</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Committed"
             value={metrics.total_committed > 0 ? formatCurrency(metrics.total_committed) : null}

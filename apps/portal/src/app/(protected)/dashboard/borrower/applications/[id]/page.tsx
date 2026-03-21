@@ -56,9 +56,9 @@ function statusColor(status: string) {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between py-2.5 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value || '—'}</span>
+    <div className="flex flex-col sm:flex-row sm:justify-between py-2.5 border-b border-gray-100 last:border-0 gap-0.5 sm:gap-4">
+      <span className="text-sm text-gray-500 shrink-0">{label}</span>
+      <span className="text-sm font-medium text-gray-900 sm:text-right">{value || '—'}</span>
     </div>
   )
 }
@@ -178,15 +178,15 @@ export default async function BorrowerApplicationDetailPage({
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0">
           <Link href="/dashboard/borrower/applications" className="text-sm text-gray-400 hover:text-gray-600">
             ← My Applications
           </Link>
-          <h1 className="text-2xl font-semibold text-gray-900 mt-1">#{app.application_number}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">#{app.application_number}</h1>
           <p className="text-sm text-gray-500 mt-0.5">Submitted {formatDate(app.submitted_at)}</p>
         </div>
-        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize ${statusColor(app.application_status)}`}>
+        <span className={`self-start px-3 py-1.5 rounded-full text-xs font-semibold capitalize ${statusColor(app.application_status)}`}>
           {app.application_status.replace(/_/g, ' ')}
         </span>
       </div>
@@ -252,9 +252,9 @@ export default async function BorrowerApplicationDetailPage({
         ) : (
           <div className="divide-y divide-gray-100 -mx-0">
             {allDocs.map((doc) => (
-              <div key={doc.id} className="flex items-start justify-between py-3 first:pt-0 last:pb-0">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{doc.file_name}</p>
+              <div key={doc.id} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">{doc.file_name}</p>
                   <p className="text-xs text-gray-400 capitalize mt-0.5">
                     {doc.document_type.replace(/_/g, ' ')} · {formatDate(doc.created_at)}
                   </p>
@@ -262,7 +262,7 @@ export default async function BorrowerApplicationDetailPage({
                     <p className="text-xs text-red-600 mt-1">Rejected: {doc.rejection_reason}</p>
                   )}
                 </div>
-                <span className={`ml-4 shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${docReviewColor(doc.review_status)}`}>
+                <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${docReviewColor(doc.review_status)}`}>
                   {doc.review_status.replace(/_/g, ' ')}
                 </span>
               </div>
@@ -314,15 +314,15 @@ export default async function BorrowerApplicationDetailPage({
         <Section title="Resolved Conditions">
           <div className="divide-y divide-gray-100 -mx-0">
             {resolvedConditions.map((c) => (
-              <div key={c.id} className="flex items-start justify-between py-3 first:pt-0 last:pb-0">
-                <div>
+              <div key={c.id} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900">
                     {CONDITION_TYPE_LABELS[c.condition_type] ?? c.condition_type}
                   </p>
                   <p className="text-sm text-gray-600 mt-0.5">{c.description}</p>
                   {c.notes && <p className="text-xs text-gray-400 mt-0.5">{c.notes}</p>}
                 </div>
-                <span className={`ml-4 shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${conditionStatusColor(c.status)}`}>
+                <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${conditionStatusColor(c.status)}`}>
                   {c.status}
                 </span>
               </div>

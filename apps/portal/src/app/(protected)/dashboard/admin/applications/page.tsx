@@ -56,7 +56,7 @@ export default async function AdminApplicationsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Applications</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Applications</h1>
         <p className="text-sm text-gray-500 mt-1">{applications?.length ?? 0} total</p>
       </div>
 
@@ -81,25 +81,64 @@ export default async function AdminApplicationsPage({
         <p className="text-sm text-red-600">Failed to load applications: {error.message}</p>
       )}
 
-      {/* Applications table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
+      {/* ── Mobile: card list ───────────────────────────────────────── */}
+      <div className="sm:hidden space-y-3">
+        {!applications?.length && (
+          <p className="text-sm text-gray-400 text-center py-8">No applications found.</p>
+        )}
+        {applications?.map((app) => {
+          const borrower = Array.isArray(app.borrowers) ? app.borrowers[0] : app.borrowers
+          const profile = borrower && (Array.isArray(borrower.profiles) ? borrower.profiles[0] : borrower.profiles)
+          return (
+            <div key={app.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900">#{app.application_number}</p>
+                  <p className="text-sm text-gray-700 truncate">{profile?.full_name || '—'}</p>
+                  <p className="text-xs text-gray-400 truncate">{profile?.email}</p>
+                </div>
+                <span className={`shrink-0 px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColor(app.application_status)}`}>
+                  {app.application_status.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <span className="text-gray-500">Purpose</span>
+                <span className="text-gray-700 capitalize">{app.loan_purpose.replace(/_/g, ' ')}</span>
+                <span className="text-gray-500">Amount</span>
+                <span className="text-gray-700 font-medium">{formatCurrency(app.requested_amount)}</span>
+                <span className="text-gray-500">Submitted</span>
+                <span className="text-gray-700">{formatDate(app.submitted_at)}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+                <a href={`/dashboard/admin/applications/${app.id}`} className="text-sm font-medium text-gray-900 hover:underline">
+                  Review →
+                </a>
+                <DeleteApplicationRowButton applicationId={app.id} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Desktop: table ──────────────────────────────────────────── */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50">
-              <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Application #</th>
-              <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Borrower</th>
-              <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Purpose</th>
-              <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
-              <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted</th>
-              <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-              <th className="px-5 py-3" />
-              <th className="px-5 py-3" />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Application #</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Borrower</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Purpose</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Amount</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Submitted</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
+              <th className="px-4 py-3" />
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {!applications?.length && (
               <tr>
-                <td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
                   No applications found.
                 </td>
               </tr>
@@ -107,37 +146,33 @@ export default async function AdminApplicationsPage({
             {applications?.map((app) => {
               const borrower = Array.isArray(app.borrowers) ? app.borrowers[0] : app.borrowers
               const profile = borrower && (Array.isArray(borrower.profiles) ? borrower.profiles[0] : borrower.profiles)
-
               return (
                 <tr key={app.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-4 font-medium text-gray-900">#{app.application_number}</td>
-                  <td className="px-5 py-4">
-                    <p className="font-medium text-gray-900">{profile?.full_name || '—'}</p>
-                    <p className="text-xs text-gray-400">{profile?.email}</p>
+                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">#{app.application_number}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-gray-900 whitespace-nowrap">{profile?.full_name || '—'}</p>
+                    <p className="text-xs text-gray-400 whitespace-nowrap">{profile?.email}</p>
                   </td>
-                  <td className="px-5 py-4 capitalize text-gray-600">
+                  <td className="px-4 py-3 capitalize text-gray-600 whitespace-nowrap">
                     {app.loan_purpose.replace(/_/g, ' ')}
                   </td>
-                  <td className="px-5 py-4 font-medium text-gray-900">
+                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
                     {formatCurrency(app.requested_amount)}
                   </td>
-                  <td className="px-5 py-4 text-gray-500">
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                     {formatDate(app.submitted_at)}
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColor(app.application_status)}`}>
                       {app.application_status.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-right">
-                    <a
-                      href={`/dashboard/admin/applications/${app.id}`}
-                      className="text-xs font-medium text-gray-900 hover:underline"
-                    >
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <a href={`/dashboard/admin/applications/${app.id}`} className="text-xs font-medium text-gray-900 hover:underline">
                       Review →
                     </a>
                   </td>
-                  <td className="px-5 py-4 text-right">
+                  <td className="px-4 py-3 text-right">
                     <DeleteApplicationRowButton applicationId={app.id} />
                   </td>
                 </tr>

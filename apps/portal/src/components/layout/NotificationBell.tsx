@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 type Notification = {
   id: string
@@ -27,6 +27,8 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unread, setUnread] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [dropdownPos, setDropdownPos] = useState<{ top?: number; bottom?: number; left?: number; right?: number }>({ left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   async function fetchNotifications() {
@@ -48,10 +50,38 @@ export default function NotificationBell() {
     return () => clearInterval(interval)
   }, [])
 
+  const openDropdown = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      const dropdownWidth = 320
+      const gap = 8
+
+      const spaceRight = window.innerWidth - rect.right
+
+      if (spaceRight >= dropdownWidth + gap) {
+        // Sidebar bell (desktop/tablet) — open to the right, anchored above the bell
+        setDropdownPos({
+          bottom: window.innerHeight - rect.top + gap,
+          left: rect.right + gap,
+        })
+      } else {
+        // Mobile header bell — open below the bell, pinned 8px from right edge
+        setDropdownPos({
+          top: rect.bottom + gap,
+          right: gap,
+        })
+      }
+    }
+    setOpen((o) => !o)
+  }, [])
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(e.target as Node)
+      ) {
         setOpen(false)
       }
     }
@@ -80,9 +110,10 @@ export default function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={buttonRef}
+        onClick={openDropdown}
         className="relative p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
         aria-label="Notifications"
       >
@@ -99,7 +130,11 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-lg z-50 overflow-hidden">
+        <div
+          ref={dropdownRef}
+          style={{ top: dropdownPos.top, bottom: dropdownPos.bottom, left: dropdownPos.left, right: dropdownPos.right }}
+          className="fixed w-80 max-w-[calc(100vw-16px)] bg-white rounded-xl border border-gray-200 shadow-lg z-[200] overflow-hidden"
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="text-sm font-semibold text-gray-900">Notifications</span>
             {unread > 0 && (

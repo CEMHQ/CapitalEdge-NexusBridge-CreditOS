@@ -34,14 +34,14 @@ export default async function BorrowerApplicationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">My Applications</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">My Applications</h1>
           <p className="text-sm text-gray-500 mt-1">{applications?.length ?? 0} total</p>
         </div>
         <a
           href="/dashboard/borrower/apply"
-          className="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
         >
           + New Application
         </a>
@@ -53,35 +53,35 @@ export default async function BorrowerApplicationsPage() {
           <p className="text-xs text-gray-400 mt-1">Start a new application to begin the process.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Application #</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Purpose</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                <th className="px-5 py-3" />
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Application #</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Purpose</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Amount</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Submitted</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Status</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {applications.map((app) => (
                 <tr key={app.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-4 font-medium text-gray-900">#{app.application_number}</td>
-                  <td className="px-5 py-4 capitalize text-gray-600">
+                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">#{app.application_number}</td>
+                  <td className="px-4 py-3 capitalize text-gray-600 whitespace-nowrap">
                     {app.loan_purpose.replace(/_/g, ' ')}
                   </td>
-                  <td className="px-5 py-4 font-medium text-gray-900">
+                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
                     {formatCurrency(app.requested_amount)}
                   </td>
-                  <td className="px-5 py-4 text-gray-500">{formatDate(app.submitted_at)}</td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(app.submitted_at)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColor(app.application_status)}`}>
                       {app.application_status.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
                     <a
                       href={`/dashboard/borrower/applications/${app.id}`}
                       className="text-xs font-medium text-gray-900 hover:underline"

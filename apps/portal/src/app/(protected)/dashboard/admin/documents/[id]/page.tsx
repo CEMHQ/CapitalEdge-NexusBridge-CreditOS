@@ -145,14 +145,14 @@ export default function AdminDocumentReviewPage() {
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 break-all">{doc.file_name}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-semibold text-gray-900 break-all">{doc.file_name}</h1>
           <p className="text-sm text-gray-500 mt-0.5 capitalize">
             {doc.document_type.replace(/_/g, ' ')} · {formatFileSize(doc.file_size_bytes)}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 flex-wrap">
           <StatusBadge status={doc.review_status} />
           {!deleteConfirm && (
             <button
@@ -197,7 +197,7 @@ export default function AdminDocumentReviewPage() {
 
       {/* Document card */}
       <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-        <div className="px-6 py-4 grid grid-cols-2 gap-4 text-sm">
+        <div className="px-4 sm:px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-xs text-gray-500 mb-0.5">Associated with</p>
             {doc.owner_link ? (
@@ -228,7 +228,7 @@ export default function AdminDocumentReviewPage() {
 
         {/* Download */}
         {doc.download_url && (
-          <div className="px-6 py-4">
+          <div className="px-4 sm:px-6 py-4">
             <button
               onClick={handleDownload}
               disabled={downloading}
@@ -263,7 +263,7 @@ export default function AdminDocumentReviewPage() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex gap-3 pt-1">
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
             <button
               onClick={() => submit('verified')}
               disabled={submitting}
@@ -290,7 +290,7 @@ export default function AdminDocumentReviewPage() {
       )}
 
       {successMsg && (
-        <div className="rounded-xl border bg-green-50 border-green-200 px-6 py-4 flex items-center justify-between">
+        <div className="rounded-xl border bg-green-50 border-green-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <p className="text-sm text-green-800 font-medium">{successMsg}</p>
           <button onClick={() => router.push('/dashboard/admin/documents')} className="text-sm text-green-700 underline">
             Back to queue

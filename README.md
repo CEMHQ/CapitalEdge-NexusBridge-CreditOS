@@ -188,6 +188,26 @@ The agent produces a tiered report: **CRITICAL / HIGH / MEDIUM** issues plus a l
 
 ---
 
+### Frontend UI/UX Agent
+
+A dedicated subagent handles all visual design, component architecture, layout, accessibility, and responsive behavior across both apps. Invoke it in Claude Code by saying **"use the frontend agent to..."**.
+
+**Location:** `.claude/agents/CLAUDE_Frontend_Agent.md`
+
+**Scope:**
+
+| Area | Coverage |
+|---|---|
+| Marketing site (`apps/web-marketing`) | Global nav, hero, trust bar, features grid, statistics, testimonials, CTA, footer, lead capture forms |
+| Portal (`apps/portal`) — all 6 roles | Dashboards, tables, status badges, skeleton loaders, empty/error states, modals, multi-step forms, e-signature status, workflow trigger log |
+| Design system enforcement | Tailwind patterns from `CLAUDE_App_UI.md`, brand rules from `CLAUDE_Web_Design.md`, entity separation, accessibility baseline |
+
+**Constraints:** Does not touch API routes, database schema, auth logic, or financial calculations. Escalates those to the appropriate agent.
+
+**Validation:** `.claude/agents/scripts/validate-frontend-agent.sh` — run after any edits to the agent file.
+
+---
+
 ### SQL Sync Rule
 
 Defined in `CLAUDE.md`. Triggers automatically whenever a migration file or SQL reference doc is created or modified.
@@ -243,7 +263,11 @@ Six roles are implemented with scoped access and navigation:
   - n8n self-hosted instance: ⚪ Not yet deployed
 - **Step 2:** E-Signatures (BoldSign) — `signature_requests` table, BoldSign REST integration, send/void/resend API routes, webhook handler, auto-transition application to funded on loan doc signing, auto-activate subscription on agreement signing ✅ Complete
 - **Step 3:** OCR / Document Intelligence — Ocrolus + Argyle, `document_extractions` table, auto-populate application fields ⚪ Planned
-- **Step 4:** Compliance Hardening — KYC (Persona), AML (OFAC SDN), Reg A investor limits, accreditation tracking ⚪ Planned
+- **Step 4:** Compliance Hardening — KYC (Plaid IDV), AML (OFAC SDN), Reg A investor limits, accreditation tracking 🔄 Partial
+  - KYC (Plaid Identity Verification) — session creation, hosted flow redirect, webhook handler: ✅ Complete
+  - AML (OFAC SDN screening) — public API, match threshold, investor status sync: ✅ Complete
+  - Admin accreditation review modal (approve / reject / under review): ✅ Complete
+  - Reg A investor limits enforcement: ⚪ Planned
 
 ### Phase 5 — Tokenization Layer ⚪ Optional / Future
 - Blockchain protocol layer on Base / Ethereum L2
@@ -275,7 +299,7 @@ Both apps deploy automatically from `main`. Push to deploy.
 | BoldSign | E-signatures | app.boldsign.com |
 | n8n | Workflow automation | Self-hosted (not yet deployed) |
 | Anthropic | Claude AI API | console.anthropic.com |
-| Plaid | Bank verification | dashboard.plaid.com |
+| Plaid | Bank verification + KYC identity verification (IDV) | dashboard.plaid.com |
 | PostHog | Product analytics | app.posthog.com |
 | Sentry | Error monitoring | sentry.io |
 

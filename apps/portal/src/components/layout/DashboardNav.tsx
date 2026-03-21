@@ -49,12 +49,14 @@ function NavLinks({ role }: { role: UserRole }) {
       { label: 'Dashboard', href: '/dashboard/borrower' },
       { label: 'My Applications', href: '/dashboard/borrower/applications' },
       { label: 'Documents', href: '/dashboard/borrower/documents' },
+      { label: 'Notifications', href: '/dashboard/notifications' },
     ],
     investor: [
       { label: 'Dashboard', href: '/dashboard/investor' },
       { label: 'Portfolio', href: '/dashboard/investor/portfolio' },
       { label: 'Statements', href: '/dashboard/investor/statements' },
       { label: 'Compliance', href: '/dashboard/investor/compliance' },
+      { label: 'Notifications', href: '/dashboard/notifications' },
     ],
     admin: [
       { label: 'Dashboard', href: '/dashboard/admin' },

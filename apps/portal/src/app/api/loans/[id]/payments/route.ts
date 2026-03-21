@@ -88,14 +88,20 @@ export async function POST(
     return NextResponse.json({ error: payErr?.message ?? 'Failed to record payment' }, { status: 500 })
   }
 
-  // Update loan balance
-  const newBalance   = Number(loan.outstanding_balance) - Number(data.principal_applied)
-  const newTotalPaid = Number(loan.total_paid) + Number(data.payment_amount)
+  // Update loan balance using fixed-precision arithmetic
+  // Multiply by 100 to work in integer cents, then divide back to avoid float drift
+  const balanceCents   = Math.round(Number(loan.outstanding_balance) * 100)
+  const principalCents = Math.round(Number(data.principal_applied) * 100)
+  const paymentCents   = Math.round(Number(data.payment_amount) * 100)
+  const totalPaidCents = Math.round(Number(loan.total_paid) * 100)
+
+  const newBalance   = (Math.max(0, balanceCents - principalCents) / 100).toFixed(2)
+  const newTotalPaid = ((totalPaidCents + paymentCents) / 100).toFixed(2)
 
   await supabase
     .from('loans')
     .update({
-      outstanding_balance: Math.max(0, newBalance),
+      outstanding_balance: newBalance,
       total_paid:          newTotalPaid,
       updated_at:          new Date().toISOString(),
     })

@@ -143,7 +143,7 @@ export async function sendApplicationStatusEmail({
   borrowerEmail,
   borrowerName,
   applicationNumber,
-  applicationId,
+  applicationId: _applicationId,
   newStatus,
   notes,
 }: {

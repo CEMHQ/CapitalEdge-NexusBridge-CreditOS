@@ -15,7 +15,7 @@ export default function RecordPaymentForm({
   const [paymentAmount, setPaymentAmount]   = useState('')
   const [principalApplied, setPrincipal]    = useState('0')
   const [interestApplied, setInterest]      = useState('')
-  const [feesApplied, setFees]              = useState('0')
+  const [feesApplied]                       = useState('0')
   const [paymentMethod, setMethod]          = useState('wire')
   const [externalRef, setRef]               = useState('')
   const [scheduleId, setScheduleId]         = useState('')

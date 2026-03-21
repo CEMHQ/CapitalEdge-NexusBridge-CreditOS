@@ -536,7 +536,7 @@ ORDER BY sr.created_at DESC;
 
 ## Step 3 — OCR / Document Intelligence (Planned)
 
-> Migration: `0017_document_intelligence` (planned)
+> Migration: `0018_document_intelligence` (planned)
 
 This step adds OCR extraction results from Ocrolus and Argyle income verification.
 Tables to be added: `document_extractions`.
@@ -545,14 +545,92 @@ Tables to be added: `document_extractions`.
 
 ---
 
-## Step 4 — Compliance Hardening (Planned)
+## Step 4 — Compliance Hardening
 
-> Migration: `0018_compliance_hardening` (planned)
+> Migration: `0017_compliance_hardening`
 
-This step adds KYC (Persona), AML (OFAC SDN), Reg A investor limits, and accreditation tracking.
-Tables to be added: `kyc_checks`, `aml_checks`, `accreditation_records`, `reg_a_limits`.
+This step adds KYC (Plaid Identity), AML screening, and 506(c) accreditation tracking.
+Tables added: `kyc_verifications`, `aml_screenings`, `accreditation_records`.
+Also alters `fund_subscriptions` to add `ppm_acknowledged_at` and `pending_signature` status.
 
-> Not yet implemented. This section will be filled in when Step 4 is built.
+### Tables created
+
+#### accreditation_records
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | gen_random_uuid() |
+| investor_id | UUID NOT NULL | FK investors(id) ON DELETE CASCADE |
+| verification_method | TEXT NOT NULL | income, net_worth, professional_certification, entity_assets, third_party_letter, manual |
+| provider | TEXT NOT NULL DEFAULT 'manual' | verify_investor, parallel_markets, manual |
+| provider_reference_id | TEXT | |
+| status | TEXT NOT NULL DEFAULT 'pending' | pending, under_review, verified, rejected, expired |
+| verified_at | TIMESTAMPTZ | |
+| expires_at | TIMESTAMPTZ | 90 days from verification per SEC guidance |
+| evidence_document_id | UUID | FK documents(id) ON DELETE SET NULL |
+| reviewer_notes | TEXT | |
+| reviewed_by | UUID | FK auth.users(id) ON DELETE SET NULL |
+| reviewed_at | TIMESTAMPTZ | |
+| created_at | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+| updated_at | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+| created_by | UUID | FK auth.users(id) ON DELETE SET NULL |
+
+#### kyc_verifications
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | gen_random_uuid() |
+| entity_type | TEXT NOT NULL | borrower, investor |
+| entity_id | UUID NOT NULL | |
+| provider | TEXT NOT NULL DEFAULT 'manual' | persona, jumio, plaid_identity, manual |
+| provider_reference_id | TEXT | |
+| verification_type | TEXT NOT NULL DEFAULT 'identity' | identity, address, document |
+| status | TEXT NOT NULL DEFAULT 'pending' | pending, in_progress, verified, failed, expired |
+| result_json | JSONB | |
+| failure_reason | TEXT | |
+| verified_at | TIMESTAMPTZ | |
+| expires_at | TIMESTAMPTZ | |
+| retry_count | INTEGER NOT NULL DEFAULT 0 | |
+| max_retries | INTEGER NOT NULL DEFAULT 3 | |
+| created_at | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+| updated_at | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+| created_by | UUID | FK auth.users(id) ON DELETE SET NULL |
+
+#### aml_screenings
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | gen_random_uuid() |
+| entity_type | TEXT NOT NULL | borrower, investor |
+| entity_id | UUID NOT NULL | |
+| provider | TEXT NOT NULL DEFAULT 'manual' | ofac_sdn, dow_jones, lexisnexis, comply_advantage, manual |
+| provider_reference_id | TEXT | |
+| screening_type | TEXT NOT NULL DEFAULT 'ofac' | ofac, pep, sanctions, adverse_media, full |
+| status | TEXT NOT NULL DEFAULT 'pending' | pending, clear, match, false_positive, confirmed_match |
+| result_json | JSONB | |
+| match_details | TEXT | |
+| reviewed_by | UUID | FK auth.users(id) ON DELETE SET NULL |
+| reviewed_at | TIMESTAMPTZ | |
+| created_at | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+| updated_at | TIMESTAMPTZ NOT NULL DEFAULT NOW() | |
+
+### fund_subscriptions alteration
+
+`ppm_acknowledged_at TIMESTAMPTZ` column added.
+`subscription_status` CHECK constraint updated to include `pending_signature`.
+
+### RLS Policies
+
+| Table | Policy | Role |
+|---|---|---|
+| accreditation_records | accreditation_records_select_own | investor reads own |
+| accreditation_records | accreditation_records_insert_own | investor inserts own |
+| accreditation_records | accreditation_records_admin | admin/manager full access |
+| kyc_verifications | kyc_verifications_admin | admin/manager full access |
+| kyc_verifications | kyc_verifications_select_own_investor | investor reads own |
+| aml_screenings | aml_screenings_admin | admin/manager full access |
+
+> Note: `aml_screenings` has no `created_by` column — admin-only table, service-role writes only.
 
 ---
 

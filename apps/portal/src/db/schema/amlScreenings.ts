@@ -14,4 +14,5 @@ export const amlScreenings = pgTable('aml_screenings', {
   reviewedAt:           timestamp('reviewed_at', { withTimezone: true }),
   createdAt:            timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt:            timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  // Note: aml_screenings migration does not define created_by — admin/service-role writes only
 })

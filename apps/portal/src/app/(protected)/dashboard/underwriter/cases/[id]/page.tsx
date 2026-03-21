@@ -88,7 +88,7 @@ export default async function UnderwriterCaseDetailPage({
 
   if (!uwCase) notFound()
 
-  const [{ data: conditions }, { data: decisions }, { data: riskFlags }] = await Promise.all([
+  const [{ data: conditions }, { data: decisions }] = await Promise.all([
     supabase.from('conditions').select('*').eq('case_id', id).order('created_at'),
     supabase.from('underwriting_decisions').select('*').eq('case_id', id).order('decided_at', { ascending: false }),
     supabase.from('risk_flags').select('*').eq('case_id', id).order('severity'),

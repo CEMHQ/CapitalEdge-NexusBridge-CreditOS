@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getUserRole } from '@/lib/auth/roles'
 import { formatDate } from '@/lib/format'
 import CreateTaskForm from '@/components/tasks/CreateTaskForm'
-import TaskStatusButton, { TaskStatusBadge } from '@/components/tasks/TaskStatusButton'
+import TaskStatusButton from '@/components/tasks/TaskStatusButton'
 import DeleteButton from '@/components/admin/DeleteButton'
 
 const PRIORITY_COLORS: Record<string, string> = {

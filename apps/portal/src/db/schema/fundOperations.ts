@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, integer, date, timestamp, boolean, unique } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, numeric, integer, date, timestamp } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 export const funds = pgTable('funds', {
@@ -26,6 +26,7 @@ export const fundSubscriptions = pgTable('fund_subscriptions', {
   fcfsPosition:          integer('fcfs_position'),
   reservedAt:            timestamp('reserved_at', { withTimezone: true }),
   confirmedAt:           timestamp('confirmed_at', { withTimezone: true }),
+  ppmAcknowledgedAt:     timestamp('ppm_acknowledged_at', { withTimezone: true }),
   notes:                 text('notes'),
   createdAt:             timestamp('created_at', { withTimezone: true }).notNull().default(sql`NOW()`),
   updatedAt:             timestamp('updated_at', { withTimezone: true }).notNull().default(sql`NOW()`),

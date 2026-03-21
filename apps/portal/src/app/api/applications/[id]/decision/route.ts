@@ -6,6 +6,7 @@ import { recordDecisionSchema } from '@/lib/validation/schemas'
 import { underwritingLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
+import { canTransitionApplication, type ApplicationStatus } from '@/lib/loan/state-machine'
 
 // Status map: decision type → application status
 const DECISION_STATUS_MAP: Record<string, string> = {
@@ -77,9 +78,26 @@ export async function POST(
     .update({ case_status: 'decision_made', updated_at: new Date().toISOString() })
     .eq('id', uwCase.id)
 
-  // Update application status to match decision
+  // Update application status to match decision — enforce state machine
   const newAppStatus = DECISION_STATUS_MAP[data.decision_type]
   if (newAppStatus) {
+    const { data: app } = await supabase
+      .from('applications')
+      .select('application_status')
+      .eq('id', id)
+      .single()
+
+    if (!app) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+    }
+
+    if (!canTransitionApplication(app.application_status as ApplicationStatus, newAppStatus as ApplicationStatus)) {
+      return NextResponse.json(
+        { error: `Cannot transition application from '${app.application_status}' to '${newAppStatus}'` },
+        { status: 422 }
+      )
+    }
+
     await supabase
       .from('applications')
       .update({ application_status: newAppStatus, updated_at: new Date().toISOString() })

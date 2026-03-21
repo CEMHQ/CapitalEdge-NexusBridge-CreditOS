@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getDefaultRoute, type UserRole } from '@/lib/auth/roles'
+import { getDefaultRoute, getUserRole } from '@/lib/auth/roles'
 
 export default async function RootPage() {
   const supabase = await createClient()
@@ -8,6 +8,7 @@ export default async function RootPage() {
 
   if (!user) redirect('/login')
 
-  const role = (user.user_metadata?.role ?? 'borrower') as UserRole
+  // Fetch role from DB — never from JWT metadata, which can be spoofed
+  const role = await getUserRole(supabase, user.id)
   redirect(getDefaultRoute(role))
 }

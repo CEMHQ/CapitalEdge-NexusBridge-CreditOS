@@ -13,7 +13,7 @@ const DECISION_TYPES = [
 
 export default function DecisionForm({
   applicationId,
-  caseId,
+  caseId: _caseId,
 }: {
   applicationId: string
   caseId: string

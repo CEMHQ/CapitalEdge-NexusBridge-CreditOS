@@ -11,7 +11,7 @@ type Metrics = {
 }
 
 export default function UnderwriterMetricsForm({
-  applicationId,
+  applicationId: _applicationId,
   loanRequestId,
   initial,
 }: {

@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
 import Link from 'next/link'
+import StartKycButton from '@/components/investor/StartKycButton'
 
 export default async function InvestorCompliancePage() {
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/purity
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -118,8 +119,21 @@ export default async function InvestorCompliancePage() {
         <div className="divide-y divide-gray-50">
           <ChecklistItem
             label="Identity Verification (KYC)"
-            status={kycApproved ? 'complete' : investor.kyc_status === 'in_progress' ? 'in_progress' : 'pending'}
-            detail={kycApproved ? 'Identity verified' : 'Required before subscription'}
+            status={kycApproved ? 'complete' : investor.kyc_status === 'in_progress' ? 'in_progress' : 'not_started'}
+            detail={
+              kycApproved
+                ? 'Identity verified'
+                : investor.kyc_status === 'in_progress'
+                ? 'Verification in progress — complete the flow in your browser'
+                : investor.kyc_status === 'failed'
+                ? 'Verification failed — please try again'
+                : 'Required before fund subscription'
+            }
+            actionNode={
+              !kycApproved && investor.kyc_status !== 'in_progress'
+                ? <StartKycButton investorId={investor.id} />
+                : undefined
+            }
           />
           <ChecklistItem
             label="Accreditation Verification"
@@ -241,12 +255,13 @@ export default async function InvestorCompliancePage() {
 type ChecklistStatus = 'complete' | 'in_progress' | 'pending' | 'not_started' | 'not_applicable'
 
 function ChecklistItem({
-  label, status, detail, action,
+  label, status, detail, action, actionNode,
 }: {
   label: string
   status: ChecklistStatus
   detail: string
   action?: { label: string; href: string }
+  actionNode?: React.ReactNode
 }) {
   const icon = {
     complete:       { symbol: '✓', color: 'text-green-500' },
@@ -265,11 +280,11 @@ function ChecklistItem({
           <p className="text-xs text-gray-500 mt-0.5">{detail}</p>
         </div>
       </div>
-      {action && (
+      {actionNode ?? (action && (
         <a href={action.href} className="text-xs text-indigo-600 font-medium hover:text-indigo-800 shrink-0 ml-4">
           {action.label} →
         </a>
-      )}
+      ))}
     </div>
   )
 }

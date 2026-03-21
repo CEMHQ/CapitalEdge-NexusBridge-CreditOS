@@ -23,7 +23,7 @@ export default function StartKycButton({ investorId }: Props) {
 
       const data = await res.json() as {
         success?: boolean
-        inquiryUrl?: string | null
+        shareableUrl?: string | null
         manual?: boolean
         error?: string
       }
@@ -38,9 +38,9 @@ export default function StartKycButton({ investorId }: Props) {
         return
       }
 
-      if (data.inquiryUrl) {
-        // Redirect the investor to the Persona hosted verification flow
-        window.location.href = data.inquiryUrl
+      if (data.shareableUrl) {
+        // Redirect the investor to the Plaid hosted verification flow
+        window.location.href = data.shareableUrl
       } else {
         // Manual / sandbox mode — no URL to redirect to
         setError('Verification submitted for manual review. Our team will contact you shortly.')

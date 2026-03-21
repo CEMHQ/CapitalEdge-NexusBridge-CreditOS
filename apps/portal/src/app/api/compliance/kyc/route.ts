@@ -6,7 +6,7 @@ import { initiateKycSchema } from '@/lib/validation/schemas'
 import { complianceLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
-import { createPersonaInquiry } from '@/lib/kyc/persona'
+import { createPlaidIdvSession } from '@/lib/kyc/plaid'
 
 // POST — admin, manager, or investor initiates KYC for an investor
 export async function POST(request: Request) {
@@ -53,9 +53,9 @@ export async function POST(request: Request) {
 
   if (!investor) return NextResponse.json({ error: 'Investor not found' }, { status: 404 })
 
-  const profile = Array.isArray(investor.profiles) ? investor.profiles[0] : investor.profiles
-  const email: string = (profile as { email: string; full_name: string } | null)?.email ?? ''
-  const fullName: string = (profile as { email: string; full_name: string } | null)?.full_name ?? ''
+  const profile  = Array.isArray(investor.profiles) ? investor.profiles[0] : investor.profiles
+  const email    = (profile as { email: string; full_name: string } | null)?.email    ?? ''
+  const fullName = (profile as { email: string; full_name: string } | null)?.full_name ?? ''
 
   // Guard: do not re-initiate if KYC is already verified
   const { data: existingVerification } = await adminClient
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     .insert({
       entity_type:       'investor',
       entity_id:         investor_id,
-      provider:          'persona',
+      provider:          'plaid',
       verification_type: 'identity',
       status:            'pending',
       created_by:        user.id,
@@ -88,11 +88,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create KYC record' }, { status: 500 })
   }
 
-  // Attempt to create Persona inquiry (skip if API key not configured)
-  const personaApiKey = process.env.PERSONA_API_KEY
-
-  if (!personaApiKey) {
-    // Manual / sandbox mode — return without calling Persona
+  // Graceful degradation: if Plaid is not configured, return manual mode
+  if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_IDV_TEMPLATE_ID) {
     void emitAuditEvent({
       actorProfileId: user.id,
       eventType:      'kyc_initiated',
@@ -100,30 +97,29 @@ export async function POST(request: Request) {
       entityId:       investor_id,
       newValue:       { kycId: kycRecord.id, manual: true },
     })
-    return NextResponse.json({ success: true, inquiryUrl: null, kycId: kycRecord.id, manual: true })
+    return NextResponse.json({ success: true, shareableUrl: null, kycId: kycRecord.id, manual: true })
   }
 
-  let inquiryUrl: string
+  let shareableUrl: string
   try {
-    const result = await createPersonaInquiry({
-      investorId:  investor_id,
+    const result = await createPlaidIdvSession({
       email,
       fullName,
       referenceId: kycRecord.id,
     })
 
-    // Persist the Persona inquiry ID back on the record
+    // Persist the Plaid session ID on the record
     await adminClient
       .from('kyc_verifications')
       .update({
-        provider_reference_id: result.inquiryId,
+        provider_reference_id: result.sessionId,
         updated_at:            new Date().toISOString(),
       })
       .eq('id', kycRecord.id)
 
-    inquiryUrl = result.inquiryUrl
+    shareableUrl = result.shareableUrl
   } catch (err) {
-    console.error('[kyc] Persona inquiry creation failed:', err)
+    console.error('[kyc] Plaid IDV session creation failed:', err)
     return NextResponse.json({ error: 'Failed to initiate identity verification' }, { status: 502 })
   }
 
@@ -141,5 +137,5 @@ export async function POST(request: Request) {
     newValue:       { kycId: kycRecord.id },
   })
 
-  return NextResponse.json({ success: true, inquiryUrl, kycId: kycRecord.id })
+  return NextResponse.json({ success: true, shareableUrl, kycId: kycRecord.id })
 }

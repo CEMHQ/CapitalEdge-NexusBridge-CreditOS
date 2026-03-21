@@ -19,20 +19,20 @@ export default function DashboardNav({ user, role }: { user: User; role: UserRol
   return (
     <nav className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center gap-8">
-            <span className="text-lg font-semibold text-gray-900">NexusBridge</span>
+        <div className="flex justify-between h-16 items-center min-w-0 gap-4">
+          <div className="flex items-center gap-4 min-w-0 flex-1 overflow-hidden">
+            <span className="text-lg font-semibold text-gray-900 shrink-0">NexusBridge</span>
             <NavLinks role={role} />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <NotificationBell />
-            <span className="text-sm text-gray-500">{user.email}</span>
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize">
+            <span className="text-sm text-gray-500 hidden sm:block truncate max-w-[160px]">{user.email}</span>
+            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize shrink-0">
               {role}
             </span>
             <button
               onClick={handleSignOut}
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors shrink-0"
             >
               Sign out
             </button>
@@ -95,12 +95,12 @@ function NavLinks({ role }: { role: UserRole }) {
   }
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-6 overflow-x-auto scrollbar-none min-w-0">
       {links[role]?.map((link) => (
         <a
           key={link.href}
           href={link.href}
-          className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="text-sm text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap shrink-0"
         >
           {link.label}
         </a>

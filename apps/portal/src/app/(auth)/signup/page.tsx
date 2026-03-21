@@ -110,9 +110,9 @@ export default function SignupPage() {
             </a>
           </p>
           <p className="text-center text-sm text-gray-400">
-            Investor access is by invitation only.{' '}
-            <a href="https://nexusbridgelending.com/investors" className="hover:underline">
-              Learn more
+            Investor access is by invitation only. Contact us at{' '}
+            <a href="mailto:investors@nexusbridgelending.com" className="hover:underline">
+              investors@nexusbridgelending.com
             </a>
           </p>
         </div>

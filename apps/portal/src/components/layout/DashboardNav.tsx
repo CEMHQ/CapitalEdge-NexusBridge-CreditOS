@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Menu,
@@ -294,62 +294,64 @@ function CollapseToggle({
   )
 }
 
+// ─── SidebarContent ───────────────────────────────────────────────────────────
+
+function SidebarContent({
+  role,
+  user,
+  collapsed,
+  onNavigate,
+  showToggle = false,
+  onSignOut,
+  onToggleCollapse,
+}: {
+  role: UserRole
+  user: User
+  collapsed: boolean
+  onNavigate?: () => void
+  showToggle?: boolean
+  onSignOut: () => void
+  onToggleCollapse?: () => void
+}) {
+  return (
+    <>
+      <nav className="flex-1 overflow-y-auto py-3 scrollbar-none" style={{ padding: collapsed ? '12px 6px' : '12px' }}>
+        <NavLinks role={role} collapsed={collapsed} onNavigate={onNavigate} />
+      </nav>
+      <UserFooter user={user} role={role} collapsed={collapsed} onSignOut={onSignOut} />
+      {showToggle && onToggleCollapse && (
+        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
+      )}
+    </>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function DashboardNav({ user, role }: { user: User; role: UserRole }) {
-  // Drawer state for mobile
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Sidebar collapsed state (used for sm–lg tablet and lg+ desktop)
-  // Default: collapsed on tablet (sm–lg), expanded on desktop (lg+)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  // Initialize collapsed state directly from matchMedia — no setState in effect
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(min-width: 640px) and (max-width: 1023px)').matches
+  })
 
   const router = useRouter()
   const supabase = createClient()
 
-  // Set initial collapsed state based on viewport width
-  const syncCollapsed = useCallback(() => {
-    if (typeof window === 'undefined') return
-    const isTablet = window.matchMedia('(min-width: 640px) and (max-width: 1023px)').matches
-    setIsCollapsed(isTablet)
-  }, [])
-
+  // Subscribe to viewport changes — no setState in effect body
   useEffect(() => {
-    syncCollapsed()
-
     const mq = window.matchMedia('(min-width: 640px) and (max-width: 1023px)')
-    const handler = () => syncCollapsed()
+    const handler = () => setIsCollapsed(mq.matches)
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [syncCollapsed])
+  }, [])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
-  }
-
-  // ── Sidebar content (shared between tablet/desktop sidebar and mobile drawer)
-  function SidebarContent({
-    collapsed,
-    onNavigate,
-    showToggle = false,
-  }: {
-    collapsed: boolean
-    onNavigate?: () => void
-    showToggle?: boolean
-  }) {
-    return (
-      <>
-        <nav className="flex-1 overflow-y-auto py-3 scrollbar-none" style={{ padding: collapsed ? '12px 6px' : '12px' }}>
-          <NavLinks role={role} collapsed={collapsed} onNavigate={onNavigate} />
-        </nav>
-        <UserFooter user={user} role={role} collapsed={collapsed} onSignOut={handleSignOut} />
-        {showToggle && (
-          <CollapseToggle collapsed={collapsed} onToggle={() => setIsCollapsed((v) => !v)} />
-        )}
-      </>
-    )
   }
 
   return (
@@ -363,7 +365,14 @@ export default function DashboardNav({ user, role }: { user: User; role: UserRol
         ].join(' ')}
       >
         <BrandMark collapsed={isCollapsed} />
-        <SidebarContent collapsed={isCollapsed} showToggle />
+        <SidebarContent
+          role={role}
+          user={user}
+          collapsed={isCollapsed}
+          showToggle
+          onSignOut={handleSignOut}
+          onToggleCollapse={() => setIsCollapsed((c) => !c)}
+        />
       </aside>
 
       {/* ── Mobile top bar (< sm) ─────────────────────────────────────────── */}
@@ -418,7 +427,13 @@ export default function DashboardNav({ user, role }: { user: User; role: UserRol
               </button>
             </div>
 
-            <SidebarContent collapsed={false} onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent
+              role={role}
+              user={user}
+              collapsed={false}
+              onNavigate={() => setMobileOpen(false)}
+              onSignOut={handleSignOut}
+            />
           </aside>
         </>
       )}

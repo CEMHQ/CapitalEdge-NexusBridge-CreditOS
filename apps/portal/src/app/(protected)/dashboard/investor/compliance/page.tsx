@@ -3,6 +3,7 @@ import { formatDate } from '@/lib/format'
 import Link from 'next/link'
 
 export default async function InvestorCompliancePage() {
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/purity
   const now = Date.now()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

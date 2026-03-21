@@ -15,6 +15,7 @@ type AccredRow = {
 }
 
 export default async function AdminCompliancePage() {
+  const now = Date.now()
   const supabase = await createClient()
 
   // Pending accreditation records
@@ -38,7 +39,7 @@ export default async function AdminCompliancePage() {
     .limit(50)
 
   // Expiring soon (within 30 days)
-  const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  const thirtyDaysOut = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString()
   const { data: expiringAccreditation } = await supabase
     .from('accreditation_records')
     .select(`
@@ -47,7 +48,7 @@ export default async function AdminCompliancePage() {
     `)
     .eq('status', 'verified')
     .lte('expires_at', thirtyDaysOut)
-    .gte('expires_at', new Date().toISOString())
+    .gte('expires_at', new Date(now).toISOString())
     .order('expires_at', { ascending: true })
 
   // Investors overview
@@ -179,7 +180,7 @@ export default async function AdminCompliancePage() {
                   const r = rec as unknown as AccredRow
                   const inv = r.investors
                   const daysLeft = r.expires_at
-                    ? Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                    ? Math.ceil((new Date(r.expires_at).getTime() - now) / (1000 * 60 * 60 * 24))
                     : null
                   return (
                     <tr key={r.id} className="hover:bg-gray-50 transition-colors">

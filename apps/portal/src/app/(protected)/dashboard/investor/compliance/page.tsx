@@ -3,6 +3,7 @@ import { formatDate } from '@/lib/format'
 import Link from 'next/link'
 
 export default async function InvestorCompliancePage() {
+  const now = Date.now()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -69,7 +70,7 @@ export default async function InvestorCompliancePage() {
 
   // Expiry warning
   const expiresAt = latestAccreditation?.expires_at ? new Date(latestAccreditation.expires_at) : null
-  const daysUntilExpiry = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
+  const daysUntilExpiry = expiresAt ? Math.ceil((expiresAt.getTime() - now) / (1000 * 60 * 60 * 24)) : null
   const expiryWarning = daysUntilExpiry !== null && daysUntilExpiry <= 30
 
   return (

@@ -23,7 +23,7 @@ All Supabase SQL queries are organized by phase and domain. Run each statement i
 |---|---|---|
 | Phase 1 — Core DDL | `profiles`, `borrowers`, `applications`, `properties`, `loan_requests` | `0001_initial_borrower_schema` |
 | Phase 2 — Auth & Roles | `user_roles`, `investors` + auth functions + RLS policies | `0005_user_roles`, `0007_investors`, `0008_cascade_deletes` |
-| Phase 3 — Foundation | `audit_events` (partitioned monthly), `activity_logs` (partitioned weekly), `notifications`, `tasks` | `0009_extensions`, `0014_audit_operations` |
+| Phase 3 — Foundation | `audit_events` (partitioned monthly), `activity_logs` (partitioned weekly), `notifications`, `tasks` | `0009_extensions`, `0014_audit_operations`, `0019_partition_rls_policies` |
 | Phase 3 — Documents | `documents`, `document_requests` | `0011_documents` |
 | Phase 3 — Underwriting | `underwriting_cases`, `underwriting_decisions`, `conditions`, `risk_flags` | `0010_underwriting` |
 | Phase 3 — Loan Lifecycle | `loans`, `payment_schedule`, `payments`, `draws` | `0012_loans` |
@@ -32,8 +32,9 @@ All Supabase SQL queries are organized by phase and domain. Run each statement i
 | Phase 4 — E-Signatures | `signature_requests` | `0016_esignatures` |
 | Phase 4 — Compliance Hardening | `accreditation_records`, `kyc_verifications`, `aml_screenings` + alters `fund_subscriptions` | `0017_compliance_hardening` |
 | Phase 4 — Reg A Limits | alters `funds` (offering_type), alters `investors` (annual_income, net_worth) | `0018_reg_a_limits` |
-| Phase 4 — OCR / Document Intelligence | `document_extractions` | `0019_document_intelligence` (planned) |
-| Phase 5 — Tokenization | `token_issuances`, `on_chain_positions`, `bridge_events` | `0020_tokenization` (planned) |
+| Phase 3 — Partition RLS | `apply_partition_rls_policies()` function + pg_cron job | `0019_partition_rls_policies` |
+| Phase 4 — OCR / Document Intelligence | `document_extractions` | `0020_document_intelligence` (planned) |
+| Phase 5 — Tokenization | `token_issuances`, `on_chain_positions`, `bridge_events` | `0021_tokenization` (planned) |
 
 ---
 

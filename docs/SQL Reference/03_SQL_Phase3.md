@@ -1,7 +1,7 @@
 # NexusBridge CreditOS — SQL Reference: Phase 3
 
 **Phase:** 3 — Loan Lifecycle + Fund Operations
-**Migrations:** `0009_extensions`, `0010_underwriting`, `0011_documents`, `0012_loans`, `0013_fund_operations`, `0014_audit_operations`
+**Migrations:** `0009_extensions`, `0010_underwriting`, `0011_documents`, `0012_loans`, `0013_fund_operations`, `0014_audit_operations`, `0019_partition_rls_policies`
 
 SQL migration DDL and verification/audit queries for all Phase 3 steps.
 Run each statement individually in the Supabase SQL Editor.
@@ -156,6 +156,67 @@ ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "activity_logs_select_admin" ON activity_logs
   FOR SELECT USING (is_admin());
+```
+
+### Partition RLS propagation (`0019_partition_rls_policies`)
+
+> **Background:** PostgreSQL propagates `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` to
+> child partitions created by pg_partman, but **RLS policies are not inherited** — each
+> physical partition is a separate table that needs its own policies. This migration fixes
+> the Supabase security advisor warning "RLS Enabled No Policy" on all `audit_events_*`
+> and `activity_logs_*` partition tables.
+
+```sql
+-- Idempotent function: applies the correct SELECT policy to any partition that
+-- belongs to audit_events or activity_logs and has no policies yet.
+CREATE OR REPLACE FUNCTION apply_partition_rls_policies()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT
+      c.relname AS partition_name,
+      p.relname AS parent_name
+    FROM pg_inherits  i
+    JOIN pg_class     c ON c.oid = i.inhrelid
+    JOIN pg_class     p ON p.oid = i.inhparent
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND p.relname IN ('audit_events', 'activity_logs')
+      AND NOT EXISTS (
+        SELECT 1 FROM pg_policy pol WHERE pol.polrelid = c.oid
+      )
+  LOOP
+    IF r.parent_name = 'audit_events' THEN
+      EXECUTE format(
+        'CREATE POLICY "audit_events_select_admin" ON public.%I FOR SELECT USING (is_admin())',
+        r.partition_name
+      );
+    ELSIF r.parent_name = 'activity_logs' THEN
+      EXECUTE format(
+        'CREATE POLICY "activity_logs_select_admin" ON public.%I FOR SELECT USING (is_admin())',
+        r.partition_name
+      );
+    END IF;
+  END LOOP;
+END;
+$$;
+
+-- Apply to all existing partitions immediately
+SELECT apply_partition_rls_policies();
+
+-- Schedule daily at 02:00 UTC so new partitions pre-created by pg_partman
+-- (p_premake=4) also receive their policies before they become active.
+SELECT cron.schedule(
+  'apply-partition-rls-daily',
+  '0 2 * * *',
+  $$SELECT apply_partition_rls_policies()$$
+);
 ```
 
 ### Create notifications

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
 import Link from 'next/link'
 import StartKycButton from '@/components/investor/StartKycButton'
+import { computeRegALimit, getRollingRegACommitments } from '@/lib/compliance/reg-a'
 
 export default async function InvestorCompliancePage() {
   // eslint-disable-next-line react-hooks/purity
@@ -11,7 +12,7 @@ export default async function InvestorCompliancePage() {
 
   const { data: investor } = await supabase
     .from('investors')
-    .select('id, investor_type, accreditation_status, kyc_status, aml_status, onboarding_status, created_at')
+    .select('id, investor_type, accreditation_status, kyc_status, aml_status, onboarding_status, annual_income, net_worth, created_at')
     .eq('profile_id', user!.id)
     .maybeSingle()
 
@@ -60,6 +61,15 @@ export default async function InvestorCompliancePage() {
 
   const ppmSig = subSigs.find(s => s.document_type === 'ppm_acknowledgment')
   const subAgreementSig = subSigs.find(s => s.document_type === 'subscription_agreement')
+
+  // Reg A investment limit (only meaningful for non-accredited investors)
+  const regALimit = computeRegALimit(
+    investor.accreditation_status,
+    investor.annual_income ?? null,
+    investor.net_worth ?? null,
+  )
+  const regAUsed      = regALimit !== null ? await getRollingRegACommitments(supabase, investor.id) : 0
+  const regARemaining = regALimit !== null ? Math.max(0, regALimit - regAUsed) : null
 
   // Compliance checklist
   const isAccredited    = investor.accreditation_status === 'verified'
@@ -233,6 +243,64 @@ export default async function InvestorCompliancePage() {
             {subscription.fcfs_position && <Row label="Queue Position" value={`#${subscription.fcfs_position}`} />}
             {subscription.ppm_acknowledged_at && <Row label="PPM Acknowledged" value={formatDate(subscription.ppm_acknowledged_at)} />}
           </div>
+        </div>
+      )}
+
+      {/* Reg A Investment Limit */}
+      {regALimit !== null ? (
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 mb-3">Reg A Investment Limit</h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Under SEC Regulation A Tier 2, non-accredited investors may invest no more than
+              10% of the greater of annual income or net worth in any rolling 12-month period
+              (minimum $2,500). The figures below reflect your current capacity.
+            </p>
+            {/* Gauge bar */}
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                <span>Used: <strong className="text-gray-900">${regAUsed.toLocaleString()}</strong></span>
+                <span>Limit: <strong className="text-gray-900">${regALimit.toLocaleString()}</strong></span>
+              </div>
+              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    regAUsed / regALimit >= 0.9 ? 'bg-red-500' :
+                    regAUsed / regALimit >= 0.7 ? 'bg-amber-400' : 'bg-indigo-500'
+                  }`}
+                  style={{ width: `${Math.min(100, (regAUsed / regALimit) * 100).toFixed(1)}%` }}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4 pt-1">
+              <div className="text-center">
+                <p className="text-xs text-gray-500">Annual limit</p>
+                <p className="text-sm font-semibold text-gray-900 mt-0.5">${regALimit.toLocaleString()}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-500">Used (12 mo)</p>
+                <p className="text-sm font-semibold text-gray-900 mt-0.5">${regAUsed.toLocaleString()}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-500">Remaining</p>
+                <p className={`text-sm font-semibold mt-0.5 ${(regARemaining ?? 0) === 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  ${(regARemaining ?? 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+            {(investor.annual_income == null && investor.net_worth == null) && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                Your annual income and net worth have not been provided. The limit shown ($2,500) is the SEC minimum.
+                Please update your financial profile to unlock a higher investment capacity.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+          <p className="text-xs text-gray-500">
+            <strong className="text-gray-700">Reg A investment limit:</strong> Not applicable — accredited investors are exempt from the SEC annual investment limit.
+          </p>
         </div>
       )}
 

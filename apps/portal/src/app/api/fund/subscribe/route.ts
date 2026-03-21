@@ -6,6 +6,7 @@ import { createSubscriptionSchema } from '@/lib/validation/schemas'
 import { subscriptionLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
+import { checkRegALimit } from '@/lib/compliance/reg-a'
 
 export async function POST(request: Request) {
   const validation = await validateBody(request, createSubscriptionSchema)
@@ -25,10 +26,10 @@ export async function POST(request: Request) {
 
   const { fund_id, commitment_amount } = validation.data
 
-  // Resolve investor record
+  // Resolve investor record (include financial profile for Reg A limit check)
   const { data: investor } = await supabase
     .from('investors')
-    .select('id, accreditation_status, onboarding_status')
+    .select('id, accreditation_status, onboarding_status, annual_income, net_worth')
     .eq('profile_id', user.id)
     .single()
 
@@ -36,11 +37,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Investor record not found' }, { status: 404 })
   }
 
-  if (investor.accreditation_status !== 'verified') {
-    return NextResponse.json(
-      { error: 'Accredited investor verification required before subscribing' },
-      { status: 422 }
+  // Resolve fund to determine offering type
+  const { data: fund } = await supabase
+    .from('funds')
+    .select('id, offering_type')
+    .eq('id', fund_id)
+    .maybeSingle()
+
+  if (!fund) {
+    return NextResponse.json({ error: 'Fund not found' }, { status: 404 })
+  }
+
+  // Compliance gate: branched by offering type
+  if (fund.offering_type === 'reg_d') {
+    // 506(c): accredited investors only
+    if (investor.accreditation_status !== 'verified') {
+      return NextResponse.json(
+        { error: 'Accredited investor verification required for this fund' },
+        { status: 422 }
+      )
+    }
+  } else if (fund.offering_type === 'reg_a') {
+    // Tier 2: non-accredited allowed subject to 10%-of-income/net-worth limit
+    const limitCheck = await checkRegALimit(
+      supabase,
+      investor.id,
+      investor.accreditation_status,
+      investor.annual_income,
+      investor.net_worth,
+      commitment_amount,
     )
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ error: limitCheck.reason }, { status: 422 })
+    }
   }
 
   // Check for existing active subscription to this fund

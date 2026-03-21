@@ -31,8 +31,9 @@ All Supabase SQL queries are organized by phase and domain. Run each statement i
 | Phase 4 — Workflow Automation | `workflow_triggers`, `workflow_executions` | `0015_workflow_automation` |
 | Phase 4 — E-Signatures | `signature_requests` | `0016_esignatures` |
 | Phase 4 — Compliance Hardening | `accreditation_records`, `kyc_verifications`, `aml_screenings` + alters `fund_subscriptions` | `0017_compliance_hardening` |
-| Phase 4 — OCR / Document Intelligence | `document_extractions` | `0018_document_intelligence` (planned) |
-| Phase 5 — Tokenization | `token_issuances`, `on_chain_positions`, `bridge_events` | `0019_tokenization` (planned) |
+| Phase 4 — Reg A Limits | alters `funds` (offering_type), alters `investors` (annual_income, net_worth) | `0018_reg_a_limits` |
+| Phase 4 — OCR / Document Intelligence | `document_extractions` | `0019_document_intelligence` (planned) |
+| Phase 5 — Tokenization | `token_issuances`, `on_chain_positions`, `bridge_events` | `0020_tokenization` (planned) |
 
 ---
 

@@ -536,7 +536,7 @@ ORDER BY sr.created_at DESC;
 
 ## Step 3 — OCR / Document Intelligence (Planned)
 
-> Migration: `0018_document_intelligence` (planned)
+> Migration: `0019_document_intelligence` (planned)
 
 This step adds OCR extraction results from Ocrolus and Argyle income verification.
 Tables to be added: `document_extractions`.
@@ -631,6 +631,55 @@ Also alters `fund_subscriptions` to add `ppm_acknowledged_at` and `pending_signa
 | aml_screenings | aml_screenings_admin | admin/manager full access |
 
 > Note: `aml_screenings` has no `created_by` column — admin-only table, service-role writes only.
+
+---
+
+## Step 4b — Reg A Investor Limit Enforcement
+
+> Migration: `0018_reg_a_limits`
+
+This migration extends existing tables to support SEC Reg A Tier 2 investment limit enforcement. Non-accredited investors in Reg A offerings are limited to the greater of 10% of annual income or 10% of net worth (minimum $2,500) in any rolling 12-month period. Accredited investors are exempt.
+
+### Alterations
+
+#### funds — offering_type column
+
+```sql
+ALTER TABLE funds
+  ADD COLUMN IF NOT EXISTS offering_type TEXT NOT NULL DEFAULT 'reg_d'
+    CHECK (offering_type IN ('reg_a', 'reg_d', 'reg_cf'));
+```
+
+| Value | Regime |
+|---|---|
+| `reg_d` | 506(c) — accredited investors only (default) |
+| `reg_a` | Tier 2 — non-accredited allowed subject to 10% limit |
+| `reg_cf` | Regulation CF crowdfunding (future) |
+
+#### investors — financial profile columns
+
+```sql
+ALTER TABLE investors
+  ADD COLUMN IF NOT EXISTS annual_income NUMERIC(15, 2),
+  ADD COLUMN IF NOT EXISTS net_worth     NUMERIC(15, 2);
+```
+
+| Column | Type | Notes |
+|---|---|---|
+| annual_income | NUMERIC(15,2) | NULL = unknown; system falls back to $2,500 minimum limit |
+| net_worth | NUMERIC(15,2) | NULL = unknown; system falls back to $2,500 minimum limit |
+
+Collected during onboarding for non-accredited investors in Reg A offerings. Not required for accredited investors or Reg D funds.
+
+### Indexes
+
+| Index | Table | Column |
+|---|---|---|
+| `idx_funds_offering_type` | `funds` | `offering_type` |
+
+### Reg A limit calculation (application logic)
+
+Limit = `max(annual_income * 0.10, net_worth * 0.10, 2500.00)`. Rolling 12-month commitments are computed at subscription time by querying `fund_subscriptions` joined to `funds` where `offering_type = 'reg_a'` and `created_at >= NOW() - INTERVAL '12 months'`.
 
 ---
 

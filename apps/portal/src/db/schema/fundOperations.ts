@@ -5,6 +5,8 @@ export const funds = pgTable('funds', {
   id:            uuid('id').primaryKey().defaultRandom(),
   fundName:      text('fund_name').notNull().default('NexusBridge Capital LP'),
   fundStatus:    text('fund_status').notNull().default('open'),
+  // offering_type controls which compliance regime applies at subscription time
+  offeringType:  text('offering_type').notNull().default('reg_d'),
   targetSize:    numeric('target_size', { precision: 15, scale: 2 }).notNull().default('50000000'),
   maxCapacity:   numeric('max_capacity', { precision: 15, scale: 2 }).notNull().default('50000000'),
   inceptionDate: date('inception_date'),

@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { formatDate } from '@/lib/format'
 import Link from 'next/link'
+import ReviewAccreditationModal from '@/components/admin/ReviewAccreditationModal'
 
 type AccredRow = {
   id: string
@@ -14,10 +16,57 @@ type AccredRow = {
   investors: { profiles: { full_name: string | null; email: string | null } | null } | null
 }
 
-export default async function AdminCompliancePage() {
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/purity
+export default async function AdminCompliancePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ review?: string }>
+}) {
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now()
+  const { review: reviewId } = await searchParams
   const supabase = await createClient()
+  const adminClient = createAdminClient()
+
+  // If ?review=<id>, fetch that record for the modal
+  let reviewRecord: {
+    id: string
+    investor_id: string
+    verification_method: string
+    status: string
+    verified_at: string | null
+    expires_at: string | null
+    reviewer_notes: string | null
+    created_at: string
+    investor_name: string | null
+    investor_email: string | null
+  } | null = null
+
+  if (reviewId) {
+    const { data: rec } = await adminClient
+      .from('accreditation_records')
+      .select(`
+        id, investor_id, verification_method, status, verified_at, expires_at, reviewer_notes, created_at,
+        investors ( profiles ( full_name, email ) )
+      `)
+      .eq('id', reviewId)
+      .maybeSingle()
+
+    if (rec) {
+      const r = rec as unknown as AccredRow
+      reviewRecord = {
+        id:                  r.id,
+        investor_id:         r.investor_id,
+        verification_method: r.verification_method,
+        status:              r.status,
+        verified_at:         r.verified_at,
+        expires_at:          r.expires_at,
+        reviewer_notes:      r.reviewer_notes,
+        created_at:          r.created_at,
+        investor_name:       r.investors?.profiles?.full_name ?? null,
+        investor_email:      r.investors?.profiles?.email ?? null,
+      }
+    }
+  }
 
   // Pending accreditation records
   const { data: pendingAccreditation } = await supabase
@@ -362,6 +411,14 @@ export default async function AdminCompliancePage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Review modal — shown when ?review=<id> is present */}
+      {reviewRecord && (
+        <ReviewAccreditationModal
+          record={reviewRecord}
+          basePath="/dashboard/admin/compliance"
+        />
       )}
 
     </div>

@@ -34,6 +34,10 @@ export type AuditEventType =
   | 'accreditation_verified'
   | 'accreditation_updated'
   | 'ppm_acknowledged'
+  | 'kyc_initiated'
+  | 'kyc_completed'
+  | 'kyc_failed'
+  | 'aml_screened'
 
 export type AuditEntityType =
   | 'loan'

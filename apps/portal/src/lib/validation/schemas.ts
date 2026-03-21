@@ -399,3 +399,20 @@ export const updateInvestorProfileSchema = z.object({
   investor_type: z.enum(['individual', 'joint', 'entity', 'ira']).optional(),
   onboarding_status: z.enum(['pending', 'in_progress', 'complete']).optional(),
 })
+
+// ─── Phase 4: Compliance — KYC / AML ─────────────────────────────────────────
+
+// POST /api/compliance/kyc
+export const initiateKycSchema = z.object({
+  investor_id: z.string().uuid(),
+})
+
+export type InitiateKycInput = z.infer<typeof initiateKycSchema>
+
+// POST /api/compliance/aml
+export const initiateAmlSchema = z.object({
+  investor_id: z.string().uuid(),
+  dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+})
+
+export type InitiateAmlInput = z.infer<typeof initiateAmlSchema>

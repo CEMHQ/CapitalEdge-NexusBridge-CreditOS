@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/format'
+import SignatureStatusBadge from '@/components/signatures/SignatureStatusBadge'
 
 const LOAN_PURPOSE_LABELS: Record<string, string> = {
   bridge: 'Bridge Loan',
@@ -164,6 +165,16 @@ export default async function BorrowerApplicationDetailPage({
   const openConditions = (conditions ?? []).filter((c) => c.status === 'pending')
   const resolvedConditions = (conditions ?? []).filter((c) => c.status !== 'pending')
 
+  // Signature requests for this application (read-only for borrower)
+  type SigRow = { id: string; document_type: string; status: string; signers: unknown; sent_at: string | null; completed_at: string | null; declined_at: string | null }
+  const { data: sigRequestsRaw } = await supabase
+    .from('signature_requests')
+    .select('id, document_type, status, signers, sent_at, completed_at, declined_at')
+    .eq('entity_type', 'application')
+    .eq('entity_id', id)
+    .order('created_at', { ascending: false })
+  const sigRequests = (sigRequestsRaw ?? []) as unknown as SigRow[]
+
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
@@ -259,6 +270,44 @@ export default async function BorrowerApplicationDetailPage({
           </div>
         )}
       </Section>
+
+      {/* Closing Documents — read-only signature status */}
+      {sigRequests.length > 0 && (
+        <Section title={`Closing Documents (${sigRequests.length})`}>
+          <div className="divide-y divide-gray-100 -mx-0">
+            {sigRequests.map((sr) => {
+              const signerList = (sr.signers ?? []) as Array<{ name: string; role: string; signed_at: string | null }>
+              return (
+                <div key={sr.id} className="py-3 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-900 capitalize">
+                      {sr.document_type.replace(/_/g, ' ')}
+                    </span>
+                    <SignatureStatusBadge status={sr.status} />
+                  </div>
+                  <div className="text-xs text-gray-500 space-y-0.5">
+                    {sr.sent_at && <p>Sent {formatDate(sr.sent_at)}</p>}
+                    {sr.completed_at && <p className="text-green-600">All parties signed {formatDate(sr.completed_at)}</p>}
+                    {sr.declined_at && <p className="text-red-600">Declined {formatDate(sr.declined_at)}</p>}
+                  </div>
+                  {signerList.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {signerList.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                          <span className={`w-2 h-2 rounded-full ${s.signed_at ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <span>{s.name}</span>
+                          <span className="text-gray-400">({s.role})</span>
+                          {s.signed_at && <span className="text-green-600 ml-auto">Signed</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </Section>
+      )}
 
       {/* Resolved Conditions */}
       {resolvedConditions.length > 0 && (

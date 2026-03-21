@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
+import SignatureStatusBadge from '@/components/signatures/SignatureStatusBadge'
 
 type LoanJoin = {
   loan_number: string | null
@@ -61,6 +62,19 @@ export default async function InvestorPortfolioPage() {
       .order('allocation_date', { ascending: false })
     return data ?? []
   })() : []
+
+  // Get signature requests for this subscription
+  type SigRow = { id: string; document_type: string; status: string; signers: unknown; sent_at: string | null; completed_at: string | null; declined_at: string | null }
+  let subSigRequests: SigRow[] = []
+  if (subscription) {
+    const { data } = await supabase
+      .from('signature_requests')
+      .select('id, document_type, status, signers, sent_at, completed_at, declined_at')
+      .eq('entity_type', 'subscription')
+      .eq('entity_id', subscription.id)
+      .order('created_at', { ascending: false })
+    subSigRequests = (data ?? []) as unknown as SigRow[]
+  }
 
   // Get NAV history (last 6)
   const { data: navHistory } = await supabase
@@ -124,6 +138,45 @@ export default async function InvestorPortfolioPage() {
           )}
         </div>
       </div>
+
+      {/* Subscription Documents */}
+      {subSigRequests.length > 0 && (
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 mb-3">Subscription Documents</h2>
+          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+            {subSigRequests.map((sr) => {
+              const signerList = (sr.signers ?? []) as Array<{ name: string; role: string; signed_at: string | null }>
+              return (
+                <div key={sr.id} className="p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-900 capitalize">
+                      {sr.document_type.replace(/_/g, ' ')}
+                    </span>
+                    <SignatureStatusBadge status={sr.status} />
+                  </div>
+                  <div className="text-xs text-gray-500 space-y-0.5">
+                    {sr.sent_at && <p>Sent {formatDate(sr.sent_at)}</p>}
+                    {sr.completed_at && <p className="text-green-600">Completed {formatDate(sr.completed_at)}</p>}
+                    {sr.declined_at && <p className="text-red-600">Declined {formatDate(sr.declined_at)}</p>}
+                  </div>
+                  {signerList.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {signerList.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                          <span className={`w-2 h-2 rounded-full ${s.signed_at ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <span>{s.name}</span>
+                          <span className="text-gray-400">({s.role})</span>
+                          {s.signed_at && <span className="text-green-600 ml-auto">Signed</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Loan allocations */}
       <div>

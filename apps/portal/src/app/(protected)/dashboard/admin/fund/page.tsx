@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
+import SendForSignatureButton from '@/components/signatures/SendForSignatureButton'
+import SignatureStatusBadge from '@/components/signatures/SignatureStatusBadge'
 
 type InvestorJoin = {
   id: string
@@ -47,6 +49,27 @@ export default async function AdminFundPage() {
   const totalDeployed  = activeSubs.reduce((sum, s) => sum + Number(s.funded_amount), 0)
 
   const capacityUsedPct = fund ? Math.round((totalCommitted / Number(fund.max_capacity)) * 100) : 0
+
+  // Signature requests for all subscriptions
+  const subIds = allSubs.map(s => s.id)
+  type SubSigRow = { id: string; entity_id: string; document_type: string; status: string; signers: unknown; sent_at: string | null; completed_at: string | null; declined_at: string | null }
+  let subSigRequests: SubSigRow[] = []
+  if (subIds.length > 0) {
+    const { data } = await supabase
+      .from('signature_requests')
+      .select('id, entity_id, document_type, status, signers, sent_at, completed_at, declined_at')
+      .eq('entity_type', 'subscription')
+      .in('entity_id', subIds)
+      .order('created_at', { ascending: false })
+    subSigRequests = (data ?? []) as unknown as SubSigRow[]
+  }
+
+  // Group signature requests by subscription ID
+  const sigsBySubId = subSigRequests.reduce<Record<string, SubSigRow[]>>((acc, sr) => {
+    if (!acc[sr.entity_id]) acc[sr.entity_id] = []
+    acc[sr.entity_id].push(sr)
+    return acc
+  }, {})
 
   return (
     <div className="space-y-8">
@@ -209,6 +232,70 @@ export default async function AdminFundPage() {
           </div>
         )}
       </div>
+
+      {/* Subscription Signatures */}
+      {activeSubs.length > 0 && (
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 mb-3">Subscription Signatures</h2>
+          <div className="space-y-4">
+            {activeSubs.map((sub) => {
+              const inv = sub.investors as unknown as InvestorJoin
+              const sigs = sigsBySubId[sub.id] ?? []
+              return (
+                <div key={sub.id} className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{inv?.profiles?.full_name ?? '—'}</p>
+                      <p className="text-xs text-gray-500">{formatCurrency(Number(sub.commitment_amount))} · {sub.subscription_status}</p>
+                    </div>
+                    <SendForSignatureButton
+                      entityType="subscription"
+                      entityId={sub.id}
+                      availableDocTypes={['ppm_acknowledgment', 'subscription_agreement']}
+                    />
+                  </div>
+                  {sigs.length > 0 ? (
+                    <div className="space-y-2">
+                      {sigs.map((sr) => {
+                        const signerList = (sr.signers ?? []) as Array<{ name: string; email: string; role: string; signed_at: string | null }>
+                        return (
+                          <div key={sr.id} className="border border-gray-100 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-900 capitalize">
+                                {sr.document_type.replace(/_/g, ' ')}
+                              </span>
+                              <SignatureStatusBadge status={sr.status} />
+                            </div>
+                            <div className="text-xs text-gray-500 space-y-0.5">
+                              {sr.sent_at && <p>Sent {formatDate(sr.sent_at)}</p>}
+                              {sr.completed_at && <p className="text-green-600">Signed {formatDate(sr.completed_at)}</p>}
+                              {sr.declined_at && <p className="text-red-600">Declined {formatDate(sr.declined_at)}</p>}
+                            </div>
+                            {signerList.length > 0 && (
+                              <div className="mt-1.5 space-y-1">
+                                {signerList.map((s, i) => (
+                                  <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                                    <span className={`w-2 h-2 rounded-full ${s.signed_at ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                    <span>{s.name}</span>
+                                    <span className="text-gray-400">({s.role})</span>
+                                    {s.signed_at && <span className="text-green-600 ml-auto">Signed</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">No signature requests sent yet.</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* NAV history */}
       <div>

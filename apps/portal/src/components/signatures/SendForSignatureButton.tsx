@@ -8,6 +8,7 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   deed_of_trust:          'Deed of Trust',
   loan_agreement:         'Loan Agreement',
   subscription_agreement: 'Subscription Agreement',
+  ppm_acknowledgment:     'PPM Acknowledgment',
 }
 
 interface SignerForm {

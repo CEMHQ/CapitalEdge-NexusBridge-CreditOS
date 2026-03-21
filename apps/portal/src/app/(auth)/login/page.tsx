@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getDefaultRoute, type UserRole } from '@/lib/auth/roles'
 import { Button } from '@/components/ui/button'
+import PasswordInput from '@/components/auth/PasswordInput'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -74,13 +75,12 @@ export default function LoginPage() {
                 Forgot password?
               </a>
             </div>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              autoComplete="current-password"
             />
           </div>
 

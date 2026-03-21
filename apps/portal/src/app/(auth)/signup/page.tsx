@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import PasswordInput from '@/components/auth/PasswordInput'
+import PasswordStrengthMeter, { analyzePassword } from '@/components/auth/PasswordStrengthMeter'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -14,10 +16,22 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const analysis = useMemo(() => analyzePassword(password), [password])
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
     setError(null)
+
+    if (!analysis.isValid) {
+      setError(
+        analysis.meetsLength
+          ? 'Please choose a stronger password.'
+          : `Password must be at least 12 characters.`
+      )
+      return
+    }
+
+    setLoading(true)
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -65,22 +79,25 @@ export default function SignupPage() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
-              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              autoComplete="new-password"
             />
+            <PasswordStrengthMeter password={password} />
           </div>
 
           {error && (
             <p className="text-sm text-red-600">{error}</p>
           )}
 
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button
+            type="submit"
+            disabled={loading || (password.length > 0 && !analysis.isValid)}
+            className="w-full"
+          >
             {loading ? 'Creating account...' : 'Create account'}
           </Button>
         </form>

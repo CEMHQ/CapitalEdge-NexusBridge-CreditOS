@@ -65,3 +65,6 @@ next-env.d.ts
 !.claude/agents/**
 images/screenshots/
 apps/web-marketing/screenshot.mjs
+
+# ─── Dev agent sessions (local only) ─────────────
+scripts/dev-agent/.sessions/

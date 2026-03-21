@@ -1,0 +1,18 @@
+{
+  "name": "nexusbridge-dev-agent",
+  "version": "1.0.0",
+  "description": "Claude-powered development agent for NexusBridge CreditOS",
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx/esm index.ts",
+    "dev": "node --import tsx/esm index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

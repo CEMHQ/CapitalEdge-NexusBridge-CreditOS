@@ -1,4 +1,5 @@
 name: Deploy
+# ci: verify RLS audit with direct connection (port 5432)
 
 on:
   push:

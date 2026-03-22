@@ -1,5 +1,4 @@
 name: Deploy
-# ci: verify RLS audit with direct connection (port 5432)
 
 on:
   push:
@@ -25,18 +24,14 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          DB_HOST=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$DATABASE_URL').hostname)")
-          DB_IPV4=$(python3 -c "import socket; print(socket.getaddrinfo('$DB_HOST', 5432, socket.AF_INET)[0][4][0])")
-          PGHOSTADDR="$DB_IPV4" psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
+          psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
 
       - name: RLS audit (deploy)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          DB_HOST=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$DATABASE_URL').hostname)")
-          DB_IPV4=$(python3 -c "import socket; print(socket.getaddrinfo('$DB_HOST', 5432, socket.AF_INET)[0][4][0])")
-          PGHOSTADDR="$DB_IPV4" psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
+          psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
 
   deploy-portal:
     name: Deploy Portal

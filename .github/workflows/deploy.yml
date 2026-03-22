@@ -54,7 +54,6 @@ jobs:
         run: npm ci
 
       - name: Build portal (Vercel)
-        working-directory: apps/portal
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PORTAL }}
@@ -67,7 +66,6 @@ jobs:
           npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy portal to Vercel
-        working-directory: apps/portal
         run: |
           npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 
@@ -92,7 +90,6 @@ jobs:
         run: npm ci
 
       - name: Build marketing site (Vercel)
-        working-directory: apps/web-marketing
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_MARKETING }}
@@ -102,6 +99,5 @@ jobs:
           npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy marketing site to Vercel
-        working-directory: apps/web-marketing
         run: |
           npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

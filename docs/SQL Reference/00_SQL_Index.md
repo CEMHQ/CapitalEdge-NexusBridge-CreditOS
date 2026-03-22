@@ -33,8 +33,11 @@ All Supabase SQL queries are organized by phase and domain. Run each statement i
 | Phase 4 — Compliance Hardening | `accreditation_records`, `kyc_verifications`, `aml_screenings` + alters `fund_subscriptions` | `0017_compliance_hardening` |
 | Phase 4 — Reg A Limits | alters `funds` (offering_type), alters `investors` (annual_income, net_worth) | `0018_reg_a_limits` |
 | Phase 3 — Partition RLS | `apply_partition_rls_policies()` function + pg_cron job | `0019_partition_rls_policies` |
-| Phase 4 — OCR / Document Intelligence | `document_extractions` | `0020_document_intelligence` (planned) |
-| Phase 5 — Tokenization | `token_issuances`, `on_chain_positions`, `bridge_events` | `0021_tokenization` (planned) |
+| Security Hardening — RLS Audit Fixes | Updated policies: profiles, borrowers, applications, investors, notifications, document_requests, documents, payment_schedule, draws, user_roles, accreditation_records; patched `reserve_fund_subscription()` | `0020_rls_audit_fixes` |
+| Security Hardening — RLS Continuous Audit | `rls_audit_log` + `notify_rls_findings()` + `run_rls_audit()` (12 inline checks) + 3 pg_cron jobs (nightly, weekly, partition sync) | `0021_rls_audit_infrastructure` |
+| Security Hardening — UPDATE WITH CHECK | WITH CHECK added to 19 admin/servicing/underwriter UPDATE policies; `SET search_path` added to `is_admin()`, `is_internal_user()`, `get_user_role()`, `handle_new_user()` | `0022_rls_update_with_check` |
+| Phase 4 — OCR / Document Intelligence | `document_extractions` | `0023_document_intelligence` (planned) |
+| Phase 5 — Tokenization | `token_issuances`, `on_chain_positions`, `bridge_events` | `0024_tokenization` (planned) |
 
 ---
 
@@ -50,6 +53,7 @@ All Supabase SQL queries are organized by phase and domain. Run each statement i
 | `payment_schedule` | `idx_payment_schedule_loan_id`, `idx_payment_schedule_due_date` |
 | `payments` | `idx_payments_loan_id`, `idx_payments_payment_date` |
 | `draws` | `idx_draws_loan_id`, `idx_draws_draw_status` |
+| `rls_audit_log` | `idx_rls_audit_log_run_at`, `idx_rls_audit_log_severity`, `idx_rls_audit_log_check_id`, `idx_rls_audit_log_resolved` (partial: WHERE resolved_at IS NULL) |
 
 ---
 

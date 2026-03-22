@@ -1,7 +1,7 @@
 # NexusBridge CreditOS — SQL Reference: Phase 3
 
 **Phase:** 3 — Loan Lifecycle + Fund Operations
-**Migrations:** `0009_extensions`, `0010_underwriting`, `0011_documents`, `0012_loans`, `0013_fund_operations`, `0014_audit_operations`, `0019_partition_rls_policies`
+**Migrations:** `0009_extensions`, `0010_underwriting`, `0011_documents`, `0012_loans`, `0013_fund_operations`, `0014_audit_operations`, `0019_partition_rls_policies`, `0020_rls_audit_fixes`
 
 SQL migration DDL and verification/audit queries for all Phase 3 steps.
 Run each statement individually in the Supabase SQL Editor.
@@ -244,11 +244,21 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own notifications
 CREATE POLICY "notifications_select_own" ON notifications
-  FOR SELECT USING (recipient_profile_id = auth.uid());
+  FOR SELECT USING (recipient_profile_id = (select auth.uid()));
 
--- Users can mark their own notifications as read
+-- Users can mark their own notifications as read (read_at only)
+-- WITH CHECK locks delivery_status, sent_at, subject, message as immutable
+-- (0020_rls_audit_fixes: rebuilt to add WITH CHECK)
 CREATE POLICY "notifications_update_own" ON notifications
-  FOR UPDATE USING (recipient_profile_id = auth.uid());
+  FOR UPDATE
+  USING (recipient_profile_id = (select auth.uid()))
+  WITH CHECK (
+    recipient_profile_id = (select auth.uid())
+    AND delivery_status = (SELECT n2.delivery_status FROM notifications n2 WHERE n2.id = notifications.id)
+    AND sent_at         = (SELECT n2.sent_at         FROM notifications n2 WHERE n2.id = notifications.id)
+    AND subject         = (SELECT n2.subject         FROM notifications n2 WHERE n2.id = notifications.id)
+    AND message         = (SELECT n2.message         FROM notifications n2 WHERE n2.id = notifications.id)
+  );
 
 -- Admin can read all notifications
 CREATE POLICY "notifications_select_admin" ON notifications
@@ -295,8 +305,9 @@ CREATE POLICY "tasks_insert_admin" ON tasks
   FOR INSERT WITH CHECK (is_admin());
 
 -- Admin/staff can update tasks
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "tasks_update_admin" ON tasks
-  FOR UPDATE USING (is_admin());
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ### Verification — Step 1
@@ -394,15 +405,21 @@ ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
 -- Uploading user can see their own documents
 CREATE POLICY "documents_select_own" ON documents
-  FOR SELECT USING (uploaded_by = auth.uid());
+  FOR SELECT USING (uploaded_by = (select auth.uid()));
+
+-- Uploading user can insert their own documents (0020_rls_audit_fixes: added)
+CREATE POLICY "documents_insert_own" ON documents
+  FOR INSERT
+  WITH CHECK (uploaded_by = (select auth.uid()));
 
 -- Admin/staff can see all documents
 CREATE POLICY "documents_select_admin" ON documents
   FOR SELECT USING (is_admin());
 
 -- Admin/staff can update documents (review_status, rejection_reason)
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "documents_update_admin" ON documents
-  FOR UPDATE USING (is_admin());
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ### Create document_requests
@@ -430,8 +447,38 @@ CREATE INDEX IF NOT EXISTS idx_doc_requests_status ON document_requests (request
 ALTER TABLE document_requests ENABLE ROW LEVEL SECURITY;
 
 -- Borrowers/investors can see requests addressed to them
+-- request_owner_id stores entity UUIDs (application, borrower, investor, loan),
+-- never user UUIDs — ownership must be resolved via entity join per type.
+-- (0020_rls_audit_fixes: rebuilt — old policy matched zero rows for every user)
 CREATE POLICY "doc_requests_select_own" ON document_requests
-  FOR SELECT USING (request_owner_id = auth.uid());
+  FOR SELECT USING (
+    (request_owner_type = 'application' AND EXISTS (
+      SELECT 1 FROM applications a
+      JOIN borrowers b ON b.id = a.borrower_id
+      WHERE a.id = document_requests.request_owner_id
+        AND b.profile_id = (select auth.uid())
+    ))
+    OR
+    (request_owner_type = 'borrower' AND EXISTS (
+      SELECT 1 FROM borrowers b
+      WHERE b.id = document_requests.request_owner_id
+        AND b.profile_id = (select auth.uid())
+    ))
+    OR
+    (request_owner_type = 'investor' AND EXISTS (
+      SELECT 1 FROM investors i
+      WHERE i.id = document_requests.request_owner_id
+        AND i.profile_id = (select auth.uid())
+    ))
+    OR
+    (request_owner_type = 'loan' AND EXISTS (
+      SELECT 1 FROM loans l
+      JOIN applications a ON a.id = l.application_id
+      JOIN borrowers b    ON b.id = a.borrower_id
+      WHERE l.id = document_requests.request_owner_id
+        AND b.profile_id = (select auth.uid())
+    ))
+  );
 
 -- Admin/staff can see all requests
 CREATE POLICY "doc_requests_select_admin" ON document_requests
@@ -441,8 +488,9 @@ CREATE POLICY "doc_requests_select_admin" ON document_requests
 CREATE POLICY "doc_requests_insert_admin" ON document_requests
   FOR INSERT WITH CHECK (is_admin());
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "doc_requests_update_admin" ON document_requests
-  FOR UPDATE USING (is_admin());
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ### Create Supabase Storage buckets
@@ -670,8 +718,11 @@ ALTER TABLE conditions             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE risk_flags             ENABLE ROW LEVEL SECURITY;
 
 -- Helper: check if caller has an internal role
+-- SET search_path added by 0022_rls_update_with_check
 CREATE OR REPLACE FUNCTION is_internal_user()
-RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE AS $$
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public, extensions
+AS $$
   SELECT EXISTS (
     SELECT 1 FROM user_roles
     WHERE user_id = auth.uid()
@@ -688,9 +739,14 @@ CREATE POLICY "admin_insert_cases" ON underwriting_cases
     EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
   );
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "admin_update_cases" ON underwriting_cases
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager', 'underwriter'))
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'underwriter'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'underwriter'))
   );
 
 -- underwriting_decisions: internal read; underwriter/admin insert
@@ -711,9 +767,14 @@ CREATE POLICY "underwriter_insert_conditions" ON conditions
     EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager', 'underwriter'))
   );
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "underwriter_update_conditions" ON conditions
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager', 'underwriter'))
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'underwriter'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'underwriter'))
   );
 
 -- risk_flags: internal read; underwriter/admin insert; admin update
@@ -725,9 +786,14 @@ CREATE POLICY "underwriter_insert_risk_flags" ON risk_flags
     EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager', 'underwriter'))
   );
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "admin_update_risk_flags" ON risk_flags
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
   );
 ```
 
@@ -1026,9 +1092,14 @@ CREATE POLICY "admin_insert_loans" ON loans
     EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
   );
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "admin_update_loans" ON loans
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager', 'servicing'))
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
   );
 
 -- payment_schedule: borrowers via loan chain; internal all
@@ -1044,9 +1115,22 @@ CREATE POLICY "read_payment_schedule" ON payment_schedule
     )
   );
 
-CREATE POLICY "servicing_manage_schedule" ON payment_schedule
-  FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager', 'servicing'))
+-- DELETE intentionally omitted — payment_schedule rows are immutable financial records.
+-- (0020_rls_audit_fixes: replaced FOR ALL with explicit INSERT + UPDATE)
+CREATE POLICY "servicing_insert_schedule" ON payment_schedule
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
+  );
+
+-- WITH CHECK added by 0022_rls_update_with_check
+CREATE POLICY "servicing_update_schedule" ON payment_schedule
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
   );
 
 -- payments: same pattern
@@ -1080,9 +1164,22 @@ CREATE POLICY "read_draws" ON draws
     )
   );
 
-CREATE POLICY "servicing_manage_draws" ON draws
-  FOR ALL TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager', 'servicing'))
+-- DELETE intentionally omitted — draw records are immutable financial records.
+-- (0020_rls_audit_fixes: replaced FOR ALL with explicit INSERT + UPDATE)
+CREATE POLICY "servicing_insert_draws" ON draws
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
+  );
+
+-- WITH CHECK added by 0022_rls_update_with_check
+CREATE POLICY "servicing_update_draws" ON draws
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager', 'servicing'))
   );
 ```
 
@@ -1260,9 +1357,14 @@ ALTER TABLE funds ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "funds_select_admin" ON funds
   FOR SELECT TO authenticated USING (is_admin());
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "funds_update_admin" ON funds
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
   );
 
 -- Investors need to read fund details for the subscription flow
@@ -1317,9 +1419,14 @@ CREATE POLICY "fund_subscriptions_select_own" ON fund_subscriptions
 CREATE POLICY "fund_subscriptions_select_admin" ON fund_subscriptions
   FOR SELECT TO authenticated USING (is_admin());
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "fund_subscriptions_update_admin" ON fund_subscriptions
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
   );
 ```
 
@@ -1328,11 +1435,14 @@ CREATE POLICY "fund_subscriptions_update_admin" ON fund_subscriptions
 ```sql
 -- Uses SELECT FOR UPDATE to lock the fund row, serializing concurrent subscription attempts.
 -- Called via supabase.rpc('reserve_fund_subscription', {...}) — never direct INSERT.
+-- (0020_rls_audit_fixes: added caller ownership check as first statement + SET search_path)
 CREATE OR REPLACE FUNCTION reserve_fund_subscription(
   p_investor_id       UUID,
   p_fund_id           UUID,
   p_commitment_amount NUMERIC
-) RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
+) RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
   v_fund              funds%ROWTYPE;
   v_total_committed   NUMERIC;
@@ -1340,7 +1450,22 @@ DECLARE
   v_subscription_id   UUID;
   v_expires_at        TIMESTAMPTZ;
 BEGIN
-  SELECT * INTO v_fund FROM funds WHERE id = p_fund_id FOR UPDATE;
+  -- SECURITY: caller must own the investor record before any other action
+  IF NOT EXISTS (
+    SELECT 1 FROM investors
+    WHERE id = p_investor_id
+      AND profile_id = auth.uid()
+  ) THEN
+    RETURN json_build_object(
+      'error', 'Unauthorized: investor record does not belong to the authenticated user'
+    );
+  END IF;
+
+  -- Lock the fund row to serialize concurrent subscription attempts
+  SELECT * INTO v_fund
+  FROM funds
+  WHERE id = p_fund_id
+  FOR UPDATE;
 
   IF NOT FOUND THEN
     RETURN json_build_object('error', 'Fund not found');
@@ -1350,6 +1475,7 @@ BEGIN
     RETURN json_build_object('error', 'Fund is not accepting subscriptions');
   END IF;
 
+  -- Sum all live commitments (reserved + confirmed + active)
   SELECT COALESCE(SUM(commitment_amount), 0) INTO v_total_committed
   FROM fund_subscriptions
   WHERE fund_id = p_fund_id
@@ -1360,8 +1486,10 @@ BEGIN
     RETURN json_build_object('error', 'Fund is at or near capacity');
   END IF;
 
+  -- Assign next FCFS position
   SELECT COALESCE(MAX(fcfs_position), 0) + 1 INTO v_fcfs_position
-  FROM fund_subscriptions WHERE fund_id = p_fund_id;
+  FROM fund_subscriptions
+  WHERE fund_id = p_fund_id;
 
   v_expires_at := NOW() + INTERVAL '30 minutes';
 
@@ -1371,7 +1499,8 @@ BEGIN
     reservation_expires_at, fcfs_position, reserved_at, created_by
   ) VALUES (
     p_fund_id, p_investor_id, p_commitment_amount,
-    'pending', 'reserved', v_expires_at, v_fcfs_position, NOW(), p_investor_id
+    'pending', 'reserved',
+    v_expires_at, v_fcfs_position, NOW(), p_investor_id
   )
   RETURNING id INTO v_subscription_id;
 
@@ -1424,9 +1553,14 @@ CREATE POLICY "fund_allocations_insert_admin" ON fund_allocations
     EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
   );
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "fund_allocations_update_admin" ON fund_allocations
-  FOR UPDATE TO authenticated USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'manager'))
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = (select auth.uid()) AND role IN ('admin', 'manager'))
   );
 ```
 

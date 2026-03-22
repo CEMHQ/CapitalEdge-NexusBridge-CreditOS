@@ -1,7 +1,7 @@
 # NexusBridge CreditOS — SQL Reference: Phase 4
 
 **Phase:** 4 — Workflow Automation + E-Signatures
-**Migrations:** `0015_workflow_automation`, `0016_esignatures`
+**Migrations:** `0015_workflow_automation`, `0016_esignatures`, `0017_compliance_hardening` (planned), `0018_reg_a_limits` (planned), `0021_rls_audit_infrastructure`, `0022_rls_update_with_check`
 
 SQL migration DDL and verification/audit queries for all Phase 4 steps.
 Run each statement individually in the Supabase SQL Editor.
@@ -16,7 +16,8 @@ Run each statement individually in the Supabase SQL Editor.
 2. [Step 2 — E-Signatures (BoldSign / Dropbox Sign)](#step-2--e-signatures-boldsign--dropbox-sign)
 3. [Step 3 — OCR / Document Intelligence (Planned)](#step-3--ocr--document-intelligence-planned)
 4. [Step 4 — Compliance Hardening (Planned)](#step-4--compliance-hardening-planned)
-5. [Cross-Phase Verification Queries](#cross-phase-verification-queries)
+5. [Security Hardening — RLS Continuous Audit](#security-hardening--rls-continuous-audit)
+6. [Cross-Phase Verification Queries](#cross-phase-verification-queries)
 
 ---
 
@@ -83,8 +84,9 @@ CREATE POLICY "workflow_triggers_select" ON workflow_triggers
 CREATE POLICY "workflow_triggers_insert" ON workflow_triggers
   FOR INSERT WITH CHECK (is_admin());
 
+-- WITH CHECK added by 0022_rls_update_with_check
 CREATE POLICY "workflow_triggers_update" ON workflow_triggers
-  FOR UPDATE USING (is_admin());
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 
 CREATE POLICY "workflow_triggers_delete" ON workflow_triggers
   FOR DELETE USING (is_admin());
@@ -400,7 +402,7 @@ CREATE POLICY "signature_requests_select_borrower" ON signature_requests
       SELECT 1 FROM applications a
       JOIN borrowers b ON b.id = a.borrower_id
       WHERE a.id = entity_id
-        AND b.profile_id = auth.uid()
+        AND b.profile_id = (select auth.uid())
     )
   );
 
@@ -412,7 +414,7 @@ CREATE POLICY "signature_requests_select_investor" ON signature_requests
       SELECT 1 FROM fund_subscriptions fs
       JOIN investors i ON i.id = fs.investor_id
       WHERE fs.id = entity_id
-        AND i.profile_id = auth.uid()
+        AND i.profile_id = (select auth.uid())
     )
   );
 
@@ -536,7 +538,7 @@ ORDER BY sr.created_at DESC;
 
 ## Step 3 — OCR / Document Intelligence (Planned)
 
-> Migration: `0019_document_intelligence` (planned)
+> Migration: `0023_document_intelligence` (planned)
 
 This step adds OCR extraction results from Ocrolus and Argyle income verification.
 Tables to be added: `document_extractions`.
@@ -624,7 +626,7 @@ Also alters `fund_subscriptions` to add `ppm_acknowledged_at` and `pending_signa
 | Table | Policy | Role |
 |---|---|---|
 | accreditation_records | accreditation_records_select_own | investor reads own |
-| accreditation_records | accreditation_records_insert_own | investor inserts own |
+| accreditation_records | accreditation_records_insert_own | investor inserts own — WITH CHECK enforces `status = 'pending'` and all review fields (`reviewed_by`, `reviewed_at`, `verified_at`) must be NULL on insert; prevents self-approval of 506(c) accreditation (0020_rls_audit_fixes) |
 | accreditation_records | accreditation_records_admin | admin/manager full access |
 | kyc_verifications | kyc_verifications_admin | admin/manager full access |
 | kyc_verifications | kyc_verifications_select_own_investor | investor reads own |
@@ -680,6 +682,206 @@ Collected during onboarding for non-accredited investors in Reg A offerings. Not
 ### Reg A limit calculation (application logic)
 
 Limit = `max(annual_income * 0.10, net_worth * 0.10, 2500.00)`. Rolling 12-month commitments are computed at subscription time by querying `fund_subscriptions` joined to `funds` where `offering_type = 'reg_a'` and `created_at >= NOW() - INTERVAL '12 months'`.
+
+---
+
+## Security Hardening — RLS Continuous Audit
+
+> Migration: `0021_rls_audit_infrastructure`
+> Related doc: `docs/RLS_CONTINUOUS_AUDIT.md`
+> Also creates: `scripts/rls-audit/audit.sql`, `scripts/rls-audit/check-policies.sh`
+
+Installs a self-maintaining RLS audit system: a persistent findings table, two SECURITY DEFINER functions, and three pg_cron jobs. The function `run_rls_audit()` duplicates all 11 checks from `scripts/rls-audit/audit.sql` inline so pg_cron can call it without filesystem access.
+
+### Create rls_audit_log
+
+```sql
+-- Append-only compliance record of all audit runs.
+-- Never update or delete rows.
+CREATE TABLE IF NOT EXISTS rls_audit_log (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  run_at        timestamptz NOT NULL DEFAULT now(),
+  run_type      text        NOT NULL,
+  -- 'nightly' | 'weekly_regression' | 'partition_sync' | 'migration_time' | 'manual'
+  severity      text        NOT NULL,
+  -- 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'OK'
+  check_id      text        NOT NULL,
+  table_name    text,
+  policy_name   text,
+  detail        text        NOT NULL,
+  resolved_at   timestamptz,
+  resolved_by   uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
+  resolution    text
+);
+```
+
+### Indexes for rls_audit_log
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_rls_audit_log_run_at   ON rls_audit_log (run_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rls_audit_log_severity ON rls_audit_log (severity);
+CREATE INDEX IF NOT EXISTS idx_rls_audit_log_check_id ON rls_audit_log (check_id);
+CREATE INDEX IF NOT EXISTS idx_rls_audit_log_resolved ON rls_audit_log (resolved_at) WHERE resolved_at IS NULL;
+```
+
+### RLS for rls_audit_log
+
+```sql
+ALTER TABLE rls_audit_log ENABLE ROW LEVEL SECURITY;
+
+-- Admin/compliance can read all audit log entries
+CREATE POLICY "rls_audit_log_select_admin" ON rls_audit_log
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'compliance')
+    )
+  );
+
+-- No client INSERT/UPDATE/DELETE — all writes go through run_rls_audit() (SECURITY DEFINER)
+```
+
+### notify_rls_findings()
+
+Sends a POST to a configured Slack/HTTP webhook when CRITICAL findings are detected. Uses `pg_net` (enabled by default on Supabase). Webhook URL is read from `current_setting('app.rls_alert_webhook')`.
+
+```sql
+-- Set the webhook URL once via:
+-- ALTER DATABASE postgres SET app.rls_alert_webhook = 'https://hooks.slack.com/...';
+
+CREATE OR REPLACE FUNCTION notify_rls_findings(
+  p_run_type text,
+  p_findings jsonb
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions
+AS $$ ... $$;
+```
+
+If no webhook is configured, findings are written to PostgreSQL logs (`RAISE LOG`).
+
+### run_rls_audit()
+
+Runs all 11 RLS checks inline, writes every finding to `rls_audit_log`, logs an `OK` entry on a clean run, and fires `notify_rls_findings()` if any CRITICAL findings are present. Returns a result set so it can be called interactively.
+
+The 11 checks (matching `scripts/rls-audit/audit.sql`):
+
+| Check ID | Severity | What it catches |
+|---|---|---|
+| `RLS_DISABLED` | CRITICAL | Tables with RLS completely off |
+| `RLS_NO_POLICY` | HIGH | Tables with RLS on but zero policies |
+| `UPDATE_NO_WITH_CHECK` | CRITICAL | UPDATE policies missing `WITH CHECK` |
+| `OPEN_POLICY` | CRITICAL | Policies using `USING (true)` |
+| `FOR_ALL_FINANCIAL` | CRITICAL | `FOR ALL` on financial ledger tables (grants DELETE) |
+| `IS_ADMIN_JWT_BASED` | CRITICAL | `is_admin()` reads from `auth.jwt()` instead of `user_roles` |
+| `SECDEF_NO_SEARCH_PATH` | HIGH | SECURITY DEFINER functions without `SET search_path` |
+| `USER_ROLES_NO_ADMIN_READ` | HIGH | `user_roles` missing admin SELECT policy |
+| `PARTITION_MISSING_POLICY` | HIGH | Partition children with RLS on but no policies |
+| `DOCUMENTS_NO_INSERT` | MEDIUM | `documents` table missing client INSERT policy |
+| `ACCREDITATION_SELF_APPROVE` | CRITICAL | `accreditation_records` INSERT not enforcing `status = 'pending'` |
+
+> **Note — Check 8 removed:** The `BARE_AUTH_UID` check was removed because PostgreSQL normalizes `(select auth.uid())` back to `auth.uid()` when storing policy expressions in `pg_policies.qual` and `pg_policies.with_check`. The ILIKE pattern the check relied on cannot distinguish between the two forms in the catalog, producing unresolvable false positives on every policy. All migrations write policies using `(select auth.uid())` for per-query evaluation correctness; this cannot be verified via pg_catalog.
+
+```sql
+CREATE OR REPLACE FUNCTION run_rls_audit(p_run_type text DEFAULT 'manual')
+RETURNS TABLE (severity text, check_id text, table_name text, policy_name text, detail text)
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions
+AS $$ ... $$;
+```
+
+### pg_cron jobs
+
+```sql
+-- Job A: Nightly full audit at 01:00 UTC
+SELECT cron.schedule(
+  'rls-audit-nightly',
+  '0 1 * * *',
+  $$SELECT * FROM run_rls_audit('nightly')$$
+);
+
+-- Job B: Weekly regression at 03:00 UTC on Monday
+SELECT cron.schedule(
+  'rls-audit-weekly',
+  '0 3 * * 1',
+  $$SELECT * FROM run_rls_audit('weekly_regression')$$
+);
+
+-- Job C: Partition RLS sync — daily at 02:00 UTC (idempotent; first created in 0019)
+DO $$
+BEGIN
+  PERFORM cron.schedule(
+    'apply-partition-rls-daily',
+    '0 2 * * *',
+    'SELECT apply_partition_rls_policies()'
+  );
+EXCEPTION WHEN unique_violation THEN
+  NULL; -- already scheduled from migration 0019, skip
+END;
+$$;
+```
+
+### Verification — RLS Continuous Audit
+
+```sql
+-- 1. Confirm rls_audit_log table exists
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name = 'rls_audit_log';
+-- Expected: 1 row
+```
+
+```sql
+-- 2. Confirm all three cron jobs are active
+SELECT jobname, schedule, active
+FROM cron.job
+WHERE jobname IN ('rls-audit-nightly', 'rls-audit-weekly', 'apply-partition-rls-daily');
+-- Expected: 3 rows, all active = true
+```
+
+```sql
+-- 3. Run the audit manually
+SELECT * FROM run_rls_audit('manual');
+-- Expected: zero rows (or only MEDIUM rows if any remain)
+-- Any CRITICAL or HIGH row means a fix is still outstanding
+```
+
+```sql
+-- 4. Confirm the audit log received the run entry
+SELECT run_type, severity, check_id, run_at
+FROM rls_audit_log
+ORDER BY run_at DESC
+LIMIT 5;
+-- Most recent row: run_type='manual', severity='OK', check_id='ALL_CHECKS_PASSED' if clean
+```
+
+### Audit: open findings (unresolved)
+
+```sql
+SELECT run_type, severity, check_id, table_name, policy_name, detail, run_at
+FROM rls_audit_log
+WHERE resolved_at IS NULL
+  AND severity IN ('CRITICAL', 'HIGH')
+ORDER BY
+  CASE severity WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 END,
+  run_at DESC;
+```
+
+### Audit: finding trend over time
+
+```sql
+SELECT
+  date_trunc('day', run_at) AS day,
+  severity,
+  check_id,
+  COUNT(*) AS occurrences
+FROM rls_audit_log
+WHERE severity != 'OK'
+  AND run_at >= NOW() - INTERVAL '30 days'
+GROUP BY 1, 2, 3
+ORDER BY 1 DESC, 2, 3;
+```
 
 ---
 

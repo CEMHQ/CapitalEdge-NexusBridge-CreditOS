@@ -2,7 +2,7 @@
 
 **Phase:** 2 — Auth + Portals
 **Related docs:** `docs/02_System_Architecture.md`, `docs/05_Entity_Separation_Strategy.md`
-**Migrations:** `0005_user_roles`, `0006_tighten_applications_update_own`
+**Migrations:** `0005_user_roles`, `0006_tighten_applications_update_own`, `0020_rls_audit_fixes`
 
 Auth functions, RLS policies, and user management queries.
 Run each statement individually in the Supabase SQL Editor.
@@ -31,18 +31,22 @@ Run each statement individually in the Supabase SQL Editor.
 
 ```sql
 -- Returns the current user's role from the database
+-- SET search_path added by 0022_rls_update_with_check
 CREATE OR REPLACE FUNCTION get_user_role()
 RETURNS text AS $$
   SELECT role FROM public.user_roles WHERE user_id = auth.uid() LIMIT 1;
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public, extensions;
 ```
 
 ```sql
 -- Returns true if current user is admin/manager/underwriter/servicing
+-- SET search_path added by 0022_rls_update_with_check
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS boolean AS $$
   SELECT get_user_role() IN ('admin', 'manager', 'underwriter', 'servicing');
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public, extensions;
 ```
 
 ### handle_new_user trigger
@@ -75,7 +79,9 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- SET search_path added by 0022_rls_update_with_check
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 ```
 
 ```sql
@@ -90,39 +96,52 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 
 > Related doc: `docs/02_System_Architecture.md`
 > Users can only read/write their own records
+> Updated by `0020_rls_audit_fixes`: all policies use `(select auth.uid())` subquery form for
+> per-query evaluation (not per-row). `profiles_update_own` adds `WITH CHECK` preventing status/email
+> self-modification. `user_roles` policies added.
 
 ```sql
 -- profiles
-CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (id = auth.uid());
-CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK (id = auth.uid());
-CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING (id = auth.uid());
+CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (id = (select auth.uid()));
+CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK (id = (select auth.uid()));
+
+-- WITH CHECK prevents users from changing their own status or email (0020_rls_audit_fixes)
+CREATE POLICY "profiles_update_own" ON profiles
+  FOR UPDATE
+  USING (id = (select auth.uid()))
+  WITH CHECK (
+    id = (select auth.uid())
+    AND status = (SELECT status FROM profiles WHERE id = (select auth.uid()))
+    AND email  = (SELECT email  FROM profiles WHERE id = (select auth.uid()))
+  );
 ```
 
 ```sql
 -- borrowers
-CREATE POLICY "borrowers_select_own" ON borrowers FOR SELECT USING (profile_id = auth.uid());
-CREATE POLICY "borrowers_insert_own" ON borrowers FOR INSERT WITH CHECK (profile_id = auth.uid());
+CREATE POLICY "borrowers_select_own" ON borrowers FOR SELECT USING (profile_id = (select auth.uid()));
+CREATE POLICY "borrowers_insert_own" ON borrowers FOR INSERT WITH CHECK (profile_id = (select auth.uid()));
 ```
 
 ```sql
 -- applications (update locked to draft status only)
 CREATE POLICY "applications_select_own" ON applications
   FOR SELECT USING (
-    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = auth.uid())
+    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = (select auth.uid()))
   );
 
 CREATE POLICY "applications_insert_own" ON applications
   FOR INSERT WITH CHECK (
-    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = auth.uid())
+    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = (select auth.uid()))
   );
 
 CREATE POLICY "applications_update_own" ON applications
-  FOR UPDATE USING (
-    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = auth.uid())
+  FOR UPDATE
+  USING (
+    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = (select auth.uid()))
     AND application_status = 'draft'
   )
   WITH CHECK (
-    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = auth.uid())
+    borrower_id IN (SELECT id FROM borrowers WHERE profile_id = (select auth.uid()))
     AND application_status = 'draft'
   );
 ```
@@ -133,7 +152,7 @@ CREATE POLICY "properties_select_own" ON properties
   FOR SELECT USING (
     application_id IN (
       SELECT id FROM applications WHERE borrower_id IN (
-        SELECT id FROM borrowers WHERE profile_id = auth.uid()
+        SELECT id FROM borrowers WHERE profile_id = (select auth.uid())
       )
     )
   );
@@ -142,7 +161,7 @@ CREATE POLICY "properties_insert_own" ON properties
   FOR INSERT WITH CHECK (
     application_id IN (
       SELECT id FROM applications WHERE borrower_id IN (
-        SELECT id FROM borrowers WHERE profile_id = auth.uid()
+        SELECT id FROM borrowers WHERE profile_id = (select auth.uid())
       )
     )
   );
@@ -154,7 +173,7 @@ CREATE POLICY "loan_requests_select_own" ON loan_requests
   FOR SELECT USING (
     application_id IN (
       SELECT id FROM applications WHERE borrower_id IN (
-        SELECT id FROM borrowers WHERE profile_id = auth.uid()
+        SELECT id FROM borrowers WHERE profile_id = (select auth.uid())
       )
     )
   );
@@ -163,7 +182,7 @@ CREATE POLICY "loan_requests_insert_own" ON loan_requests
   FOR INSERT WITH CHECK (
     application_id IN (
       SELECT id FROM applications WHERE borrower_id IN (
-        SELECT id FROM borrowers WHERE profile_id = auth.uid()
+        SELECT id FROM borrowers WHERE profile_id = (select auth.uid())
       )
     )
   );
@@ -171,8 +190,25 @@ CREATE POLICY "loan_requests_insert_own" ON loan_requests
 
 ```sql
 -- investors
-CREATE POLICY "investors_select_own" ON investors FOR SELECT USING (profile_id = auth.uid());
-CREATE POLICY "investors_insert_own" ON investors FOR INSERT WITH CHECK (profile_id = auth.uid());
+CREATE POLICY "investors_select_own" ON investors FOR SELECT USING (profile_id = (select auth.uid()));
+CREATE POLICY "investors_insert_own" ON investors FOR INSERT WITH CHECK (profile_id = (select auth.uid()));
+```
+
+```sql
+-- user_roles: self-read + admin read (added by 0020_rls_audit_fixes)
+-- is_admin()/is_internal_user() are SECURITY DEFINER and bypass RLS,
+-- but direct admin dashboard queries need this policy to return rows.
+CREATE POLICY "user_roles_select_own" ON user_roles
+  FOR SELECT USING (user_id = (select auth.uid()));
+
+CREATE POLICY "user_roles_select_admin" ON user_roles
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM user_roles ur2
+      WHERE ur2.user_id = (select auth.uid())
+        AND ur2.role IN ('admin', 'manager')
+    )
+  );
 ```
 
 ---
@@ -181,41 +217,48 @@ CREATE POLICY "investors_insert_own" ON investors FOR INSERT WITH CHECK (profile
 
 > Related doc: `docs/02_System_Architecture.md`, `docs/05_Entity_Separation_Strategy.md`
 > Admin/manager/underwriter/servicing can read and update all records
+> Updated by `0022_rls_update_with_check`: all UPDATE policies now include `WITH CHECK` mirroring USING.
 
 ```sql
 -- profiles
 CREATE POLICY "profiles_select_admin" ON profiles FOR SELECT USING (is_admin());
-CREATE POLICY "profiles_update_admin" ON profiles FOR UPDATE USING (is_admin());
+CREATE POLICY "profiles_update_admin" ON profiles
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ```sql
 -- borrowers
 CREATE POLICY "borrowers_select_admin" ON borrowers FOR SELECT USING (is_admin());
-CREATE POLICY "borrowers_update_admin" ON borrowers FOR UPDATE USING (is_admin());
+CREATE POLICY "borrowers_update_admin" ON borrowers
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ```sql
 -- applications
 CREATE POLICY "applications_select_admin" ON applications FOR SELECT USING (is_admin());
-CREATE POLICY "applications_update_admin" ON applications FOR UPDATE USING (is_admin());
+CREATE POLICY "applications_update_admin" ON applications
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ```sql
 -- properties
 CREATE POLICY "properties_select_admin" ON properties FOR SELECT USING (is_admin());
-CREATE POLICY "properties_update_admin" ON properties FOR UPDATE USING (is_admin());
+CREATE POLICY "properties_update_admin" ON properties
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ```sql
 -- loan_requests
 CREATE POLICY "loan_requests_select_admin" ON loan_requests FOR SELECT USING (is_admin());
-CREATE POLICY "loan_requests_update_admin" ON loan_requests FOR UPDATE USING (is_admin());
+CREATE POLICY "loan_requests_update_admin" ON loan_requests
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ```sql
 -- investors
 CREATE POLICY "investors_select_admin" ON investors FOR SELECT USING (is_admin());
-CREATE POLICY "investors_update_admin" ON investors FOR UPDATE USING (is_admin());
+CREATE POLICY "investors_update_admin" ON investors
+  FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 ```
 
 ---

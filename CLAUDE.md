@@ -291,8 +291,8 @@ For each migration file touched, verify the corresponding SQL reference doc sect
 | `0013_fund_operations` | `docs/SQL Reference/03_SQL_Phase3.md` | Step 5 |
 | `0015_workflow_automation` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 1 |
 | `0016_esignatures` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 2 |
-| `0017_document_intelligence` (planned) | `docs/SQL Reference/04_SQL_Phase4.md` | Step 3 |
-| `0018_compliance_hardening` (planned) | `docs/SQL Reference/04_SQL_Phase4.md` | Step 4 |
+| `0023_document_intelligence` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 3 |
+| `0017_compliance_hardening`, `0018_reg_a_limits`, `0020_rls_audit_fixes`, `0021_rls_audit_infrastructure` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 4 |
 | `0019_tokenization` (planned) | `docs/SQL Reference/05_SQL_Phase5_Tokenization.md` | All |
 
 ### How to fix discrepancies
@@ -413,10 +413,10 @@ emitAuditEvent({ ... });
 
 | Step | Scope | Status |
 |---|---|---|
-| Step 1 | Workflow Automation: workflow_triggers, workflow_executions tables + fireWorkflowTrigger engine + 6 API routes + /dashboard/admin/workflows UI + n8n inbound webhook + 5 seeded triggers wired to application/document/payment/loan events | 🔄 Partial — platform engine complete; n8n self-hosted instance not yet deployed |
+| Step 1 | Workflow Automation: workflow_triggers, workflow_executions tables + fireWorkflowTrigger engine + 6 API routes + /dashboard/admin/workflows UI + n8n inbound webhook + 5 seeded triggers wired to application/document/payment/loan/condition events | ✅ Complete — n8n self-hosted instance is an ops/deployment concern, not a code gap |
 | Step 2 | E-Signatures: BoldSign integration (Dropbox Sign preserved for future upgrade), signature_requests table, gate loan closing + subscription on signed docs | ✅ Complete |
-| Step 3 | OCR / Document Intelligence: Ocrolus + Argyle, document_extractions + extraction_field_mappings tables, 5 API routes, ExtractionReviewPanel UI, auto-populate application fields | 🔄 In Progress |
-| Step 4 | Compliance Hardening: KYC (Persona), AML (OFAC SDN), Reg A investor limits, accreditation tracking | ⚪ Planned |
+| Step 3 | OCR / Document Intelligence: Ocrolus + Argyle, document_extractions + extraction_field_mappings tables, 5 API routes, ExtractionReviewPanel UI, auto-populate application fields | ✅ Complete |
+| Step 4 | Compliance Hardening: KYC (Plaid Identity), AML (OFAC SDN), Reg A investor limits, accreditation tracking | ✅ Complete |
 
 ### Post-Phase 3 Improvements (all complete):
 

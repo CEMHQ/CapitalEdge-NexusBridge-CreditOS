@@ -1,7 +1,7 @@
 # NexusBridge CreditOS — SQL Reference: Phase 4
 
-**Phase:** 4 — Workflow Automation + E-Signatures
-**Migrations:** `0015_workflow_automation`, `0016_esignatures`, `0017_compliance_hardening` (planned), `0018_reg_a_limits` (planned), `0021_rls_audit_infrastructure`, `0022_rls_update_with_check`
+**Phase:** 4 — Workflow Automation + E-Signatures + OCR / Document Intelligence
+**Migrations:** `0015_workflow_automation`, `0016_esignatures`, `0023_document_intelligence`, `0017_compliance_hardening`, `0018_reg_a_limits`, `0020_rls_audit_fixes`, `0021_rls_audit_infrastructure`, `0022_rls_update_with_check`
 
 SQL migration DDL and verification/audit queries for all Phase 4 steps.
 Run each statement individually in the Supabase SQL Editor.
@@ -338,12 +338,13 @@ CREATE TABLE IF NOT EXISTS signature_requests (
   -- application | subscription
   entity_id             uuid        NOT NULL,
   provider              text        NOT NULL DEFAULT 'dropbox_sign',
+  -- DB default is 'dropbox_sign' (legacy); active code sets 'boldsign' on every insert
   provider_request_id   text,
-  -- External signature request ID from Dropbox Sign
+  -- External document ID from BoldSign (documentId in webhook payload)
   template_id           text,
-  -- Dropbox Sign template ID used
+  -- BoldSign template ID used
   document_type         text        NOT NULL,
-  -- promissory_note | deed_of_trust | loan_agreement | subscription_agreement
+  -- promissory_note | deed_of_trust | loan_agreement | subscription_agreement | ppm_acknowledgment
   status                text        NOT NULL DEFAULT 'draft',
   -- draft | sent | viewed | signed | declined | expired | voided
   signers               jsonb       NOT NULL DEFAULT '[]',
@@ -353,7 +354,7 @@ CREATE TABLE IF NOT EXISTS signature_requests (
   declined_at           timestamptz,
   decline_reason        text,
   signed_document_id    uuid        REFERENCES documents(id) ON DELETE SET NULL,
-  -- Populated after Dropbox Sign webhook delivers the signed PDF
+  -- Populated after BoldSign webhook delivers the signed PDF
   callback_url          text,
   created_at            timestamptz NOT NULL DEFAULT now(),
   updated_at            timestamptz NOT NULL DEFAULT now(),
@@ -536,14 +537,300 @@ ORDER BY sr.created_at DESC;
 
 ---
 
-## Step 3 — OCR / Document Intelligence (Planned)
+## Step 3 — OCR / Document Intelligence
 
-> Migration: `0023_document_intelligence` (planned)
+> **Related docs:** `docs/13_Document_Management.md`, `docs/implementation plan/Phase4_Implementation_Plan.md`
+> Migration: `0023_document_intelligence`
 
-This step adds OCR extraction results from Ocrolus and Argyle income verification.
-Tables to be added: `document_extractions`.
+Adds OCR extraction results from Ocrolus (primary) and Argyle (income verification), plus per-field human review records. Human review is mandatory before any extracted data modifies application records.
 
-> Not yet implemented. This section will be filled in when Step 3 is built.
+### Create document_extractions
+
+```sql
+-- Stores the result of an OCR extraction run against a document.
+-- One document can have multiple extraction attempts (e.g. retry after failure).
+-- Records are immutable after creation; corrections go in extraction_field_mappings.
+CREATE TABLE IF NOT EXISTS document_extractions (
+  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id       uuid        NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  provider_name     text        NOT NULL,
+  -- 'ocrolus' | 'argyle' | 'manual'
+  extraction_status text        NOT NULL DEFAULT 'pending',
+  -- 'pending' | 'processing' | 'completed' | 'failed' | 'reviewed' | 'accepted' | 'rejected'
+  extracted_json    jsonb,
+  -- structured output from the OCR provider; may be NULL until completed
+  raw_text          text,
+  -- full extracted text (Restricted PII — access logged; nulled after review)
+  confidence_score  numeric(5,2),
+  -- overall document confidence 0.00–100.00
+  provider_job_id   text,
+  -- external job/request ID from the provider (for webhook correlation)
+  failure_reason    text,
+  -- set when extraction_status = 'failed'
+  reviewed_by       uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
+  reviewed_at       timestamptz,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  created_by        uuid        NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+
+  CONSTRAINT chk_extraction_status CHECK (extraction_status IN (
+    'pending', 'processing', 'completed', 'failed', 'reviewed', 'accepted', 'rejected'
+  )),
+  CONSTRAINT chk_provider_name CHECK (provider_name IN ('ocrolus', 'argyle', 'manual')),
+  CONSTRAINT chk_confidence_range CHECK (confidence_score IS NULL OR (confidence_score >= 0 AND confidence_score <= 100))
+);
+```
+
+### Indexes for document_extractions
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_extractions_document_id  ON document_extractions (document_id);
+CREATE INDEX IF NOT EXISTS idx_extractions_status       ON document_extractions (extraction_status);
+CREATE INDEX IF NOT EXISTS idx_extractions_provider_job ON document_extractions (provider_job_id) WHERE provider_job_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_extractions_created_at   ON document_extractions (created_at DESC);
+```
+
+### RLS for document_extractions
+
+```sql
+ALTER TABLE document_extractions ENABLE ROW LEVEL SECURITY;
+
+-- Admin, manager, and underwriter: full access
+-- No borrower/investor access — extraction data is internal only
+
+CREATE POLICY "extractions_select_admin" ON document_extractions
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  );
+
+CREATE POLICY "extractions_insert_admin" ON document_extractions
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  );
+
+CREATE POLICY "extractions_update_admin" ON document_extractions
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  );
+```
+
+### Create extraction_field_mappings
+
+```sql
+-- One row per extracted field per extraction run.
+-- The reviewer accepts, rejects, or overrides each field before it can be
+-- applied to the application. Records are immutable; corrections use override_value.
+CREATE TABLE IF NOT EXISTS extraction_field_mappings (
+  id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  extraction_id    uuid        NOT NULL REFERENCES document_extractions(id) ON DELETE CASCADE,
+  source_field     text        NOT NULL,
+  -- field name from the OCR provider JSON (e.g. 'average_daily_balance')
+  target_entity    text        NOT NULL,
+  -- 'application' | 'borrower' | 'property'
+  target_field     text        NOT NULL,
+  -- corresponding field in the target entity (e.g. 'bank_balance_avg_3mo')
+  extracted_value  text,
+  -- raw value from provider (stored as text, parsed on apply)
+  confidence       numeric(5,2),
+  -- per-field confidence 0.00–100.00
+  status           text        NOT NULL DEFAULT 'pending',
+  -- 'pending' | 'accepted' | 'rejected' | 'overridden'
+  override_value   text,
+  -- human-entered correction; used instead of extracted_value when status='overridden'
+  reviewed_by      uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
+  reviewed_at      timestamptz,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT chk_mapping_status CHECK (status IN ('pending', 'accepted', 'rejected', 'overridden')),
+  CONSTRAINT chk_target_entity  CHECK (target_entity IN ('application', 'borrower', 'property')),
+  CONSTRAINT chk_field_confidence CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 100)),
+  CONSTRAINT chk_override_requires_value CHECK (
+    status != 'overridden' OR override_value IS NOT NULL
+  )
+);
+```
+
+### Indexes for extraction_field_mappings
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_field_mappings_extraction_id ON extraction_field_mappings (extraction_id);
+CREATE INDEX IF NOT EXISTS idx_field_mappings_status        ON extraction_field_mappings (status);
+CREATE INDEX IF NOT EXISTS idx_field_mappings_target        ON extraction_field_mappings (target_entity, target_field);
+```
+
+### RLS for extraction_field_mappings
+
+```sql
+ALTER TABLE extraction_field_mappings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "field_mappings_select_admin" ON extraction_field_mappings
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  );
+
+CREATE POLICY "field_mappings_insert_admin" ON extraction_field_mappings
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  );
+
+CREATE POLICY "field_mappings_update_admin" ON extraction_field_mappings
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = (select auth.uid())
+        AND role IN ('admin', 'manager', 'underwriter')
+    )
+  );
+```
+
+### Verification — Step 3
+
+```sql
+-- Verify both tables exist
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN ('document_extractions', 'extraction_field_mappings')
+ORDER BY table_name;
+-- Expected: 2 rows
+```
+
+```sql
+-- Verify indexes (4 on document_extractions, 3 on extraction_field_mappings)
+SELECT indexname, tablename
+FROM pg_indexes
+WHERE tablename IN ('document_extractions', 'extraction_field_mappings')
+  AND indexname LIKE 'idx_%'
+ORDER BY tablename, indexname;
+```
+
+```sql
+-- Verify CHECK constraints
+SELECT conname, conrelid::regclass AS table_name
+FROM pg_constraint
+WHERE conrelid::regclass::text IN ('document_extractions', 'extraction_field_mappings')
+  AND contype = 'c'
+ORDER BY table_name, conname;
+-- Expected: 3 on document_extractions (status, provider_name, confidence_range)
+--           4 on extraction_field_mappings (status, target_entity, confidence, override_requires_value)
+```
+
+```sql
+-- Verify RLS is enabled on both tables
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE tablename IN ('document_extractions', 'extraction_field_mappings')
+  AND schemaname = 'public';
+-- rowsecurity should be true for both
+```
+
+```sql
+-- Verify RLS policies (3 per table: SELECT, INSERT, UPDATE)
+SELECT tablename, policyname, cmd
+FROM pg_policies
+WHERE tablename IN ('document_extractions', 'extraction_field_mappings')
+ORDER BY tablename, cmd, policyname;
+```
+
+### Audit: extraction queue by status
+
+```sql
+SELECT
+  de.extraction_status,
+  de.provider_name,
+  COUNT(*) AS count
+FROM document_extractions de
+GROUP BY de.extraction_status, de.provider_name
+ORDER BY de.extraction_status, de.provider_name;
+```
+
+### Audit: pending review queue
+
+```sql
+SELECT
+  de.id AS extraction_id,
+  d.document_type,
+  d.file_name,
+  de.provider_name,
+  de.confidence_score,
+  de.created_at
+FROM document_extractions de
+JOIN documents d ON d.id = de.document_id
+WHERE de.extraction_status = 'completed'
+ORDER BY de.created_at ASC;
+-- Completed extractions awaiting human review
+```
+
+### Audit: field mappings awaiting review
+
+```sql
+SELECT
+  efm.extraction_id,
+  efm.source_field,
+  efm.target_entity,
+  efm.target_field,
+  efm.extracted_value,
+  efm.confidence,
+  efm.status
+FROM extraction_field_mappings efm
+WHERE efm.status = 'pending'
+ORDER BY efm.created_at ASC;
+```
+
+### Audit: low-confidence extractions (< 85%)
+
+```sql
+SELECT
+  de.id,
+  d.document_type,
+  d.file_name,
+  de.provider_name,
+  de.confidence_score,
+  de.extraction_status
+FROM document_extractions de
+JOIN documents d ON d.id = de.document_id
+WHERE de.confidence_score < 85
+ORDER BY de.confidence_score ASC;
+```
 
 ---
 
@@ -620,6 +907,28 @@ Also alters `fund_subscriptions` to add `ppm_acknowledged_at` and `pending_signa
 
 `ppm_acknowledged_at TIMESTAMPTZ` column added.
 `subscription_status` CHECK constraint updated to include `pending_signature`.
+
+### Indexes
+
+| Index | Table | Columns | Condition |
+|---|---|---|---|
+| `idx_accreditation_records_investor_id` | `accreditation_records` | `investor_id` | |
+| `idx_accreditation_records_status` | `accreditation_records` | `status` | |
+| `idx_accreditation_records_expires_at` | `accreditation_records` | `expires_at` | WHERE expires_at IS NOT NULL |
+| `idx_kyc_verifications_entity` | `kyc_verifications` | `(entity_type, entity_id)` | |
+| `idx_kyc_verifications_status` | `kyc_verifications` | `status` | |
+| `idx_aml_screenings_entity` | `aml_screenings` | `(entity_type, entity_id)` | |
+| `idx_aml_screenings_status` | `aml_screenings` | `status` | |
+
+### updated_at triggers
+
+`update_updated_at_column()` (CREATE OR REPLACE — shared function) is used by all three tables.
+
+| Trigger | Table |
+|---|---|
+| `accreditation_records_updated_at` | `accreditation_records` |
+| `kyc_verifications_updated_at` | `kyc_verifications` |
+| `aml_screenings_updated_at` | `aml_screenings` |
 
 ### RLS Policies
 
@@ -895,7 +1204,8 @@ FROM information_schema.tables
 WHERE table_schema = 'public'
   AND table_name IN (
     'workflow_triggers', 'workflow_executions',
-    'signature_requests'
+    'signature_requests',
+    'document_extractions', 'extraction_field_mappings'
   )
 ORDER BY table_name;
 ```
@@ -907,7 +1217,8 @@ SELECT tablename, policyname, cmd
 FROM pg_policies
 WHERE tablename IN (
   'workflow_triggers', 'workflow_executions',
-  'signature_requests'
+  'signature_requests',
+  'document_extractions', 'extraction_field_mappings'
 )
 ORDER BY tablename, cmd, policyname;
 ```
@@ -919,7 +1230,8 @@ SELECT indexname, tablename
 FROM pg_indexes
 WHERE tablename IN (
   'workflow_triggers', 'workflow_executions',
-  'signature_requests'
+  'signature_requests',
+  'document_extractions', 'extraction_field_mappings'
 )
   AND indexname LIKE 'idx_%'
 ORDER BY tablename, indexname;

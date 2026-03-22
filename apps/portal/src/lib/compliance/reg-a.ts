@@ -47,7 +47,7 @@ export async function getRollingRegACommitments(
     .select('commitment_amount, funds!inner(offering_type)')
     .eq('investor_id', investorId)
     .eq('funds.offering_type', 'reg_a')
-    .in('subscription_status', ['pending', 'confirmed', 'funded'])
+    .in('subscription_status', ['pending', 'approved', 'active'])
     .gte('created_at', since.toISOString())
 
   if (error || !data) return 0

@@ -6,6 +6,7 @@ import { updateConditionSchema } from '@/lib/validation/schemas'
 import { underwritingLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
+import { fireWorkflowTrigger } from '@/lib/workflows/engine'
 
 export async function PATCH(
   request: Request,
@@ -49,6 +50,11 @@ export async function PATCH(
     entityType:     'condition',
     entityId:       conditionId,
     eventPayload:   { case_id: caseId, status, notes: notes ?? null, actor_role: role },
+  })
+
+  void fireWorkflowTrigger('condition_updated', {
+    entity_id:  conditionId,
+    new_status: status,
   })
 
   return NextResponse.json({ success: true })

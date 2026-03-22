@@ -53,23 +53,23 @@ jobs:
         working-directory: apps/portal
         run: npm ci
 
-      - name: Build portal
+      - name: Build portal (Vercel)
         working-directory: apps/portal
         env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PORTAL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
           NEXUSBRIDGE_PORTAL_KEY: ${{ secrets.NEXUSBRIDGE_PORTAL_KEY }}
-        run: npm run build
+        run: |
+          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_PORTAL }}
-          working-directory: apps/portal
-          vercel-args: '--prod'
+      - name: Deploy portal to Vercel
+        working-directory: apps/portal
+        run: |
+          npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 
   deploy-marketing:
     name: Deploy Marketing Site
@@ -91,17 +91,17 @@ jobs:
         working-directory: apps/web-marketing
         run: npm ci
 
-      - name: Build marketing site
+      - name: Build marketing site (Vercel)
         working-directory: apps/web-marketing
         env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_MARKETING }}
           RESEND_API_KEY: ${{ secrets.WEB_MKT_RESEND_API_KEY }}
-        run: npm run build
+        run: |
+          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_MARKETING }}
-          working-directory: apps/web-marketing
-          vercel-args: '--prod'
+      - name: Deploy marketing site to Vercel
+        working-directory: apps/web-marketing
+        run: |
+          npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

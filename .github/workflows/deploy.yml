@@ -26,12 +26,12 @@ jobs:
         run: |
           psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
 
-      - name: RLS audit pre-migration check (deploy)
+      - name: RLS audit (deploy)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          bash scripts/rls-audit/check-policies.sh
+          psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
 
   deploy-portal:
     name: Deploy Portal

@@ -25,14 +25,18 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
+          DB_HOST=$(echo "$DATABASE_URL" | sed 's|.*@\(.*\):.*|\1|')
+          DB_IPV4=$(getent ahostsv4 "$DB_HOST" | awk 'NR==1{print $1}')
+          psql "${DATABASE_URL/$DB_HOST/$DB_IPV4}" -f scripts/rls-audit/audit.sql
 
       - name: RLS audit (deploy)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          psql "$DATABASE_URL" -f scripts/rls-audit/audit.sql
+          DB_HOST=$(echo "$DATABASE_URL" | sed 's|.*@\(.*\):.*|\1|')
+          DB_IPV4=$(getent ahostsv4 "$DB_HOST" | awk 'NR==1{print $1}')
+          psql "${DATABASE_URL/$DB_HOST/$DB_IPV4}" -f scripts/rls-audit/audit.sql
 
   deploy-portal:
     name: Deploy Portal

@@ -10,7 +10,7 @@ NexusBridge CreditOS is a hybrid financial infrastructure platform connecting bo
 
 **Business model**: Originate and manage short-duration loans (6-12 months), secured by real assets, with conservative LTV ratios. Investors participate through NexusBridge Capital LP. Long-term vision includes a hybrid "HyFi" layer -- blockchain-based tokenized participation on top of the centralized lending platform.
 
-The marketing site (`apps/web-marketing`) is **live on Vercel** (Phase 1 complete). The unified portal (`apps/portal`) is **live in development** (Phase 4 in progress — workflow automation + e-signatures complete). The `services/`, `core/`, and `infrastructure/` directories are scaffolding -- not yet built.
+The marketing site (`apps/web-marketing`) is **live on Vercel** (Phase 1 complete). The unified portal (`apps/portal`) is **live in development** (Phase 4 complete — all steps through Reg A offerings + document acknowledgment gate). The `services/`, `core/`, and `infrastructure/` directories are scaffolding -- not yet built.
 
 Design docs live in `/docs/`. Before implementing any feature, read the relevant doc:
 
@@ -119,7 +119,7 @@ Requires `apps/web-marketing/.env.local` with:
 RESEND_API_KEY=your_key_here
 ```
 
-### Portal (`apps/portal`) -- Phase 4 in progress
+### Portal (`apps/portal`) -- Phase 4 complete
 ```bash
 cd apps/portal
 npm run dev       # Start dev server (localhost:3001)
@@ -154,7 +154,7 @@ supabase functions serve # Serve Edge Functions locally
 ```
 apps/
   web-marketing/   # Marketing site -- live on Vercel (localhost:3000)
-  portal/          # Unified portal -- Phase 4 in progress (localhost:3001)
+  portal/          # Unified portal -- Phase 4 complete (localhost:3001)
 services/          # Backend domain services (scaffolding only)
 core/              # Shared libraries (scaffolding only)
 infrastructure/    # Docker, Terraform, CI/CD (scaffolding only)
@@ -399,7 +399,7 @@ emitAuditEvent({ ... });
 | **Phase 1** | Marketing site -- all 8 pages live, lead capture forms, email routing | ✅ Complete |
 | **Phase 2** | Supabase auth + RBAC, all role dashboards, borrower portal, investor portal, admin console, underwriter workspace, servicing dashboard | ✅ Complete |
 | **Phase 3** | Loan lifecycle + underwriting + document management + fund operations | ✅ Complete |
-| **Phase 4** | Workflow automation (n8n) + e-signatures + OCR (Ocrolus/Argyle) + compliance hardening (KYC/AML, Reg A/D enforcement) | 🔄 In Progress |
+| **Phase 4** | Workflow automation (n8n) + e-signatures + OCR (Ocrolus/Argyle) + compliance hardening (KYC/AML, Reg A/D enforcement) + Reg A offerings + document acknowledgment gate | ✅ Complete |
 | **Phase 5** | Tokenization layer (Base/Ethereum L2) -- HyFi vision | ⚪ Optional |
 
 ### Phase 3 Progress:
@@ -420,6 +420,7 @@ emitAuditEvent({ ... });
 | Step 2 | E-Signatures: BoldSign integration (Dropbox Sign preserved for future upgrade), signature_requests table, gate loan closing + subscription on signed docs | ✅ Complete |
 | Step 3 | OCR / Document Intelligence: Ocrolus + Argyle, document_extractions + extraction_field_mappings tables, 5 API routes, ExtractionReviewPanel UI, auto-populate application fields | ✅ Complete |
 | Step 4 | Compliance Hardening: KYC (Plaid Identity), AML (OFAC SDN), Reg A investor limits, accreditation tracking | ✅ Complete |
+| Step 5 | Reg A Offerings + Document Acknowledgment Gate: reg_a_offerings table, offering detail page, SubscribeForm with offering-type-aware compliance gates, AIQ self-certification (POST /api/investor/aiq), offering_circular_acknowledged_at stamped for both Reg A and Reg D, AIQ checklist on compliance page | ✅ Complete |
 
 ### Post-Phase 3 Improvements (all complete):
 

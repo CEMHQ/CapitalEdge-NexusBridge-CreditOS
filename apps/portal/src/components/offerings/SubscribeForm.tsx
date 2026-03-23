@@ -61,9 +61,11 @@ export default function SubscribeForm({
     }
 
     setLoading(true)
-    const body: Record<string, unknown> = { fund_id: fundId, commitment_amount: parsed }
-    // Reg A: pass server-side acknowledgment flag so the API can timestamp it
-    if (isRegA) body.offering_circular_acknowledged = acknowledged
+    const body: Record<string, unknown> = {
+      fund_id:                       fundId,
+      commitment_amount:             parsed,
+      offering_circular_acknowledged: acknowledged,   // required for both Reg A and Reg D
+    }
     const res = await fetch('/api/fund/subscribe', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },

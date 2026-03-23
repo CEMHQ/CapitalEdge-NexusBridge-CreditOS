@@ -13,7 +13,7 @@ export default async function InvestorCompliancePage() {
 
   const { data: investor } = await supabase
     .from('investors')
-    .select('id, investor_type, accreditation_status, kyc_status, aml_status, onboarding_status, annual_income, net_worth, jurisdiction, created_at')
+    .select('id, investor_type, accreditation_status, kyc_status, aml_status, onboarding_status, annual_income, net_worth, jurisdiction, created_at, aiq_self_certified_at, aiq_accreditation_basis')
     .eq('profile_id', user!.id)
     .maybeSingle()
 
@@ -40,7 +40,7 @@ export default async function InvestorCompliancePage() {
   // Active subscription with signature data
   const { data: subscription } = await supabase
     .from('fund_subscriptions')
-    .select('id, subscription_status, commitment_amount, funded_amount, fcfs_position, ppm_acknowledged_at, confirmed_at, created_at, funds ( fund_name )')
+    .select('id, subscription_status, commitment_amount, funded_amount, fcfs_position, ppm_acknowledged_at, offering_circular_acknowledged_at, confirmed_at, created_at, funds ( fund_name, offering_type )')
     .eq('investor_id', investor.id)
     .in('subscription_status', ['pending', 'approved', 'active', 'pending_signature'])
     .order('created_at', { ascending: false })
@@ -63,8 +63,10 @@ export default async function InvestorCompliancePage() {
   const ppmSig = subSigs.find(s => s.document_type === 'ppm_acknowledgment')
   const subAgreementSig = subSigs.find(s => s.document_type === 'subscription_agreement')
 
-  // jurisdiction is a new column — cast from the select result until DB types are regenerated
-  const investorJurisdiction = (investor as Record<string, unknown>).jurisdiction as string | null ?? null
+  // jurisdiction / AIQ — cast from the select result until DB types are regenerated
+  const investorJurisdiction   = (investor as Record<string, unknown>).jurisdiction as string | null ?? null
+  const aiqSelfCertifiedAt     = (investor as Record<string, unknown>).aiq_self_certified_at as string | null ?? null
+  const aiqAccreditationBasis  = (investor as Record<string, unknown>).aiq_accreditation_basis as string | null ?? null
 
   // Reg A investment limit (only meaningful for non-accredited investors)
   const regALimit = computeRegALimit(
@@ -78,11 +80,16 @@ export default async function InvestorCompliancePage() {
   // Compliance checklist
   const isAccredited    = investor.accreditation_status === 'verified'
   const kycApproved     = investor.kyc_status === 'approved'
+  const aiqCompleted    = !!aiqSelfCertifiedAt
   const ppmSigned       = !!subscription?.ppm_acknowledged_at
   const subSigned       = subAgreementSig?.status === 'signed'
   const hasSubscription = !!subscription
+  const fundOfferingType = (subscription?.funds as unknown as { fund_name: string; offering_type: string } | null)?.offering_type ?? 'reg_d'
+  const isRegD           = fundOfferingType === 'reg_d'
+  const offeringAcknowledgedAt = (subscription as Record<string, unknown> | null)?.offering_circular_acknowledged_at as string | null ?? null
 
-  const allComplete = isAccredited && kycApproved && ppmSigned && subSigned
+  // For Reg D: all complete requires AIQ; for Reg A it is not required
+  const allComplete = isAccredited && kycApproved && ppmSigned && subSigned && (!isRegD || aiqCompleted)
 
   // Expiry warning
   const expiresAt = latestAccreditation?.expires_at ? new Date(latestAccreditation.expires_at) : null
@@ -165,6 +172,19 @@ export default async function InvestorCompliancePage() {
             }
             action={!isAccredited && !latestAccreditation ? { label: 'Begin Verification', href: '/dashboard/investor/onboarding' } : undefined}
           />
+          {/* AIQ required for Reg D 506(c); not applicable for Reg A */}
+          {isAccredited && (
+            <ChecklistItem
+              label="Accredited Investor Questionnaire (AIQ)"
+              status={aiqCompleted ? 'complete' : 'not_started'}
+              detail={
+                aiqCompleted
+                  ? `Self-certified ${formatDate(aiqSelfCertifiedAt!)}${aiqAccreditationBasis ? ` · Basis: ${aiqAccreditationBasis.replace(/_/g, ' ')}` : ''}`
+                  : 'Required for Reg D 506(c) — self-certify your accreditation basis before subscribing'
+              }
+              action={!aiqCompleted ? { label: 'Complete AIQ', href: '/dashboard/investor/offerings' } : undefined}
+            />
+          )}
           <ChecklistItem
             label="PPM Receipt & Acknowledgment"
             status={ppmSigned ? 'complete' : ppmSig?.status === 'sent' || ppmSig?.status === 'viewed' ? 'in_progress' : hasSubscription ? 'pending' : 'not_applicable'}
@@ -245,6 +265,7 @@ export default async function InvestorCompliancePage() {
             <Row label="Committed" value={`$${Number(subscription.commitment_amount).toLocaleString()}`} />
             <Row label="Funded" value={`$${Number(subscription.funded_amount).toLocaleString()}`} />
             {subscription.fcfs_position && <Row label="Queue Position" value={`#${subscription.fcfs_position}`} />}
+            {offeringAcknowledgedAt && <Row label="Offering Docs Acknowledged" value={formatDate(offeringAcknowledgedAt)} />}
             {subscription.ppm_acknowledged_at && <Row label="PPM Acknowledged" value={formatDate(subscription.ppm_acknowledged_at)} />}
           </div>
         </div>

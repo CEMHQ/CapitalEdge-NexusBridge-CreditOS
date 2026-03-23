@@ -64,6 +64,13 @@ export async function POST(request: Request) {
         { status: 422 }
       )
     }
+    // 506(c): PPM/offering document acknowledgment required before subscription reservation
+    if (!offering_circular_acknowledged) {
+      return NextResponse.json(
+        { error: 'You must acknowledge that you have received and reviewed the PPM before subscribing' },
+        { status: 422 }
+      )
+    }
   } else if (fund.offering_type === 'reg_a') {
     // Tier 2: offering circular acknowledgment required before subscription reservation
     if (!offering_circular_acknowledged) {
@@ -117,8 +124,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: 422 })
   }
 
-  // For Reg A: stamp the offering circular acknowledgment timestamp on the subscription
-  if (fund.offering_type === 'reg_a' && offering_circular_acknowledged) {
+  // Stamp offering circular acknowledgment timestamp for both Reg A and Reg D
+  if (offering_circular_acknowledged) {
     await supabase
       .from('fund_subscriptions')
       .update({ offering_circular_acknowledged_at: new Date().toISOString() })

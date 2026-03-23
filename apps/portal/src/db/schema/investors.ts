@@ -11,6 +11,9 @@ export const investors = pgTable('investors', {
   // Reg A Tier 2 financial profile — used to compute the 10%-of-income/net-worth limit
   annualIncome: numeric('annual_income', { precision: 15, scale: 2 }),
   netWorth:     numeric('net_worth',     { precision: 15, scale: 2 }),
+  // Reg D 506(c) AIQ self-certification — set via POST /api/investor/aiq
+  aiqSelfCertifiedAt:   timestamp('aiq_self_certified_at',   { withTimezone: true }),
+  aiqAccreditationBasis: text('aiq_accreditation_basis'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

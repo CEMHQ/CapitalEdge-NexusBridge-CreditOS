@@ -1,7 +1,7 @@
 # NexusBridge CreditOS — SQL Reference: Phase 4
 
 **Phase:** 4 — Workflow Automation + E-Signatures + OCR / Document Intelligence
-**Migrations:** `0015_workflow_automation`, `0016_esignatures`, `0023_document_intelligence`, `0017_compliance_hardening`, `0018_reg_a_limits`, `0020_rls_audit_fixes`, `0021_rls_audit_infrastructure`, `0022_rls_update_with_check`
+**Migrations:** `0015_workflow_automation`, `0016_esignatures`, `0023_document_intelligence`, `0017_compliance_hardening`, `0018_reg_a_limits`, `0020_rls_audit_fixes`, `0021_rls_audit_infrastructure`, `0022_rls_update_with_check`, `0024_reg_a_offerings`, `0025_fix_user_roles_rls`, `0026_fix_self_referential_rls`, `0027_offering_documents_bucket`
 
 SQL migration DDL and verification/audit queries for all Phase 4 steps.
 Run each statement individually in the Supabase SQL Editor.
@@ -16,8 +16,9 @@ Run each statement individually in the Supabase SQL Editor.
 2. [Step 2 — E-Signatures (BoldSign / Dropbox Sign)](#step-2--e-signatures-boldsign--dropbox-sign)
 3. [Step 3 — OCR / Document Intelligence (Planned)](#step-3--ocr--document-intelligence-planned)
 4. [Step 4 — Compliance Hardening (Planned)](#step-4--compliance-hardening-planned)
-5. [Security Hardening — RLS Continuous Audit](#security-hardening--rls-continuous-audit)
-6. [Cross-Phase Verification Queries](#cross-phase-verification-queries)
+5. [Step 5 — Reg A Tier 2 Investor UX — Schema Foundation](#step-5--reg-a-tier-2-investor-ux--schema-foundation)
+6. [Security Hardening — RLS Continuous Audit](#security-hardening--rls-continuous-audit)
+7. [Cross-Phase Verification Queries](#cross-phase-verification-queries)
 
 ---
 
@@ -1194,6 +1195,63 @@ ORDER BY 1 DESC, 2, 3;
 
 ---
 
+## Security Hardening — RLS Infinite Recursion Fix
+
+> Migration: `0025_fix_user_roles_rls`
+
+### Root Cause
+
+The `user_roles_select_admin` policy added in `0020_rls_audit_fixes` used an `EXISTS` subquery that re-reads the `user_roles` table:
+
+```sql
+-- BROKEN (causes infinite recursion for ALL users)
+CREATE POLICY "user_roles_select_admin" ON user_roles
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles ur2
+      WHERE ur2.user_id = (select auth.uid())
+        AND ur2.role IN ('admin', 'manager')
+    )
+  );
+```
+
+Because RLS policies are evaluated for every row-level access, this creates infinite recursion whenever any user queries `user_roles` — including a borrower reading their own role row.
+
+### Fix
+
+Replace the self-referencing subquery with `get_user_role()`, which is `SECURITY DEFINER` and therefore bypasses RLS when it reads `user_roles`. This breaks the cycle while preserving the same admin-read semantics.
+
+```sql
+DROP POLICY IF EXISTS "user_roles_select_admin" ON user_roles;
+
+CREATE POLICY "user_roles_select_admin" ON user_roles
+  FOR SELECT
+  USING (get_user_role() IN ('admin', 'manager'));
+```
+
+The existing `user_roles_select_own` policy (from `0005_user_roles`) is unaffected and safe — it uses `USING (user_id = (select auth.uid()))` which does not recurse.
+
+### Verification
+
+```sql
+-- Confirm the corrected policy is in place
+SELECT policyname, cmd, qual
+FROM pg_policies
+WHERE tablename = 'user_roles'
+  AND policyname = 'user_roles_select_admin';
+-- Expected: qual = "(get_user_role() = ANY (ARRAY['admin'::text, 'manager'::text]))"
+```
+
+```sql
+-- Confirm a borrower can read their own role without recursion error
+-- (Run as the borrower user or via RLS simulation)
+SELECT role FROM user_roles WHERE user_id = auth.uid();
+-- Expected: 1 row, no "infinite recursion" error
+```
+
+---
+
 ## Cross-Phase Verification Queries
 
 ### All Phase 4 tables
@@ -1270,4 +1328,440 @@ LEFT JOIN workflow_executions we ON we.trigger_id = wt.id
 WHERE wt.event_type = 'application_status_changed'
 GROUP BY wt.id, wt.name
 ORDER BY last_executed DESC NULLS LAST;
+```
+
+---
+
+## Step 5 — Reg A Tier 2 Investor UX — Schema Foundation
+
+> **Related doc:** `docs/12_Investor_Portal_RegA_UX_Flow.md`
+> Migration: `0024_reg_a_offerings`
+
+Adds the schema required for the Reg A Tier 2 investor UX: jurisdiction screening on investors, offering campaign tracking, and SEC filing document storage.
+
+### investors — jurisdiction column (alteration)
+
+```sql
+ALTER TABLE investors
+  ADD COLUMN IF NOT EXISTS jurisdiction TEXT
+    CHECK (jurisdiction IS NULL OR (length(jurisdiction) = 2 AND jurisdiction = upper(jurisdiction)));
+```
+
+| Column | Type | Notes |
+|---|---|---|
+| jurisdiction | TEXT | NULL = not yet provided; two-character uppercase US state/territory code (ISO 3166-2 subdivision suffix, e.g. `CA`, `NY`, `PR`). Jurisdiction gate skipped when NULL. |
+
+### offerings
+
+Tracks a Reg A Tier 2 (or Reg D / Reg CF) offering campaign. Each fund may have multiple offerings over time (successive raises).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | gen_random_uuid() |
+| fund_id | UUID NOT NULL | FK funds(id) ON DELETE CASCADE |
+| offering_type | TEXT NOT NULL | `reg_a`, `reg_d`, `reg_cf` |
+| offering_status | TEXT NOT NULL DEFAULT `draft` | `draft`, `qualified`, `active`, `suspended`, `closed`, `terminated` |
+| title | TEXT NOT NULL | |
+| description | TEXT | |
+| max_offering_amount | NUMERIC(15,2) NOT NULL | |
+| min_investment | NUMERIC(15,2) NOT NULL DEFAULT 2500 | $2,500 default matches Reg A minimum |
+| max_investment | NUMERIC(15,2) | NULL = no per-investor cap |
+| per_share_price | NUMERIC(15,4) | NULL for LP units / debt offerings |
+| shares_offered | NUMERIC(18,0) | NULL for open-ended offerings |
+| sec_file_number | TEXT | e.g. `024-12345` |
+| qualification_date | DATE | Date SEC qualifies the Form 1-A |
+| offering_open_date | DATE | |
+| offering_close_date | DATE | |
+| jurisdiction_restrictions | JSONB NOT NULL DEFAULT `[]` | Array of restricted US state codes, e.g. `["CA","TX"]`. Empty array = no restrictions. |
+| created_by | UUID NOT NULL | FK profiles(id) ON DELETE RESTRICT |
+| created_at | TIMESTAMPTZ NOT NULL DEFAULT now() | |
+| updated_at | TIMESTAMPTZ NOT NULL DEFAULT now() | |
+
+### offering_documents
+
+SEC filings and investor-facing documents attached to an offering.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | gen_random_uuid() |
+| offering_id | UUID NOT NULL | FK offerings(id) ON DELETE CASCADE |
+| document_type | TEXT NOT NULL | `form_1a`, `form_1a_amendment`, `form_1k`, `form_1sa`, `form_1u`, `offering_circular`, `supplement`, `other` |
+| label | TEXT NOT NULL | Display name, e.g. "NexusBridge Capital LP Offering Circular" |
+| file_path | TEXT NOT NULL | Supabase Storage path; generate signed URL at read time |
+| filed_at | DATE | Date filed with SEC; NULL for internal drafts |
+| effective_date | DATE | SEC-declared effective date |
+| created_by | UUID NOT NULL | FK profiles(id) ON DELETE RESTRICT |
+| created_at | TIMESTAMPTZ NOT NULL DEFAULT now() | |
+| updated_at | TIMESTAMPTZ NOT NULL DEFAULT now() | |
+
+### Indexes
+
+| Index | Table | Columns | Notes |
+|---|---|---|---|
+| `idx_investors_jurisdiction` | `investors` | `jurisdiction` | WHERE jurisdiction IS NOT NULL |
+| `idx_offerings_fund_id` | `offerings` | `fund_id` | |
+| `idx_offerings_status` | `offerings` | `offering_status` | |
+| `idx_offerings_type` | `offerings` | `offering_type` | |
+| `idx_offerings_close_date` | `offerings` | `offering_close_date` | WHERE offering_close_date IS NOT NULL |
+| `idx_offering_documents_offer` | `offering_documents` | `offering_id` | |
+| `idx_offering_documents_type` | `offering_documents` | `(offering_id, document_type)` | |
+
+### updated_at triggers
+
+`update_updated_at_column()` (shared SECURITY DEFINER function from `0017_compliance_hardening`) is used by both new tables.
+
+| Trigger | Table |
+|---|---|
+| `offerings_updated_at` | `offerings` |
+| `offering_documents_updated_at` | `offering_documents` |
+
+### RLS Policies
+
+| Table | Policy | Command | Notes |
+|---|---|---|---|
+| `offerings` | `offerings_select_active` | SELECT | Authenticated users read only `offering_status = 'active'` rows |
+| `offerings` | `offerings_staff_all` | ALL | admin + manager full access to all offerings regardless of status |
+| `offering_documents` | `offering_documents_select_active` | SELECT | Authenticated users read documents only for active offerings (subquery to `offerings`) |
+| `offering_documents` | `offering_documents_staff_all` | ALL | admin + manager full access |
+
+### Verification — Step 5
+
+```sql
+-- Tables exist
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN ('offerings', 'offering_documents')
+ORDER BY table_name;
+-- Expected: 2 rows
+```
+
+```sql
+-- investors.jurisdiction column exists
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'investors' AND column_name = 'jurisdiction';
+-- Expected: 1 row, character varying, YES
+```
+
+```sql
+-- Indexes (6 on new tables + 1 on investors)
+SELECT indexname, tablename
+FROM pg_indexes
+WHERE tablename IN ('offerings', 'offering_documents', 'investors')
+  AND indexname IN (
+    'idx_investors_jurisdiction',
+    'idx_offerings_fund_id', 'idx_offerings_status', 'idx_offerings_type',
+    'idx_offerings_close_date', 'idx_offering_documents_offer', 'idx_offering_documents_type'
+  )
+ORDER BY tablename, indexname;
+-- Expected: 7 rows
+```
+
+```sql
+-- Triggers
+SELECT trigger_name, event_object_table
+FROM information_schema.triggers
+WHERE trigger_name IN ('offerings_updated_at', 'offering_documents_updated_at')
+  AND trigger_schema = 'public';
+-- Expected: 2 rows
+```
+
+```sql
+-- RLS enabled
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE tablename IN ('offerings', 'offering_documents')
+  AND schemaname = 'public';
+-- Expected: rowsecurity = true for both
+```
+
+```sql
+-- RLS policies (2 per table)
+SELECT tablename, policyname, cmd
+FROM pg_policies
+WHERE tablename IN ('offerings', 'offering_documents')
+ORDER BY tablename, policyname;
+-- Expected: 4 rows total
+```
+
+### Audit queries
+
+```sql
+-- Offerings by status and type
+SELECT offering_type, offering_status, COUNT(*) AS count
+FROM offerings
+GROUP BY offering_type, offering_status
+ORDER BY offering_type, offering_status;
+```
+
+```sql
+-- Active offerings with subscription summary
+SELECT
+  o.title,
+  o.offering_type,
+  o.max_offering_amount,
+  o.offering_close_date,
+  COUNT(fs.id) AS subscriber_count,
+  COALESCE(SUM(fs.commitment_amount), 0) AS total_committed
+FROM offerings o
+JOIN funds f ON f.id = o.fund_id
+LEFT JOIN fund_subscriptions fs
+  ON fs.fund_id = f.id
+  AND fs.subscription_status IN ('pending', 'approved', 'active')
+WHERE o.offering_status = 'active'
+GROUP BY o.id, o.title, o.offering_type, o.max_offering_amount, o.offering_close_date
+ORDER BY o.offering_close_date ASC NULLS LAST;
+```
+
+```sql
+-- Investors missing suitability data (non-accredited only)
+SELECT COUNT(*) AS investors_missing_suitability
+FROM investors
+WHERE accreditation_status != 'verified'
+  AND (annual_income IS NULL OR net_worth IS NULL OR jurisdiction IS NULL);
+```
+
+### Step 5 — Offering Documents Storage Bucket
+
+> Migration: `0027_offering_documents_bucket`
+
+Creates the `offering-documents` Supabase Storage bucket and its RLS policies. The bucket is private (not public). Signed URLs are generated server-side via the admin client and expire after 15 minutes (download) or 60 minutes (upload).
+
+#### Bucket creation
+
+```sql
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'offering-documents',
+  'offering-documents',
+  false,
+  52428800,  -- 50 MB per file
+  ARRAY[
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ]
+)
+ON CONFLICT (id) DO NOTHING;
+```
+
+#### Storage RLS policies
+
+| Policy | Command | Role | Notes |
+|---|---|---|---|
+| `offering_documents_storage_admin_all` | ALL | authenticated | Admin or manager only; WITH CHECK enforced |
+| `offering_documents_storage_read_active` | SELECT | authenticated | All authenticated users can read (server generates signed URL) |
+
+```sql
+-- Admins and managers: full CRUD on offering documents
+CREATE POLICY "offering_documents_storage_admin_all"
+ON storage.objects
+FOR ALL
+TO authenticated
+USING (
+  bucket_id = 'offering-documents'
+  AND EXISTS (
+    SELECT 1 FROM user_roles ur
+    WHERE ur.user_id = auth.uid()
+    AND ur.role IN ('admin', 'manager')
+  )
+)
+WITH CHECK (
+  bucket_id = 'offering-documents'
+  AND EXISTS (
+    SELECT 1 FROM user_roles ur
+    WHERE ur.user_id = auth.uid()
+    AND ur.role IN ('admin', 'manager')
+  )
+);
+
+-- Investors and borrowers: read-only access
+CREATE POLICY "offering_documents_storage_read_active"
+ON storage.objects
+FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'offering-documents'
+);
+```
+
+#### Verification — Offering Documents Bucket
+
+```sql
+-- Confirm bucket exists
+SELECT id, name, public, file_size_limit
+FROM storage.buckets
+WHERE id = 'offering-documents';
+-- Expected: 1 row, public = false, file_size_limit = 52428800
+```
+
+```sql
+-- Confirm storage RLS policies
+SELECT policyname, definition
+FROM storage.policies
+WHERE bucket_id = 'offering-documents'
+ORDER BY policyname;
+-- Expected: 2 policies (offering_documents_storage_admin_all, offering_documents_storage_read_active)
+```
+
+---
+
+## Security Hardening — RLS Self-Referential Policy Fix
+
+**Migration:** `0026_fix_self_referential_rls`
+
+Fixes two self-referential RLS policies introduced in `0020_rls_audit_fixes` that caused PostgreSQL to raise "infinite recursion detected in policy for relation X" on UPDATE operations.
+
+### Root Cause
+
+PostgreSQL's recursion detector raises an error whenever a policy on table X contains a subquery that accesses table X — regardless of whether it would actually loop infinitely. Two policies from `0020` had this pattern:
+
+| Policy | Table | Self-referential subquery |
+|---|---|---|
+| `profiles_update_own` | `profiles` | WITH CHECK reads `SELECT status FROM profiles WHERE id = auth.uid()` |
+| `notifications_update_own` | `notifications` | WITH CHECK reads `SELECT delivery_status FROM notifications WHERE id = notifications.id` |
+
+This was previously masked by the `user_roles_select_admin` infinite recursion (fixed in `0025`). Once `0025` removed that recursion, PostgreSQL was able to proceed far enough in policy evaluation to hit these self-referential subqueries.
+
+### Fix
+
+Remove the self-referential subqueries from both policies. Field-level immutability (status, email, delivery_status, etc.) is enforced at the API layer — all routes that write these rows are server-side and only pass approved fields. The USING + WITH CHECK ownership guard is sufficient.
+
+```sql
+-- profiles_update_own: remove self-referential status/email check
+DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
+
+CREATE POLICY "profiles_update_own" ON profiles
+  FOR UPDATE
+  USING     (id = (select auth.uid()))
+  WITH CHECK (id = (select auth.uid()));
+
+-- notifications_update_own: remove self-referential field immutability check
+DROP POLICY IF EXISTS "notifications_update_own" ON notifications;
+
+CREATE POLICY "notifications_update_own" ON notifications
+  FOR UPDATE
+  USING     (recipient_profile_id = (select auth.uid()))
+  WITH CHECK (recipient_profile_id = (select auth.uid()));
+```
+
+### Verification
+
+```sql
+-- Confirm profiles_update_own no longer has self-referential subquery
+SELECT policyname, qual, with_check
+FROM pg_policies
+WHERE tablename = 'profiles' AND policyname = 'profiles_update_own';
+-- with_check should be: (id = (select auth.uid()))
+
+-- Confirm notifications_update_own no longer has self-referential subquery
+SELECT policyname, qual, with_check
+FROM pg_policies
+WHERE tablename = 'notifications' AND policyname = 'notifications_update_own';
+-- with_check should be: (recipient_profile_id = (select auth.uid()))
+
+-- Smoke test: verify a profile update succeeds for the current user
+-- (Run as an authenticated borrower)
+UPDATE profiles SET full_name = full_name WHERE id = auth.uid();
+-- Should return 0 rows affected (no-op), not an error
+```
+
+---
+
+## Phase 4 — Document Acknowledgment Gate (Reg A + Reg D Compliance)
+
+> Migration: `0028_document_acknowledgment_gate`
+> Related doc: `docs/12_Investor_Portal_RegA_UX_Flow.md`
+>
+> Enforces the correct regulatory document sequence before a subscription reservation is created:
+>
+> **Reg A Tier 2**: investor must acknowledge the offering circular (server-side) before subscribing.
+> **Reg D 506(c)**: investor must complete the Accredited Investor Questionnaire (AIQ) self-certification before subscribing, in addition to admin-verified accreditation.
+>
+> Note: PPM pre-delivery ordering (admin must send PPM before subscription) is enforced via
+> `ppm_acknowledged_at` on the approval gate. A future migration may add a dedicated
+> `investor_ppm_deliveries` junction table to enforce pre-subscription PPM delivery.
+
+### fund_subscriptions — offering_circular_acknowledged_at
+
+```sql
+ALTER TABLE fund_subscriptions
+  ADD COLUMN IF NOT EXISTS offering_circular_acknowledged_at TIMESTAMPTZ;
+```
+
+Set by `POST /api/fund/subscribe` when `offering_circular_acknowledged=true` is in the request body.
+Required for Reg A subscriptions; null is permitted for Reg D.
+
+### investors — AIQ self-certification fields
+
+```sql
+ALTER TABLE investors
+  ADD COLUMN IF NOT EXISTS aiq_self_certified_at    TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS aiq_accreditation_basis  TEXT
+    CHECK (aiq_accreditation_basis IN (
+      'income',
+      'net_worth',
+      'professional',
+      'entity',
+      'other'
+    ));
+```
+
+`aiq_self_certified_at` — set by `POST /api/investor/aiq` when the investor completes the inline AIQ.
+Required for Reg D 506(c) subscriptions in addition to admin-verified `accreditation_status = 'verified'`.
+
+`aiq_accreditation_basis` — the basis the investor self-certified under (income threshold, net worth, professional license, entity owner, or other).
+
+### Index — fast lookup of Reg A subscriptions missing acknowledgment
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_fund_subs_circular_ack
+  ON fund_subscriptions(offering_circular_acknowledged_at)
+  WHERE offering_circular_acknowledged_at IS NULL;
+```
+
+### Verification — Document Acknowledgment Gate
+
+```sql
+-- Confirm offering_circular_acknowledged_at column exists on fund_subscriptions
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'fund_subscriptions'
+  AND column_name = 'offering_circular_acknowledged_at';
+
+-- Confirm AIQ columns exist on investors
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'investors'
+  AND column_name IN ('aiq_self_certified_at', 'aiq_accreditation_basis');
+
+-- Confirm partial index exists
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = 'fund_subscriptions'
+  AND indexname = 'idx_fund_subs_circular_ack';
+
+-- Audit: Reg A subscriptions without offering circular acknowledgment
+SELECT fs.id, fs.subscription_status, fs.created_at, p.email
+FROM fund_subscriptions fs
+JOIN investors i   ON i.id = fs.investor_id
+JOIN profiles p    ON p.id = i.profile_id
+JOIN funds f       ON f.id = fs.fund_id
+WHERE f.offering_type = 'reg_a'
+  AND fs.offering_circular_acknowledged_at IS NULL
+ORDER BY fs.created_at DESC;
+
+-- Audit: Reg D subscriptions from investors without AIQ
+SELECT fs.id, fs.subscription_status, fs.created_at, p.email
+FROM fund_subscriptions fs
+JOIN investors i   ON i.id = fs.investor_id
+JOIN profiles p    ON p.id = i.profile_id
+JOIN funds f       ON f.id = fs.fund_id
+WHERE f.offering_type = 'reg_d'
+  AND i.aiq_self_certified_at IS NULL
+ORDER BY fs.created_at DESC;
 ```

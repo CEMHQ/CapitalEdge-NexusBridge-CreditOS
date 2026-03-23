@@ -24,12 +24,12 @@ export async function POST(request: Request) {
   const blocked = await applyRateLimit(subscriptionLimiter, user.id)
   if (blocked) return blocked
 
-  const { fund_id, commitment_amount } = validation.data
+  const { fund_id, commitment_amount, offering_circular_acknowledged } = validation.data
 
-  // Resolve investor record (include financial profile for Reg A limit check)
+  // Resolve investor record (include financial profile for Reg A limit check + AIQ status)
   const { data: investor } = await supabase
     .from('investors')
-    .select('id, accreditation_status, onboarding_status, annual_income, net_worth')
+    .select('id, accreditation_status, onboarding_status, annual_income, net_worth, aiq_self_certified_at')
     .eq('profile_id', user.id)
     .single()
 
@@ -57,7 +57,21 @@ export async function POST(request: Request) {
         { status: 422 }
       )
     }
+    // 506(c): Accredited Investor Questionnaire (AIQ) self-certification required before subscribing
+    if (!(investor as Record<string, unknown>).aiq_self_certified_at) {
+      return NextResponse.json(
+        { error: 'You must complete the Accredited Investor Questionnaire before subscribing to this fund' },
+        { status: 422 }
+      )
+    }
   } else if (fund.offering_type === 'reg_a') {
+    // Tier 2: offering circular acknowledgment required before subscription reservation
+    if (!offering_circular_acknowledged) {
+      return NextResponse.json(
+        { error: 'You must acknowledge that you have read the offering circular before subscribing' },
+        { status: 422 }
+      )
+    }
     // Tier 2: non-accredited allowed subject to 10%-of-income/net-worth limit
     const limitCheck = await checkRegALimit(
       supabase,
@@ -103,6 +117,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: 422 })
   }
 
+  // For Reg A: stamp the offering circular acknowledgment timestamp on the subscription
+  if (fund.offering_type === 'reg_a' && offering_circular_acknowledged) {
+    await supabase
+      .from('fund_subscriptions')
+      .update({ offering_circular_acknowledged_at: new Date().toISOString() })
+      .eq('id', result.subscription_id)
+  }
+
   emitAuditEvent({
     actorProfileId: user.id,
     eventType:      'subscription_action',
@@ -111,7 +133,9 @@ export async function POST(request: Request) {
     eventPayload: {
       fund_id,
       commitment_amount,
-      fcfs_position: result.fcfs_position,
+      fcfs_position:                  result.fcfs_position,
+      offering_type:                  fund.offering_type,
+      offering_circular_acknowledged: offering_circular_acknowledged ?? false,
     },
   })
 

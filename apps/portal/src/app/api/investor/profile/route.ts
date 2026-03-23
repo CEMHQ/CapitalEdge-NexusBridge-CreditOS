@@ -5,6 +5,7 @@ import { getUserRole } from '@/lib/auth/roles'
 import { updateInvestorProfileSchema } from '@/lib/validation/schemas'
 import { updateLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
+import { emitAuditEvent } from '@/lib/audit/emit'
 
 export async function PATCH(request: Request) {
   const supabase = await createClient()
@@ -38,6 +39,21 @@ export async function PATCH(request: Request) {
     .eq('id', investor.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Emit audit event when suitability fields are updated (log that fields changed, not values)
+  const suitabilityFields = ['annual_income', 'net_worth', 'jurisdiction'] as const
+  const suitabilityUpdated = suitabilityFields.some(f => parsed.data[f] !== undefined)
+  if (suitabilityUpdated) {
+    void emitAuditEvent({
+      actorProfileId: user.id,
+      eventType:      'suitability_updated',
+      entityType:     'investor',
+      entityId:       investor.id,
+      eventPayload:   {
+        fields_updated: suitabilityFields.filter(f => parsed.data[f] !== undefined),
+      },
+    })
+  }
 
   return NextResponse.json({ success: true })
 }

@@ -38,6 +38,17 @@ export type AuditEventType =
   | 'kyc_completed'
   | 'kyc_failed'
   | 'aml_screened'
+  | 'extraction_triggered'
+  | 'extraction_reviewed'
+  | 'extraction_applied'
+  | 'suitability_updated'
+  | 'offering_created'
+  | 'offering_updated'
+  | 'offering_deleted'
+  | 'offering_document_attached'
+  | 'offering_document_removed'
+  | 'offering_circular_acknowledged'
+  | 'aiq_submitted'
 
 export type AuditEntityType =
   | 'loan'
@@ -56,6 +67,8 @@ export type AuditEntityType =
   | 'workflow_trigger'
   | 'workflow_execution'
   | 'signature_request'
+  | 'offering'
+  | 'offering_document'
 
 export interface AuditEventParams {
   actorProfileId: string | null

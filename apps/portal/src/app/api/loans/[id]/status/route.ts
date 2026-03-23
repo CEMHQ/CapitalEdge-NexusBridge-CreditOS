@@ -7,6 +7,7 @@ import { updateLimiter } from '@/lib/rate-limit/index'
 import { applyRateLimit } from '@/lib/rate-limit/apply'
 import { emitAuditEvent } from '@/lib/audit/emit'
 import { canTransitionLoan, canRoleTransitionLoan } from '@/lib/loan/state-machine'
+import { fireWorkflowTrigger } from '@/lib/workflows/engine'
 
 export async function PATCH(
   request: Request,
@@ -75,6 +76,11 @@ export async function PATCH(
     entityType:     'loan',
     entityId:       id,
     eventPayload:   { from: loan.loan_status, to: loan_status, notes: notes ?? null, actor_role: role },
+  })
+
+  void fireWorkflowTrigger('loan_status_changed', {
+    entity_id:  id,
+    new_status: loan_status,
   })
 
   return NextResponse.json({ success: true })

@@ -2,7 +2,7 @@
 
 **Phase:** 5 — Tokenization Layer (Optional / Not yet started)
 **Related docs:** `docs/17_DeFi_Tokenization_RWA_Architecture.md`
-**Migration:** `0019_tokenization` (planned)
+**Migration:** `0027_tokenization` (planned)
 
 SQL migration DDL and verification queries for Phase 5 — the HyFi tokenization layer.
 

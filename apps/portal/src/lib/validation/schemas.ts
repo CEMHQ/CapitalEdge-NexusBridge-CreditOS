@@ -271,8 +271,15 @@ export const reviewDocumentSchema = z.object({
 // ─── Phase 3: Fund operations ─────────────────────────────────────────────────
 
 export const createSubscriptionSchema = z.object({
-  fund_id:           z.string().uuid(),
-  commitment_amount: z.number().positive().min(10000, 'Minimum commitment is $10,000'),
+  fund_id:                         z.string().uuid(),
+  commitment_amount:               z.number().positive().min(10000, 'Minimum commitment is $10,000'),
+  // Reg A Tier 2: investor must acknowledge offering circular before subscribing (server-side enforced)
+  offering_circular_acknowledged:  z.boolean().optional(),
+})
+
+// POST /api/investor/aiq — Accredited Investor Questionnaire self-certification (Reg D 506(c))
+export const submitAiqSchema = z.object({
+  accreditation_basis: z.enum(['income', 'net_worth', 'professional', 'entity', 'other']),
 })
 
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>
@@ -396,9 +403,93 @@ export const reviewAccreditationSchema = z.object({
 // ─── PATCH /api/investor/profile ──────────────────────────────────────────────
 
 export const updateInvestorProfileSchema = z.object({
-  investor_type: z.enum(['individual', 'joint', 'entity', 'ira']).optional(),
+  investor_type:     z.enum(['individual', 'joint', 'entity', 'ira']).optional(),
   onboarding_status: z.enum(['pending', 'in_progress', 'complete']).optional(),
+  // Reg A suitability fields — collected during Reg A onboarding / compliance page
+  annual_income:     z.number().positive().optional(),
+  net_worth:         z.number().positive().optional(),
+  jurisdiction:      z.string().length(2).toUpperCase().optional(),  // ISO 3166-2 state code, e.g. "CA"
 })
+
+// ─── Phase 4: OCR / Document Intelligence ────────────────────────────────────
+
+// POST /api/documents/[id]/extract
+export const triggerExtractionSchema = z.object({
+  provider: z.enum(['ocrolus', 'argyle', 'manual']),
+})
+
+export type TriggerExtractionInput = z.infer<typeof triggerExtractionSchema>
+
+// PATCH /api/documents/[id]/extraction  — review field mappings
+const fieldMappingReviewSchema = z.object({
+  field_mapping_id: z.string().uuid(),
+  status: z.enum(['accepted', 'rejected', 'overridden']),
+  override_value: z.string().trim().max(1000).optional(),
+})
+
+export const reviewExtractionSchema = z.object({
+  extraction_id: z.string().uuid(),
+  field_reviews: z.array(fieldMappingReviewSchema).min(0).max(200),
+  // overall extraction decision after reviewing all fields
+  extraction_decision: z.enum(['accepted', 'rejected']).optional(),
+})
+
+export type ReviewExtractionInput = z.infer<typeof reviewExtractionSchema>
+
+// POST /api/documents/[id]/extraction/apply
+export const applyExtractionSchema = z.object({
+  extraction_id: z.string().uuid(),
+})
+
+export type ApplyExtractionInput = z.infer<typeof applyExtractionSchema>
+
+// ─── Phase 4 Step 5: Offerings CRUD (admin) ───────────────────────────────────
+
+export const createOfferingSchema = z.object({
+  fund_id:                  z.string().uuid(),
+  offering_type:            z.enum(['reg_a', 'reg_d', 'reg_cf']),
+  title:                    z.string().trim().min(2).max(255),
+  description:              z.string().trim().max(5000).optional(),
+  max_offering_amount:      z.number().positive(),
+  min_investment:           z.number().positive().default(2500),
+  max_investment:           z.number().positive().optional().nullable(),
+  per_share_price:          z.number().positive().optional().nullable(),
+  shares_offered:           z.number().int().positive().optional().nullable(),
+  sec_file_number:          z.string().trim().max(50).optional().nullable(),
+  qualification_date:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  offering_open_date:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  offering_close_date:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  jurisdiction_restrictions: z.array(z.string().length(2).toUpperCase()).default([]),
+})
+
+export type CreateOfferingInput = z.infer<typeof createOfferingSchema>
+
+export const patchOfferingSchema = createOfferingSchema.partial().extend({
+  offering_status: z.enum(['draft', 'qualified', 'active', 'suspended', 'closed', 'terminated']).optional(),
+})
+
+export type PatchOfferingInput = z.infer<typeof patchOfferingSchema>
+
+export const attachOfferingDocumentSchema = z.object({
+  document_type:  z.enum(['form_1a', 'form_1a_amendment', 'form_1k', 'form_1sa', 'form_1u', 'offering_circular', 'supplement', 'other']),
+  label:          z.string().trim().min(2).max(255),
+  file_path:      z.string().trim().min(1).max(1000),  // Supabase Storage path
+  filed_at:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+})
+
+export type AttachOfferingDocumentInput = z.infer<typeof attachOfferingDocumentSchema>
+
+// POST /api/webhooks/ocr  — inbound provider webhook
+export const ocrWebhookSchema = z.object({
+  provider:   z.enum(['ocrolus', 'argyle']),
+  job_id:     z.string().min(1),
+  status:     z.enum(['completed', 'failed']),
+  // error message when status = 'failed'
+  error:      z.string().optional(),
+})
+
+export type OcrWebhookInput = z.infer<typeof ocrWebhookSchema>
 
 // ─── Phase 4: Compliance — KYC / AML ─────────────────────────────────────────
 

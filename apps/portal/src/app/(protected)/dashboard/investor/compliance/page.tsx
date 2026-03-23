@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/format'
 import Link from 'next/link'
 import StartKycButton from '@/components/investor/StartKycButton'
+import SuitabilityForm from '@/components/investor/SuitabilityForm'
 import { computeRegALimit, getRollingRegACommitments } from '@/lib/compliance/reg-a'
 
 export default async function InvestorCompliancePage() {
@@ -12,7 +13,7 @@ export default async function InvestorCompliancePage() {
 
   const { data: investor } = await supabase
     .from('investors')
-    .select('id, investor_type, accreditation_status, kyc_status, aml_status, onboarding_status, annual_income, net_worth, created_at')
+    .select('id, investor_type, accreditation_status, kyc_status, aml_status, onboarding_status, annual_income, net_worth, jurisdiction, created_at')
     .eq('profile_id', user!.id)
     .maybeSingle()
 
@@ -61,6 +62,9 @@ export default async function InvestorCompliancePage() {
 
   const ppmSig = subSigs.find(s => s.document_type === 'ppm_acknowledgment')
   const subAgreementSig = subSigs.find(s => s.document_type === 'subscription_agreement')
+
+  // jurisdiction is a new column — cast from the select result until DB types are regenerated
+  const investorJurisdiction = (investor as Record<string, unknown>).jurisdiction as string | null ?? null
 
   // Reg A investment limit (only meaningful for non-accredited investors)
   const regALimit = computeRegALimit(
@@ -288,12 +292,14 @@ export default async function InvestorCompliancePage() {
                 </p>
               </div>
             </div>
-            {(investor.annual_income == null && investor.net_worth == null) && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                Your annual income and net worth have not been provided. The limit shown ($2,500) is the SEC minimum.
-                Please update your financial profile to unlock a higher investment capacity.
-              </p>
-            )}
+            {/* Always show the suitability form — either to fill in missing data or to update */}
+            <div className="border-t border-gray-100 pt-4">
+              <SuitabilityForm
+                currentAnnualIncome={investor.annual_income ?? null}
+                currentNetWorth={investor.net_worth ?? null}
+                currentJurisdiction={investorJurisdiction}
+              />
+            </div>
           </div>
         </div>
       ) : (

@@ -12,6 +12,76 @@ import { fireWorkflowTrigger } from '@/lib/workflows/engine'
 import { canTransitionApplication, canRoleTransitionApplication } from '@/lib/loan/state-machine'
 import { sendApplicationStatusEmail } from '@/lib/email'
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const role = await getUserRole(supabase, user.id)
+
+  if (role === 'borrower') {
+    // Borrowers may only read applications they own
+    const { data: borrower } = await supabase
+      .from('borrowers')
+      .select('id')
+      .eq('profile_id', user.id)
+      .single()
+
+    if (!borrower) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const { data: application, error } = await supabase
+      .from('applications')
+      .select(`
+        id, application_number, application_status, loan_purpose,
+        requested_amount, requested_term_months, exit_strategy,
+        submitted_at, created_at, updated_at,
+        properties ( * ),
+        loan_requests ( * )
+      `)
+      .eq('id', id)
+      .eq('borrower_id', borrower.id)
+      .single()
+
+    if (error || !application) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(application)
+  }
+
+  if (['admin', 'manager', 'underwriter', 'servicing'].includes(role)) {
+    const adminClient = createAdminClient()
+    const { data: application, error } = await adminClient
+      .from('applications')
+      .select(`
+        id, application_number, application_status, loan_purpose,
+        requested_amount, requested_term_months, exit_strategy,
+        submitted_at, created_at, updated_at, borrower_id,
+        properties ( * ),
+        loan_requests ( * )
+      `)
+      .eq('id', id)
+      .single()
+
+    if (error || !application) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(application)
+  }
+
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

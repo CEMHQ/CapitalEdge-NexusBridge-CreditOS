@@ -53,7 +53,6 @@ export async function POST(request: Request) {
       provider:       'ofac_sdn',
       screening_type: 'ofac',
       status:         'pending',
-      created_by:     user.id,
     })
     .select('id')
     .single()

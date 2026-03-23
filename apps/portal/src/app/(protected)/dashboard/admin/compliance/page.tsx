@@ -135,6 +135,16 @@ export default async function AdminCompliancePage({
         <p className="text-sm text-gray-500 mt-1">506(c) accreditation queue, KYC/AML status, subscription gating</p>
       </div>
 
+      {/* Quick links */}
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href="/dashboard/admin/compliance/reg-a"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
+        >
+          Reg A Report — $75M Cap Tracking →
+        </Link>
+      </div>
+
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard

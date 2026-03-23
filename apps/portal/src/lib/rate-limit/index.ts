@@ -120,3 +120,24 @@ export const complianceLimiter = new Ratelimit({
   limiter: Ratelimit.fixedWindow(10, '1 h'),
   prefix: 'rl:compliance',
 })
+
+// Trigger OCR extraction: 30 per user per hour (provider API calls are expensive)
+export const extractionTriggerLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(30, '1 h'),
+  prefix: 'rl:extraction-trigger',
+})
+
+// OCR inbound webhook: 50 per minute (provider callbacks)
+export const ocrWebhookLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(50, '1 m'),
+  prefix: 'rl:ocr-webhook',
+})
+
+// Offering CRUD (admin): 30 per user per hour
+export const offeringsLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(30, '1 h'),
+  prefix: 'rl:offerings',
+})

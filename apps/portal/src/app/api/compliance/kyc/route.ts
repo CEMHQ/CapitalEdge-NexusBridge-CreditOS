@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     .insert({
       entity_type:       'investor',
       entity_id:         investor_id,
-      provider:          'plaid',
+      provider:          'plaid_identity',
       verification_type: 'identity',
       status:            'pending',
       created_by:        user.id,

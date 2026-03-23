@@ -25,6 +25,8 @@ import {
   Bell,
   ClipboardList,
   Landmark,
+  Layers,
+  Briefcase,
   type LucideIcon,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -46,6 +48,7 @@ const NAV_LINKS: Record<UserRole, NavLink[]> = {
   investor: [
     { label: 'Dashboard',     href: '/dashboard/investor',            icon: LayoutDashboard },
     { label: 'Portfolio',     href: '/dashboard/investor/portfolio',  icon: BarChart2 },
+    { label: 'Offerings',     href: '/dashboard/investor/offerings',  icon: Layers },
     { label: 'Statements',    href: '/dashboard/investor/statements', icon: Receipt },
     { label: 'Compliance',    href: '/dashboard/investor/compliance', icon: Shield },
     { label: 'Notifications', href: '/dashboard/notifications',       icon: Bell },
@@ -55,6 +58,7 @@ const NAV_LINKS: Record<UserRole, NavLink[]> = {
     { label: 'Applications', href: '/dashboard/admin/applications', icon: FileText },
     { label: 'Investors',    href: '/dashboard/admin/investors',    icon: Users },
     { label: 'Fund',         href: '/dashboard/admin/fund',         icon: TrendingUp },
+    { label: 'Offerings',    href: '/dashboard/admin/offerings',    icon: Briefcase },
     { label: 'Compliance',   href: '/dashboard/admin/compliance',   icon: Shield },
     { label: 'Documents',    href: '/dashboard/admin/documents',    icon: FolderOpen },
     { label: 'Underwriting', href: '/dashboard/underwriter',        icon: ClipboardCheck },
@@ -68,6 +72,7 @@ const NAV_LINKS: Record<UserRole, NavLink[]> = {
     { label: 'Dashboard',    href: '/dashboard/admin',              icon: LayoutDashboard },
     { label: 'Applications', href: '/dashboard/admin/applications', icon: FileText },
     { label: 'Investors',    href: '/dashboard/admin/investors',    icon: Users },
+    { label: 'Offerings',    href: '/dashboard/admin/offerings',    icon: Briefcase },
     { label: 'Compliance',   href: '/dashboard/admin/compliance',   icon: Shield },
     { label: 'Documents',    href: '/dashboard/admin/documents',    icon: FolderOpen },
     { label: 'Tasks',        href: '/dashboard/admin/tasks',        icon: CheckSquare },

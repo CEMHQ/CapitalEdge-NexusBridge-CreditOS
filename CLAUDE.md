@@ -293,7 +293,9 @@ For each migration file touched, verify the corresponding SQL reference doc sect
 | `0016_esignatures` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 2 |
 | `0023_document_intelligence` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 3 |
 | `0017_compliance_hardening`, `0018_reg_a_limits`, `0020_rls_audit_fixes`, `0021_rls_audit_infrastructure` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 4 |
-| `0019_tokenization` (planned) | `docs/SQL Reference/05_SQL_Phase5_Tokenization.md` | All |
+| `0024_reg_a_offerings` | `docs/SQL Reference/04_SQL_Phase4.md` | Step 5 |
+| `0028_document_acknowledgment_gate` | `docs/SQL Reference/04_SQL_Phase4.md` | Document Acknowledgment Gate |
+| `0029_tokenization` (planned) | `docs/SQL Reference/05_SQL_Phase5_Tokenization.md` | All |
 
 ### How to fix discrepancies
 
@@ -381,6 +383,7 @@ emitAuditEvent({ ... });
 | Underwriting | 7 routes: cases list, case detail, assign, decision, conditions CRUD, risk flags |
 | Loan Lifecycle | 6 routes: loans list, loan detail, create loan, record payment, manage draws, state transitions |
 | Fund Operations | Fund subscriptions (FCFS locking), fund allocations, NAV snapshots |
+| Investor Compliance | POST /api/investor/aiq (AIQ self-certification for Reg D 506(c)) |
 | Notifications | GET /api/notifications, PATCH /api/notifications (mark all read), PATCH /api/notifications/[id] (mark single read) |
 | Tasks | POST /api/tasks (create), PATCH /api/tasks/[id] (update status/fields), DELETE /api/tasks/[id] |
 | Admin -- Users | PATCH /api/admin/users/[id] (update role/status) |

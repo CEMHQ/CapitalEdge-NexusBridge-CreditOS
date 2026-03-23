@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ExtractionReviewPanel } from '@/components/documents/ExtractionReviewPanel'
 
 type Doc = {
   id: string
   file_name: string
   document_type: string
+  upload_status: string
   review_status: string
   rejection_reason: string | null
   file_size_bytes: number
@@ -297,6 +299,13 @@ export default function AdminDocumentReviewPage() {
           </button>
         </div>
       )}
+
+      {/* OCR / Document Intelligence */}
+      <ExtractionReviewPanel
+        documentId={doc.id}
+        documentType={doc.document_type}
+        uploadStatus={doc.upload_status}
+      />
     </div>
   )
 }
